@@ -1,0 +1,41 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environment files
+.env
+.env.*
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Generated artifacts
+*.log
+
+# Data sensitif Shopee (session browser & kredensial)
+data/raw/shopee/chrome_profile_pw/
+data/raw/shopee/cookie_header.txt
+data/raw/shopee/api_headers.txt
+
+# Model dan checkpoint (ukuran besar)
+artifacts/models/
+artifacts/checkpoints/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build
+dist/
+build/
+*.egg-info/

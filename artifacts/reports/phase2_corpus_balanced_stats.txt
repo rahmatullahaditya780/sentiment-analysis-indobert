@@ -1,0 +1,10 @@
+Total original rows: 18160
+Target fractions:
+ - positive: 37.50% -> desired 6810 rows
+ - negative: 32.50% -> desired 5902 rows
+ - neutral: 30.00% -> desired 5448 rows
+
+Balanced counts:
+ - positive: 6810 (37.50%)
+ - negative: 5902 (32.50%)
+ - neutral: 5448 (30.00%)

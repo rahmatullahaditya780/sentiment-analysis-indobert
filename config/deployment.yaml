@@ -1,0 +1,17 @@
+app:
+  name: sistem-analisis-sentimen
+  environment: production
+  debug: false
+
+server:
+  host: 0.0.0.0
+  port: 8501
+
+paths:
+  artifacts: artifacts
+  models: artifacts/models
+  reports: artifacts/reports
+
+model:
+  base_name: indobert-base-p2
+  max_length: 128

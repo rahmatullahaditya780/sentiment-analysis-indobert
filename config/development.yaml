@@ -1,0 +1,19 @@
+app:
+  name: sistem-analisis-sentimen
+  environment: development
+  debug: true
+
+paths:
+  data_raw: data/raw
+  data_interim: data/interim
+  data_processed: data/processed
+  artifacts: artifacts
+  models: artifacts/models
+  checkpoints: artifacts/checkpoints
+  reports: artifacts/reports
+
+model:
+  base_name: indobert-base-p2
+  max_length: 128
+  batch_size: 16
+  learning_rate: 2e-5
