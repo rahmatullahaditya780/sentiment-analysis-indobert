@@ -6,59 +6,59 @@
     "test": 0.1
   },
   "unified": {
-    "total": 17962,
+    "total": 20608,
     "counts": {
-      "positive": 9860,
-      "negative": 6747,
-      "neutral": 1355
+      "positive": 12178,
+      "negative": 6941,
+      "neutral": 1489
     },
     "pct": {
-      "positive": 54.89,
-      "negative": 37.56,
-      "neutral": 7.54
+      "positive": 59.09,
+      "negative": 33.68,
+      "neutral": 7.23
     }
   },
   "train": {
-    "total": 14369,
+    "total": 16485,
     "counts": {
-      "positive": 7888,
-      "negative": 5397,
-      "neutral": 1084
+      "positive": 9742,
+      "negative": 5552,
+      "neutral": 1191
     },
     "pct": {
-      "positive": 54.9,
-      "negative": 37.56,
-      "neutral": 7.54
+      "positive": 59.1,
+      "negative": 33.68,
+      "neutral": 7.22
     }
   },
   "validation": {
-    "total": 1795,
+    "total": 2059,
     "counts": {
-      "positive": 986,
-      "negative": 674,
-      "neutral": 135
+      "positive": 1217,
+      "negative": 694,
+      "neutral": 148
     },
     "pct": {
-      "positive": 54.93,
-      "negative": 37.55,
-      "neutral": 7.52
+      "positive": 59.11,
+      "negative": 33.71,
+      "neutral": 7.19
     }
   },
   "test": {
-    "total": 1798,
+    "total": 2064,
     "counts": {
-      "positive": 986,
-      "negative": 676,
-      "neutral": 136
+      "positive": 1219,
+      "negative": 695,
+      "neutral": 150
     },
     "pct": {
-      "positive": 54.84,
-      "negative": 37.6,
-      "neutral": 7.56
+      "positive": 59.06,
+      "negative": 33.67,
+      "neutral": 7.27
     }
   },
   "imbalance": {
-    "spread": 0.4735,
+    "spread": 0.5187,
     "threshold": 0.15,
     "needs_handling": true,
     "severe_needs_augmentation": true,
@@ -67,6 +67,7 @@
   "sources": {
     "smsa:train": 10933,
     "prdect_id": 5283,
+    "kaggle_shopee": 2646,
     "smsa:validation": 1246,
     "smsa:test": 500
   }

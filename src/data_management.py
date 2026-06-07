@@ -4,7 +4,7 @@ Fase 2 — Data Management: pembangunan unified corpus dari 3 sumber.
 Sumber:
 - SmSA (IndoNLU)              -> data/raw/smsa/{train,validation,test}_preprocess.tsv
 - PRDECT-ID (snapshot)        -> data/raw/prdect_id/prdect_snapshot.csv
-- Kaggle E-Commerce Review    -> data/raw/kaggle_ecommerce/*.csv  (opsional, skip jika belum ada)
+- Kaggle Review Product Shopee -> data/raw/kaggle/*.csv  (opsional, skip jika belum ada)
 
 Pipeline: load -> harmonisasi label -> normalisasi teks -> deduplikasi -> merge.
 Output: data/processed/unified_corpus.csv  [text, label, source]
@@ -74,18 +74,20 @@ def load_prdect_id() -> pd.DataFrame:
 
 
 def load_kaggle() -> pd.DataFrame:
-    """Muat Kaggle Indonesian E-Commerce Review (rizqinugroho).
+    """Muat Kaggle Review Product Shopee (mdhimaspamungkas).
 
-    Mendeteksi otomatis kolom teks (review_text/content/ulasan) dan label
-    (sentiment_label) atau rating (rating/star). Skip jika folder/file kosong.
-    Source: kaggle_ecommerce.
+    Skema: kolom teks `comment` + rating bintang 1-5 (-> harmonize_rating).
+    Loader tetap auto-deteksi kolom agar tahan jika CSV diganti varian lain
+    (teks: comment/review_text/content/ulasan; label: sentiment_label; atau
+    rating: rating/star). Baris dengan comment kosong (NaN) lolos ke sini lalu
+    dibuang oleh filter teks-kosong di build_unified_corpus. Source: kaggle_shopee.
     """
-    kaggle_dir = RAW_DIR / "kaggle_ecommerce"
+    kaggle_dir = RAW_DIR / "kaggle"
     csvs = sorted(kaggle_dir.glob("*.csv")) if kaggle_dir.exists() else []
     if not csvs:
         print(
-            "  [Kaggle] LEWAT — belum ada CSV di data/raw/kaggle_ecommerce/. "
-            "Unduh dataset rizqinugroho lalu jalankan ulang."
+            "  [Kaggle] LEWAT — belum ada CSV di data/raw/kaggle/. "
+            "Unduh dataset Review Product Shopee lalu jalankan ulang."
         )
         return _empty()
 
@@ -93,7 +95,7 @@ def load_kaggle() -> pd.DataFrame:
     for path in csvs:
         df = pd.read_csv(path)
         cols = {c.lower(): c for c in df.columns}
-        text_col = _first_present(cols, ["review_text", "content", "ulasan", "review", "text"])
+        text_col = _first_present(cols, ["comment", "review_text", "content", "ulasan", "review", "text"])
         if text_col is None:
             print(f"  [Kaggle] LEWAT {path.name} — kolom teks tidak ditemukan")
             continue
@@ -108,7 +110,7 @@ def load_kaggle() -> pd.DataFrame:
         else:
             print(f"  [Kaggle] LEWAT {path.name} — tak ada kolom label/rating")
             continue
-        out["source"] = "kaggle_ecommerce"
+        out["source"] = "kaggle_shopee"
         frames.append(out[["text", "label", "source"]])
         print(f"  [Kaggle] {path.name}: {len(out)} baris")
 

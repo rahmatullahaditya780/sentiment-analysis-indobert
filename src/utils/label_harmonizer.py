@@ -4,7 +4,7 @@ Harmonisasi label sentimen lintas sumber dataset (Fase 2).
 Tiga sumber dataset memakai skema label berbeda:
 - SmSA (IndoNLU)     : integer {0: positive, 1: neutral, 2: negative}
 - PRDECT-ID          : string  {positive, negative}  (tanpa neutral)
-- Kaggle E-Commerce  : rating bintang 1-5  ATAU  string sentiment_label
+- Kaggle Shopee      : rating bintang 1-5  ATAU  string sentiment_label
 
 Modul ini menyeragamkan semuanya ke label kanonik: positive / negative / neutral.
 """
