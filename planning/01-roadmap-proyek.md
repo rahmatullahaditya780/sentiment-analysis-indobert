@@ -19,8 +19,8 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 1 | Project Initialization & Environment Setup | **Selesai** |
 | 2 | Data Collection & Data Management | **Selesai** (korpus training; OmorfoShop deferred-paralel) |
 | 3 | Data Preprocessing | **Selesai** |
-| 4 | Model Training & Fine-Tuning | **Siap mulai** |
-| 5 | Model Evaluation | Belum mulai |
+| 4 | Model Training & Fine-Tuning | **Selesai** (F1 macro test 0.8971; CV 0.9016 ± 0.010) |
+| 5 | Model Evaluation | **Siap mulai** |
 | 6 | Sentiment Inference Engine | Belum mulai |
 | 7 | Rule-Based Marketing Recommendation | Belum mulai |
 | 8 | Dashboard Development | Belum mulai |
@@ -36,7 +36,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 - [DEFERRED] Dataset OmorfoShop via Shopee Open Platform API — PENDING kredensial (fallback CSV siap). Data implementasi, bukan dependensi Fase 3–5.
 - [x] Unified dataset tersedia dengan split 80/10/10 (20.608 baris; stratified, seed=42).
 - [x] Data flow antar fase terdokumentasi (Fase 2→3: `clean_*.csv` sebagai input Fase 4).
-- [x] Output tiap fase tersimpan sebagai artefak di `outputs/` (`phase2_split_stats.json`, `phase3_preprocessing_stats.json`).
+- [x] Output tiap fase tersimpan sebagai artefak di `outputs/` (`phase2_split_stats.json`, `phase3_preprocessing_stats.json`, `phase4_final_metrics.json`, `cross_validation_report.json`, `hyperparameter_log.csv`).
 - [ ] Setiap fase punya checklist selesai sebelum pindah.
 - [ ] File catatan revisi diperbarui setiap ada perubahan signifikan.
 

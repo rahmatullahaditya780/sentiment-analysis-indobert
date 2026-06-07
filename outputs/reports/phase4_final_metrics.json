@@ -1,0 +1,19 @@
+{
+  "accuracy": 0.937,
+  "precision_macro": 0.9077,
+  "recall_macro": 0.8882,
+  "f1_macro": 0.8971,
+  "config": {
+    "run_name": "final",
+    "learning_rate": 3e-05,
+    "batch_size": 8,
+    "num_epochs": 3,
+    "max_length": 128,
+    "dropout_rate": 0.1,
+    "weight_decay": 0.01,
+    "warmup_steps": 500,
+    "early_stopping_patience": 2,
+    "model_name": "indolem/indobert-base-uncased",
+    "seed": 42
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "config": {
+    "run_name": "final",
+    "learning_rate": 3e-05,
+    "batch_size": 8,
+    "num_epochs": 3,
+    "max_length": 128,
+    "dropout_rate": 0.1,
+    "weight_decay": 0.01,
+    "warmup_steps": 500,
+    "early_stopping_patience": 2,
+    "model_name": "indolem/indobert-base-uncased",
+    "seed": 42
+  },
+  "n_splits": 5,
+  "seed": 42,
+  "folds": [
+    {
+      "fold": 1,
+      "f1_macro": 0.8932,
+      "accuracy": 0.932
+    },
+    {
+      "fold": 2,
+      "f1_macro": 0.9111,
+      "accuracy": 0.946
+    },
+    {
+      "fold": 3,
+      "f1_macro": 0.8879,
+      "accuracy": 0.9372
+    },
+    {
+      "fold": 4,
+      "f1_macro": 0.9021,
+      "accuracy": 0.9417
+    },
+    {
+      "fold": 5,
+      "f1_macro": 0.9138,
+      "accuracy": 0.9442
+    }
+  ],
+  "f1_macro_mean": 0.9016,
+  "f1_macro_std": 0.01
+}

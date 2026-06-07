@@ -107,12 +107,25 @@ Save Best Model (berdasarkan macro F1)
 
 ## Deliverables Checkpoint 4
 
-- [ ] IndoBERT berhasil di-fine-tune dengan konfigurasi optimal.
-- [ ] Focused random search selesai dan terdokumentasi (5–8 eksperimen).
-- [ ] 5-Fold cross-validation selesai dan report tersedia di `outputs/reports/`.
-- [ ] Best model tersimpan di `models/` (model weight + tokenizer).
-- [ ] Training log dan hyperparameter log tersedia di `outputs/reports/`.
-- [ ] Early stopping dan LR scheduler terimplementasi.
+- [x] IndoBERT berhasil di-fine-tune dengan konfigurasi optimal (LR 3e-5, BS 8, 3 epoch).
+- [x] Focused random search selesai dan terdokumentasi (baseline + 6 eksperimen).
+- [x] 5-Fold cross-validation selesai dan report tersedia di `outputs/reports/`.
+- [x] Best model tersimpan di `models/best_model/` (model weight + tokenizer).
+- [x] Hyperparameter log tersedia di `outputs/reports/hyperparameter_log.csv` (training log per-epoch tersimpan di `trainer_state.json` checkpoint).
+- [x] Early stopping (patience=2) dan LR scheduler (linear+warmup 500) terimplementasi.
+
+## Hasil Aktual (Checkpoint 4)
+
+| Metrik | Nilai |
+|---|---|
+| Konfigurasi final | LR 3e-5, batch 8, 3 epoch (seed=42) |
+| F1 macro (test set) | **0.8971** (target ≥ 0.85 ✅) |
+| Accuracy (test set) | 0.9370 |
+| Precision macro / Recall macro | 0.9077 / 0.8882 |
+| 5-Fold CV (mean ± std) | **0.9016 ± 0.010** (stabil) |
+
+Detail: `outputs/reports/phase4_final_metrics.json`, `cross_validation_report.json`, `hyperparameter_log.csv`.
+Gate diverifikasi via `scripts/validate_phase4_gate.py` → **LULUS**.
 
 ## Implementasi Kode
 
