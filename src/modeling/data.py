@@ -155,5 +155,9 @@ def build_hf_dataset(
 
     ds = ds.map(_tokenize, batched=True)
     ds = ds.remove_columns([text_column])
-    ds.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+    # CATATAN: sengaja TIDAK memakai ds.set_format("torch"). Formatter torch
+    # bawaan `datasets` meng-impor torchvision (VideoReader) yang sering bentrok
+    # versi di Colab. HF Trainer tetap mengubah kolom (yang sudah dipad ke
+    # max_length) menjadi tensor via default_data_collator, jadi format eksplisit
+    # tidak diperlukan dan justru memicu ImportError.
     return ds
