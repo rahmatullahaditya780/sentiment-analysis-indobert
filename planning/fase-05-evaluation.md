@@ -35,12 +35,14 @@ Mengukur performa model klasifikasi sentimen menggunakan test set yang belum per
 
 ## Deliverables Checkpoint 5
 
-- [ ] Semua metrik evaluasi tersedia: accuracy, precision macro, recall macro, F1 macro.
-- [ ] Confusion matrix selesai dibuat untuk setiap kelas (Positif, Negatif, Netral).
-- [ ] Learning curve (training loss vs. validation loss per epoch) tersedia.
-- [ ] Cross-validation report tersedia (mean F1 ± std dev dari 5-fold — dari Fase 4).
-- [ ] Final evaluation report selesai (`outputs/reports/evaluation_final.json`).
-- [ ] Visualisasi tersimpan di `outputs/charts/` (confusion matrix, learning curve).
+- [x] Semua metrik evaluasi tersedia: accuracy 0.937, precision macro 0.9077, recall macro 0.8882, F1 macro 0.8971.
+- [x] Confusion matrix selesai dibuat untuk setiap kelas (Positif, Negatif, Netral) → `outputs/charts/confusion_matrix.png`.
+- [ ] Learning curve (training loss vs. validation loss per epoch) tersedia — **menunggu re-run Fase 4** (ekspor `training_log.csv`).
+- [x] Cross-validation report tersedia (mean F1 0.9016 ± 0.010 dari 5-fold — dari Fase 4).
+- [x] Final evaluation report selesai (`outputs/reports/evaluation_final.json`).
+- [~] Visualisasi tersimpan di `outputs/charts/` (confusion matrix ✅, learning curve ⏳).
+
+> Evaluasi metrik & confusion matrix dijalankan **lokal di CPU** (torch CPU + transformers + sklearn), mereproduksi persis hasil test set Fase 4. Learning curve butuh riwayat loss per epoch yang diekspor saat re-run training Fase 4.
 
 ## Implementasi Kode
 
