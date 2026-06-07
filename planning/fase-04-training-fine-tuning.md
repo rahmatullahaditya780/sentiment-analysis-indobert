@@ -1,7 +1,7 @@
 # Fase 4 — Model Training & Fine-Tuning (Checkpoint 4)
 
 ## Tujuan
-Melatih model IndoBERT untuk klasifikasi sentimen menggunakan dataset gabungan SmSA dan Indonesian E-Commerce Review.
+Melatih model IndoBERT untuk klasifikasi sentimen menggunakan unified dataset gabungan tiga sumber (SmSA + PRDECT-ID + Review Product Shopee), total 20.608 ulasan.
 
 ## Functional Requirements
 | ID | Requirement |

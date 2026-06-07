@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Gambaran Proyek
 
-**Sentara** (slug teknis: `sentara`) adalah sistem analisis sentimen untuk ulasan produk e-commerce OmorfoShop. Ini adalah proyek skripsi yang mengimplementasikan pipeline lengkap untuk mengumpulkan, memproses, melatih, dan menganalisis sentimen dari ulasan produk berbahasa Indonesia.
+**Sentara** (slug teknis: `sistem analisis sentimen berbasis IndoBERT`) adalah sistem analisis sentimen untuk ulasan produk e-commerce OmorfoShop. Ini adalah proyek skripsi yang mengimplementasikan pipeline lengkap untuk mengumpulkan, memproses, melatih, dan menganalisis sentimen dari ulasan produk berbahasa Indonesia.
 
 Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **Shopee Open Platform API (REST v2.0, OAuth2)** — bukan web scraping.
 
@@ -31,8 +31,10 @@ Fase 10: Deployment & Documentation                  ⏳ Belum mulai
 project_root/
 │
 ├── data/
-│   ├── raw/             # Dataset mentah (SmSA TSV, Kaggle CSV)
+│   ├── raw/             # Dataset mentah (SmSA TSV, PRDECT-ID CSV, Kaggle Shopee CSV)
 │   │   ├── smsa/        # train_preprocess.tsv, validation_preprocess.tsv, test_preprocess.tsv
+│   │   ├── prdect_id/   # prdect_snapshot.csv
+│   │   ├── kaggle/      # data.csv (Review Product Shopee)
 │   │   └── source_manifest.yaml
 │   ├── processed/       # Dataset setelah preprocessing & split (CSV)
 │   └── implementation/  # Dataset OmorfoShop hasil Shopee Open Platform API
@@ -69,13 +71,14 @@ project_root/
 
 ## Sumber Data
 
-| Dataset | Sumber | Jumlah | Fungsi |
+| Dataset | Sumber | Jumlah (aktual) | Fungsi |
 |---|---|---|---|
-| SmSA | github.com/IndoNLP/indonlu | 4.000–5.000 | Training & Evaluasi |
-| Indonesian E-Commerce Review | Kaggle (rizqinugroho) | 5.000–7.000 | Training & Evaluasi |
-| OmorfoShop (via Open Platform API) | Shopee API `get_rating` | ±1.200 | Implementasi saja |
+| SmSA | github.com/IndoNLP/indonlu | 12.679 | Training & Evaluasi |
+| PRDECT-ID (snapshot) | data.mendeley.com/datasets/574v66hf2v | 5.283 | Training & Evaluasi |
+| Review Product Shopee | Kaggle (mdhimaspamungkas) | 2.646 | Training & Evaluasi |
+| OmorfoShop (via Open Platform API) | Shopee API `get_rating` | ±1.200 (PENDING) | Implementasi saja |
 
-**Unified dataset** (SmSA + Kaggle): 9.000–12.000 ulasan, split **80/10/10** (train/val/test) dengan stratifikasi.
+**Unified dataset** (SmSA + PRDECT-ID + Kaggle Shopee): **20.608 ulasan**, split **80/10/10** stratified (seed=42) → train **16.485** / validation **2.059** / test **2.064**. Distribusi kelas: positif 59,1% / negatif 33,7% / neutral 7,2% (spread > 15% → wajib `class_weight` di Fase 4).
 
 ## Alur Data
 

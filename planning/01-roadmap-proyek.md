@@ -45,7 +45,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | Fase | Output Utama |
 |---|---|
 | 1 | Struktur project, virtual env, requirements.txt |
-| 2 | Unified dataset 9K–12K ulasan, dataset OmorfoShop ±1.200, split 80/10/10 |
+| 2 | Unified dataset 20.608 ulasan (SmSA+PRDECT+Kaggle Shopee), split 80/10/10; dataset OmorfoShop ±1.200 deferred |
 | 3 | Pipeline preprocessing (tanpa stemming), dataset siap training |
 | 4 | Best model IndoBERT, hyperparameter log, 5-fold CV report, training log |
 | 5 | Metrik evaluasi (accuracy, F1 macro ≥85%), confusion matrix, learning curve |

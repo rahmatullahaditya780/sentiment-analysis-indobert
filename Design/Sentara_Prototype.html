@@ -271,7 +271,7 @@ document.getElementById('s6').innerHTML=shell(6,`
   <h1>Tentang Aplikasi & Cara Pakai</h1>
   <div class="sub">Sentara — sistem analisis sentimen ulasan e-commerce berbasis IndoBERT</div>
   <div class="card"><div class="ttl">Tentang Sentara</div>
-    <p style="font-size:14px;color:var(--sub);line-height:1.6">Sentara adalah sistem analisis sentimen ulasan produk e-commerce berbasis IndoBERT (indolem/indobert-base-uncased) yang di-fine-tune untuk klasifikasi tiga kelas: Positif, Negatif, dan Netral. Model dilatih dari gabungan dataset SmSA (IndoNLU) dan Indonesian E-Commerce Review (Kaggle), lalu diuji pada ±1.000 ulasan OmorfoShop Official Store via Shopee Open Platform API. Tujuannya membantu pemilik toko memahami persepsi pelanggan dan menyusun strategi pemasaran berbasis data.</p></div>
+    <p style="font-size:14px;color:var(--sub);line-height:1.6">Sentara adalah sistem analisis sentimen ulasan produk e-commerce berbasis IndoBERT (indolem/indobert-base-uncased) yang di-fine-tune untuk klasifikasi tiga kelas: Positif, Negatif, dan Netral. Model dilatih dari gabungan tiga dataset publik — SmSA (IndoNLU), PRDECT-ID, dan Review Product Shopee (Kaggle) — total 20.608 ulasan, lalu diuji pada ±1.000 ulasan OmorfoShop Official Store via Shopee Open Platform API. Tujuannya membantu pemilik toko memahami persepsi pelanggan dan menyusun strategi pemasaran berbasis data.</p></div>
   <div class="card" style="margin-top:16px"><div class="ttl">Cara Pakai dalam 5 Langkah</div>
     <div class="steps">${steps.map((s,i)=>`<div class="step"><div class="c">${i+1}</div><b>${s[0]}</b><p>${s[1]}</p></div>${i<4?'<div class="arrow">&rarr;</div>':''}`).join("")}</div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">

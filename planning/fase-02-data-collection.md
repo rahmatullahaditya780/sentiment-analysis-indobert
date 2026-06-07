@@ -6,7 +6,7 @@ Mengumpulkan dan mengelola seluruh dataset yang digunakan dalam penelitian: data
 ## Functional Requirements
 | ID | Requirement |
 |---|---|
-| FR-2.1 | Sistem harus dapat membaca dataset CSV dari SmSA dan Indonesian E-Commerce Review. |
+| FR-2.1 | Sistem harus dapat membaca dataset dari SmSA (TSV), PRDECT-ID (CSV), dan Review Product Shopee (Kaggle CSV). |
 | FR-2.2 | Sistem harus dapat mengambil ulasan OmorfoShop Official Store melalui Shopee Open Platform API (REST v2.0) menggunakan autentikasi OAuth2 dan endpoint `get_rating`. |
 | FR-2.3 | Sistem harus dapat menggabungkan dataset SmSA dan E-Commerce Review menjadi unified dataset. |
 | FR-2.4 | Sistem harus dapat melakukan validasi struktur dan harmonisasi label sentimen. |
@@ -17,11 +17,12 @@ Mengumpulkan dan mengelola seluruh dataset yang digunakan dalam penelitian: data
 
 ## Dataset Training & Evaluasi (Dataset Publik)
 
-| Dataset | Sumber | Jumlah Estimasi | Label | Format |
+| Dataset | Sumber | Jumlah Aktual | Label | Format |
 |---|---|---|---|---|
-| SmSA (IndoNLU) | github.com/IndoNLP/indonlu | 4.000–5.000 ulasan | Positif / Negatif / Netral | TSV `[text, label]` |
-| Indonesian E-Commerce Review | Kaggle (rizqinugroho) | 5.000–7.000 ulasan | Positif / Negatif / Netral (dari rating) | CSV `[review_text, rating, sentiment_label]` |
-| **Total Unified Dataset** | — | **9.000–12.000 ulasan** | 3 kelas seragam | CSV `[review_text, sentiment_label]` |
+| SmSA (IndoNLU) | github.com/IndoNLP/indonlu | 12.679 ulasan | Positif / Negatif / Netral | TSV `[text, label]` |
+| PRDECT-ID (snapshot) | data.mendeley.com/datasets/574v66hf2v | 5.283 ulasan | Positif / Negatif | CSV `[text, label]` |
+| Review Product Shopee | Kaggle (mdhimaspamungkas) | 2.646 ulasan | Positif / Negatif / Netral (dari rating) | CSV `[username, rating, comment]` |
+| **Total Unified Dataset** | — | **20.608 ulasan** | 3 kelas seragam | CSV `[text, label, source]` |
 
 ## Dataset Implementasi (OmorfoShop)
 
@@ -42,12 +43,18 @@ Mengumpulkan dan mengelola seluruh dataset yang digunakan dalam penelitian: data
 | text | String | Teks ulasan/kalimat |
 | label | String | Sentimen: positive / negative / neutral |
 
-### Indonesian E-Commerce Review
+### PRDECT-ID (snapshot)
 | Atribut | Tipe | Keterangan |
 |---|---|---|
-| review_text | String | Teks ulasan produk |
-| rating | Integer | Rating bintang 1–5 |
-| sentiment_label | String | Label sentimen (dipetakan dari rating jika belum ada) |
+| text | String | Teks ulasan produk |
+| label | String | Sentimen: positive / negative (tidak ada neutral) |
+
+### Review Product Shopee (Kaggle, mdhimaspamungkas)
+| Atribut | Tipe | Keterangan |
+|---|---|---|
+| username | String | Nama pengguna pengulas (tidak dipakai) |
+| rating | Integer | Rating bintang 1–5 → dipetakan ke label (1–2 negative, 3 neutral, 4–5 positive) |
+| comment | String | Teks ulasan; baris dengan comment kosong (316) di-drop saat loading |
 
 ### Dataset Implementasi OmorfoShop
 | Atribut | Tipe | Keterangan |
@@ -80,19 +87,19 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 
 ## Stratified Split
 
-| Subset | Proporsi | Estimasi Jumlah |
+| Subset | Proporsi | Jumlah Aktual |
 |---|---|---|
-| Training Set | 80% | 7.200–9.600 ulasan |
-| Validation Set | 10% | 900–1.200 ulasan |
-| Testing Set | 10% | 900–1.200 ulasan |
+| Training Set | 80% | 16.485 ulasan |
+| Validation Set | 10% | 2.059 ulasan |
+| Testing Set | 10% | 2.064 ulasan |
 
 ## Proses Pengerjaan
 
-1. **Import Dataset Publik** — Unduh SmSA dari IndoNLU GitHub & Indonesian E-Commerce Review dari Kaggle (CSV).
+1. **Import Dataset Publik** — Unduh SmSA dari IndoNLU GitHub (TSV), PRDECT-ID (snapshot CSV), & Review Product Shopee dari Kaggle (CSV).
 2. **Verifikasi Manual** — Periksa 5–10% data acak untuk memastikan konsistensi label.
 3. **Harmonisasi Label** — Seragamkan: `'positive'/'1'` → Positif, `'negative'/'-1'` → Negatif, `'neutral'/'0'` → Netral.
 4. **Deduplication** — Hapus data duplikat untuk mencegah data leakage.
-5. **Merge Dataset** — Gabungkan SmSA dan Kaggle menjadi satu file CSV unified.
+5. **Merge Dataset** — Gabungkan SmSA, PRDECT-ID, dan Kaggle Shopee menjadi satu file CSV unified.
 6. **Stratified Split** — Bagi dataset 80/10/10 menggunakan `stratified_train_test_split`.
 7. **Cek Class Imbalance** — Hitung distribusi, terapkan strategi jika selisih > 15%.
 8. **Pengambilan Ulasan OmorfoShop via Open Platform API** — Autentikasi OAuth2, `get_item_list` → `get_rating` (pagination, maks 1.200 ulasan).
