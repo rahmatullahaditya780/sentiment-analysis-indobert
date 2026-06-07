@@ -1,5 +1,5 @@
 app:
-  name: sistem-analisis-sentimen
+  name: sentara
   environment: development
   debug: true
 

@@ -4,212 +4,219 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Gambaran Proyek
 
-**sistem-analisis-sentimen** adalah sistem analisis sentimen untuk ulasan produk e-commerce. Ini adalah proyek skripsi yang mengimplementasikan pipeline lengkap untuk mengumpulkan, memproses, melatih, dan menganalisis sentimen dari ulasan produk berbahasa Indonesia.
+**Sentara** (slug teknis: `sentara`) adalah sistem analisis sentimen untuk ulasan produk e-commerce OmorfoShop. Ini adalah proyek skripsi yang mengimplementasikan pipeline lengkap untuk mengumpulkan, memproses, melatih, dan menganalisis sentimen dari ulasan produk berbahasa Indonesia.
 
-Proyek menggunakan **IndoBERT** (varian BERT untuk bahasa Indonesia) sebagai model ML inti, dan mengikuti sistem pengembangan berbasis 10 fase dengan gate ketat. Saat ini berada di Fase 2 (Pengumpulan Data & Manajemen Data), dengan dataset dari Shopee (via web scraping) dan SMSA (dataset sentimen Indonesia).
+Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggunakan dataset publik SmSA (IndoNLU) dan Indonesian E-Commerce Review (Kaggle). Data implementasi diambil dari OmorfoShop Official Store via **Shopee Open Platform API (REST v2.0, OAuth2)** — bukan web scraping.
+
+Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Saat ini berada di Fase 2 (Data Collection & Data Management).
 
 ## Arsitektur Tingkat Tinggi
 
-Proyek mengikuti **arsitektur berbasis fase dengan gate ketat** — setiap fase hanya bisa dimulai setelah checklist fase sebelumnya selesai 100%:
-
 ```
-Fase 1: Inisialisasi Proyek (SELESAI)
-  └─ Setup environment, dependensi, struktur konfigurasi
-
-Fase 2: Pengumpulan Data & Manajemen Data (BERJALAN)
-  ├─ Pengumpulan data mentah (Shopee, SMSA)
-  ├─ Pelacakan manifest/metadata dataset
-  ├─ Utilitas validasi kolom
-  └─ Persiapan dataset (balancing, cleaning)
-
-Fase 3: Preprocessing Data (SELANJUTNYA)
-  └─ Normalisasi teks, tokenisasi untuk IndoBERT
-
-Fase 4–10: Training Model → Inferensi → Dashboard → Deployment
+Fase 1:  Project Initialization & Environment Setup  ✅ SELESAI
+Fase 2:  Data Collection & Data Management           🔄 BERJALAN
+Fase 3:  Data Preprocessing                          ⏳ Belum mulai
+Fase 4:  Model Training & Fine-Tuning                ⏳ Belum mulai
+Fase 5:  Model Evaluation                            ⏳ Belum mulai
+Fase 6:  Sentiment Inference Engine                  ⏳ Belum mulai
+Fase 7:  Rule-Based Marketing Recommendation         ⏳ Belum mulai
+Fase 8:  Dashboard Development (Streamlit)           ⏳ Belum mulai
+Fase 9:  Testing & Validation                        ⏳ Belum mulai
+Fase 10: Deployment & Documentation                  ⏳ Belum mulai
 ```
 
-### Direktori Utama
+## Struktur Folder (TRD v2)
 
-- **`src/`** — Utilitas inti
-  - `data_management.py` — Loading data, validasi, manajemen skema
-  - `phase2_dataset_builder.py` — Konstruksi dataset dari berbagai sumber
-  - `__init__.py` — Definisi package
-
-- **`scripts/`** — Pipeline yang bisa dijalankan
-  - `init_phase2_data.py` — Inisialisasi struktur folder fase 2
-  - `build_phase2_corpus.py` — Menggabungkan dataset menjadi corpus terpadu
-  - `scrape_shopee_reviews.py` — Web scraper untuk ulasan Shopee
-  - `validate_phase2_gate.py` — Validasi gate sebelum masuk fase 3
-
-- **`data/`** — Data di berbagai tahap
-  - `raw/` — Dataset mentah dan source manifest (`shopee/`, `smsa/`)
-  - `interim/` — Hasil pemrosesan sementara
-  - `processed/` — Dataset final siap training
-  - `external/` — Data pendukung dari sumber eksternal
-
-- **`artifacts/`** — Output model dan analisis
-  - `models/` — Checkpoint model terlatih
-  - `checkpoints/` — Checkpoint training
-  - `reports/` — Laporan analisis dan statistik
-
-- **`config/`** — Konfigurasi per environment
-  - `development.yaml` — Dev (debug=true, path lokal)
-  - `deployment.yaml` — Produksi (debug=false, konfigurasi server)
-
-- **`planning/`** — Dokumentasi fase dan roadmap
-  - `01-roadmap-proyek.md` — Roadmap utama dengan status gate global
-  - `fase-NN-*.md` — Dokumentasi detail tiap fase beserta checklistnya
-  - `02-catatan-revisi.md` — Catatan revisi di luar fase
-
-## Alur Data & Konsep Kunci
-
-### Struktur Dataset Fase 2
-
-Sistem bekerja dengan tiga sumber data:
-1. **Shopee** — Ulasan hasil web scraping (`data/raw/shopee/`)
-2. **SMSA** — Dataset Sentimen Indonesia (`data/raw/smsa/`)
-   - `train_preprocess.tsv` — Data training
-   - `test_preprocess.tsv` — Data test
-   - `validation_preprocess.tsv` — Data validasi
-
-### Source Manifest
-
-Berada di `data/raw/source_manifest.yaml`, melacak metadata tiap dataset:
-- Nama dan tipe sumber
-- URL/referensi
-- Lisensi dan hak penggunaan
-- Tanggal pengumpulan, versi
-- Catatan khusus tentang keterbatasan
-
-### Validasi Dataset
-
-Sebelum lanjut ke Fase 3, dataset harus lulus validasi di `validate_phase2_gate.py`:
-- Semua kolom wajib harus ada di corpus gabungan
-- Source manifest harus lengkap
-- Corpus gabungan disimpan di `data/processed/phase2_sentiment_corpus.csv`
-
-### Keseimbangan Kelas
-
-Dataset seimbang saat ini (`phase2_sentiment_corpus_balanced.csv`):
-- Positif: 37,50% (6.810 baris)
-- Negatif: 32,50% (5.902 baris)
-- Netral: 30,00% (5.448 baris)
-- **Total: 18.160 baris**
-
-## Alur Kerja Pengembangan
-
-### Setup
-
-```bash
-# Buat dan aktifkan virtual environment
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-source .venv/bin/activate     # Unix/Mac
-
-# Install dependensi
-pip install -r requirements.txt
-pip install -r requirements-dev.txt   # Untuk tools pengembangan
+```
+project_root/
+│
+├── data/
+│   ├── raw/             # Dataset mentah (SmSA TSV, Kaggle CSV)
+│   │   ├── smsa/        # train_preprocess.tsv, validation_preprocess.tsv, test_preprocess.tsv
+│   │   └── source_manifest.yaml
+│   ├── processed/       # Dataset setelah preprocessing & split (CSV)
+│   └── implementation/  # Dataset OmorfoShop hasil Shopee Open Platform API
+│
+├── notebooks/           # Jupyter/Colab notebooks untuk eksperimen
+│
+├── src/
+│   ├── scraping/        # Scraping statis OmorfoShop (legacy/backup saja)
+│   ├── shopee_api/      # Shopee Open Platform client (OAuth2, get_item_list, get_rating)
+│   ├── preprocessing/   # Pipeline preprocessing teks (case fold → clean → tokenize)
+│   ├── modeling/        # Fine-tuning IndoBERT & focused random search
+│   ├── evaluation/      # Metrik evaluasi & 5-fold cross-validation
+│   ├── recommendation/  # Rule-based mapping engine (5 kondisi pemasaran)
+│   ├── dashboard/       # Komponen Streamlit (modul-modul UI)
+│   └── utils/           # Helper functions bersama
+│
+├── models/              # Bobot model terlatih (best model + tokenizer) — di-gitignore
+│
+├── outputs/
+│   ├── charts/          # Visualisasi (confusion matrix, learning curve, word cloud)
+│   ├── reports/         # Laporan evaluasi (.json, .csv, hyperparameter log)
+│   └── logs/            # Training log — di-gitignore
+│
+├── planning/            # Dokumentasi fase & roadmap
+│   ├── 01-roadmap-proyek.md
+│   ├── 02-catatan-revisi.md
+│   └── fase-NN-*.md
+│
+├── app.py               # Entry point Streamlit (Fase 8)
+├── requirements.txt     # Dependensi runtime
+├── requirements-dev.txt # Dependensi development (black, ruff, pytest, ipykernel)
+└── .env.example         # Template environment variables
 ```
 
-### Perintah Umum
+## Sumber Data
 
-```bash
-# Validasi gate Fase 2 sebelum masuk Fase 3
-python scripts/validate_phase2_gate.py
+| Dataset | Sumber | Jumlah | Fungsi |
+|---|---|---|---|
+| SmSA | github.com/IndoNLP/indonlu | 4.000–5.000 | Training & Evaluasi |
+| Indonesian E-Commerce Review | Kaggle (rizqinugroho) | 5.000–7.000 | Training & Evaluasi |
+| OmorfoShop (via Open Platform API) | Shopee API `get_rating` | ±1.200 | Implementasi saja |
 
-# Inisialisasi struktur data Fase 2
-python scripts/init_phase2_data.py
+**Unified dataset** (SmSA + Kaggle): 9.000–12.000 ulasan, split **80/10/10** (train/val/test) dengan stratifikasi.
 
-# Bangun corpus gabungan dari berbagai sumber
-python scripts/build_phase2_corpus.py
+## Alur Data
 
-# Pengecekan kualitas kode
-ruff check .        # Linting cepat
-black --check .     # Cek format kode
-
-# Format kode otomatis
-black .
-
-# Jalankan tes
-pytest
-pytest tests/test_nama_file.py   # Jalankan satu file tes
 ```
-
-### Environment Variables
-
-Dikonfigurasi di `.env` (dari `.env.example`):
+USER INPUT
+  ├─ [CSV Batch Upload]
+  └─ [Pilih Produk] → Open Platform API (get_item_list + get_rating)
+         ↓
+  PREPROCESSING MODULE
+  Case Folding → Text Cleaning (regex) → Tokenization (IndoBERT, max_length=128)
+  TANPA stemming / stopword removal — merusak konteks IndoBERT
+         ↓
+  INDOBERT MODEL (indolem/indobert-base-uncased, fine-tuned)
+         ↓
+  SENTIMENT CLASSIFICATION: Positif / Negatif / Netral + Confidence Score
+         ↓
+  RULE-BASED MAPPING ENGINE (5 kondisi: Excellent/Good/Moderate/Poor/Mixed)
+         ↓
+  DASHBOARD VISUALIZATION (Streamlit: Charts + Word Cloud + Recommendation Panel)
 ```
-APP_ENV=development|production
-APP_NAME=sistem-analisis-sentimen
-STREAMLIT_SERVER_PORT=8501    # Untuk dashboard Fase 8
-MODEL_NAME=indobert-base-p2
-```
-
-## Dependensi & Stack
-
-`requirements.txt` belum diisi — paket akan ditambahkan seiring kemajuan fase (rencana: HuggingFace Transformers, PyTorch, Pandas, NumPy, PyYAML, Streamlit).
-
-`requirements-dev.txt` (isi terkonfirmasi):
-- **black** — Code formatter
-- **ruff** — Linter cepat
-- **pytest** — Framework testing
-- **ipykernel** — Dukungan Jupyter
 
 ## Pola Implementasi Utama
 
-### Import Utilitas
+### Import Antar Modul
 
-Semua skrip fase mengimpor dari `src` menggunakan resolusi path root proyek:
+Semua skrip/modul mengimpor dari `src` menggunakan resolusi path root proyek:
+
 ```python
 from pathlib import Path
 import sys
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-from src.data_management import load_data, validate_columns
 ```
 
 ### Sistem Gate Fase
 
 Setiap fase memiliki:
-1. File markdown di `planning/fase-NN-*.md` dengan daftar deliverable
-2. Checklist yang harus 100% selesai sebelum fase berikutnya
-3. Skrip validasi di `scripts/` untuk memverifikasi syarat gate
-4. Artefak output tersimpan di `artifacts/` dengan laporan
+1. File `planning/fase-NN-*.md` dengan deliverable dan checklist
+2. Checklist harus 100% selesai sebelum fase berikutnya dimulai
+3. Output fase tersimpan di `outputs/` dan/atau `data/processed/`
 
 Status gate saat ini ada di `planning/01-roadmap-proyek.md`.
 
-### Pola Konfigurasi
+## Hyperparameter IndoBERT (Fase 4)
 
-Dua environment di `config/`:
-- Development: path lokal, debugging aktif
-- Deployment: binding server, optimisasi
-- Keduanya mengacu pada: model `indobert-base-p2`, max length 128, batch size 16
+| Parameter | Nilai | Keterangan |
+|---|---|---|
+| Model | `indolem/indobert-base-uncased` | HuggingFace Hub |
+| Learning Rate | 2e-5 | Optimal untuk BERT bahasa Indonesia |
+| Batch Size | 16 | Seimbang memori/stabilitas |
+| Epochs | 3–5 | + early stopping (patience=2) |
+| Max Sequence Length | 128 | Sesuai rata-rata ulasan e-commerce |
+| Dropout Rate | 0.1 | Regularisasi standar BERT |
+| Weight Decay | 0.01 | Mencegah overfitting |
+| Warmup Steps | 500 | Stabilisasi awal training |
+| Optimizer | AdamW | Standar transformer |
 
-## Status Implementasi
+Focused random search: 5–8 kombinasi pada 30% training set → validasi dengan 5-fold cross-validation pada full training set.
 
-| File | Status |
+## Rule-Based Mapping (Fase 7) — 5 Kondisi Pemasaran
+
+| Kondisi | Kriteria (Compound) |
 |---|---|
-| `scripts/validate_phase2_gate.py` | Sudah diimplementasikan |
-| `src/data_management.py` | Skeleton kosong (diimpor oleh validate script — harus diimplementasikan lebih dulu) |
-| `src/phase2_dataset_builder.py` | Skeleton kosong |
-| `scripts/init_phase2_data.py` | Skeleton kosong |
-| `scripts/build_phase2_corpus.py` | Skeleton kosong |
-| `scripts/scrape_shopee_reviews.py` | Skeleton kosong |
+| Excellent Performance | Positif ≥ 50% AND Negatif ≤ 20% |
+| Good Performance | Positif 40–49% AND Negatif 20–30% |
+| Moderate Performance | Positif 30–39% AND Negatif 30–40% |
+| Poor Performance | Positif < 30% AND Negatif > 40% |
+| Mixed/Unstable | Netral > 35% ATAU trend berubah signifikan |
 
-**Catatan:** Dataset seimbang (`data/processed/phase2_sentiment_corpus_balanced.csv`) sudah ada meskipun skrip build masih kosong — dibuat secara manual di luar skrip.
+## Alur Kerja Pengembangan
 
-**Shopee scraper membutuhkan:** Setup browser automation (Playwright, Chrome profile di `data/raw/shopee/chrome_profile_pw/`).
+### Setup
 
-**Kemajuan gate:** Semua item checklist di `planning/fase-NN-*.md` harus dicentang sebelum pindah ke fase berikutnya. Status gate saat ini ada di `planning/01-roadmap-proyek.md`.
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+source .venv/bin/activate       # Unix/Mac
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
 
-## Fase Mendatang (Pekerjaan Selanjutnya)
+### Perintah Umum
 
-- **Fase 3**: Preprocessing data (normalisasi, tokenisasi)
-- **Fase 4**: Fine-tuning IndoBERT dengan dataset seimbang
-- **Fase 5**: Evaluasi model dan komputasi metrik
-- **Fase 6**: Inference engine untuk prediksi sentimen real-time
-- **Fase 7**: Rekomendasi pemasaran berbasis aturan
-- **Fase 8**: Dashboard Streamlit (akan menggunakan direktori `app/`)
-- **Fase 9**: Testing dan validasi menyeluruh
-- **Fase 10**: Deployment dan dokumentasi final
+```bash
+streamlit run app.py            # Jalankan dashboard
+
+ruff check .                    # Linting
+black --check .                 # Cek format
+black .                         # Format otomatis
+pytest                          # Jalankan semua tes
+```
+
+### Environment Variables
+
+Salin `.env.example` ke `.env` dan isi:
+
+```
+APP_ENV=development
+APP_NAME=sentara
+STREAMLIT_SERVER_PORT=8501
+MODEL_NAME=indolem/indobert-base-uncased
+MODEL_MAX_LENGTH=128
+SHOPEE_PARTNER_ID=<dari Shopee Open Platform>
+SHOPEE_PARTNER_KEY=<secret key untuk HMAC-SHA256>
+SHOPEE_SHOP_ID=<shop ID OmorfoShop>
+SHOPEE_REDIRECT_URL=http://localhost:8501
+```
+
+## Tech Stack
+
+| Komponen | Teknologi |
+|---|---|
+| Model AI | IndoBERT (`indolem/indobert-base-uncased`) |
+| Transformer Library | HuggingFace Transformers ≥4.40 |
+| Machine Learning | PyTorch ≥2.2, Scikit-learn ≥1.4 |
+| Dashboard | Streamlit ≥1.35 |
+| Data Processing | Pandas ≥2.2, NumPy ≥1.26 |
+| Visualization | Plotly ≥5.22, Matplotlib ≥3.9, WordCloud |
+| API Client | `requests` + HMAC-SHA256 (Shopee Open Platform) |
+| Eksperimen | Jupyter Notebook / Google Colab |
+| Deployment | Streamlit Cloud / HuggingFace Spaces |
+
+## Catatan Penting
+
+- **TIDAK** menggunakan Sastrawi (stemming) atau NLTK stopwords — merusak representasi konteks IndoBERT.
+- Shopee data **hanya via Open Platform API resmi** (OAuth2) — bukan web scraping — patuh ToS Shopee.
+- GPU lokal (AMD Radeon Vega 7) tidak didukung PyTorch CUDA → gunakan **Google Colab** untuk training Fase 4.
+- Model IndoBERT (~500MB) → siapkan **HuggingFace Spaces** sebagai alternatif jika Streamlit Cloud melebihi batas memori ~1GB.
+- F1 macro-average adalah metrik evaluasi **utama** (target ≥ 85%).
+
+## Status Implementasi Saat Ini
+
+| Modul | Status |
+|---|---|
+| `src/shopee_api/` | Skeleton kosong — dikerjakan Fase 2 |
+| `src/preprocessing/` | Skeleton kosong — dikerjakan Fase 3 |
+| `src/modeling/` | Skeleton kosong — dikerjakan Fase 4 |
+| `src/evaluation/` | Skeleton kosong — dikerjakan Fase 5 |
+| `src/recommendation/` | Skeleton kosong — dikerjakan Fase 7 |
+| `src/dashboard/` | Skeleton kosong — dikerjakan Fase 8 |
+| `data/raw/smsa/` | Ada (train/validation/test TSV dari IndoNLU) |
+| `data/processed/phase2_sentiment_corpus_balanced.csv` | Ada (dibuat manual, perlu reverifikasi dengan sumber baru) |
+| `app.py` | Placeholder — dikerjakan Fase 8 |
