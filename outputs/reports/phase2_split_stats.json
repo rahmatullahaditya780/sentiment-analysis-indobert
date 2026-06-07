@@ -1,0 +1,73 @@
+{
+  "seed": 42,
+  "fractions": {
+    "train": 0.8,
+    "validation": 0.1,
+    "test": 0.1
+  },
+  "unified": {
+    "total": 17962,
+    "counts": {
+      "positive": 9860,
+      "negative": 6747,
+      "neutral": 1355
+    },
+    "pct": {
+      "positive": 54.89,
+      "negative": 37.56,
+      "neutral": 7.54
+    }
+  },
+  "train": {
+    "total": 14369,
+    "counts": {
+      "positive": 7888,
+      "negative": 5397,
+      "neutral": 1084
+    },
+    "pct": {
+      "positive": 54.9,
+      "negative": 37.56,
+      "neutral": 7.54
+    }
+  },
+  "validation": {
+    "total": 1795,
+    "counts": {
+      "positive": 986,
+      "negative": 674,
+      "neutral": 135
+    },
+    "pct": {
+      "positive": 54.93,
+      "negative": 37.55,
+      "neutral": 7.52
+    }
+  },
+  "test": {
+    "total": 1798,
+    "counts": {
+      "positive": 986,
+      "negative": 676,
+      "neutral": 136
+    },
+    "pct": {
+      "positive": 54.84,
+      "negative": 37.6,
+      "neutral": 7.56
+    }
+  },
+  "imbalance": {
+    "spread": 0.4735,
+    "threshold": 0.15,
+    "needs_handling": true,
+    "severe_needs_augmentation": true,
+    "recommended_strategy": "class_weight pada fine-tuning IndoBERT + F1 macro sebagai metrik utama; pertimbangkan augmentasi (back-translation) untuk kelas minoritas"
+  },
+  "sources": {
+    "smsa:train": 10933,
+    "prdect_id": 5283,
+    "smsa:validation": 1246,
+    "smsa:test": 500
+  }
+}

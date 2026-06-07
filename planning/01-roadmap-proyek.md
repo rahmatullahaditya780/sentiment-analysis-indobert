@@ -1,10 +1,10 @@
 # Roadmap Proyek Sistem Analisis Sentimen Ulasan Produk E-Commerce
 
 ## Tujuan
-Dokumen ini menjadi acuan utama pengembangan sistem berdasarkan TRD, mulai dari inisialisasi sampai dokumentasi akhir.
+Dokumen ini menjadi acuan utama pengembangan sistem berdasarkan TRD v2, mulai dari inisialisasi sampai dokumentasi akhir.
 
 ## Aturan Gate Antar Fase
-Setiap fase hanya boleh dilanjutkan jika checklist fase saat ini sudah terpenuhi seluruhnya.
+Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sudah terpenuhi.
 
 ### Format Status
 - `Belum mulai`
@@ -12,68 +12,51 @@ Setiap fase hanya boleh dilanjutkan jika checklist fase saat ini sudah terpenuhi
 - `Siap dicek`
 - `Selesai`
 
-## Daftar Fase
-1. Fase 1 - Project Initialization & Environment Setup
-2. Fase 2 - Data Collection & Data Management
-3. Fase 3 - Data Preprocessing
-4. Fase 4 - Model Training & Fine-Tuning
-5. Fase 5 - Model Evaluation
-6. Fase 6 - Sentiment Inference Engine
-7. Fase 7 - Rule-Based Marketing Recommendation
-8. Fase 8 - Dashboard Development
-9. Fase 9 - Testing & Validation
-10. Fase 10 - Deployment & Documentation
+## Status Fase Saat Ini
+
+| Fase | Nama | Status |
+|---|---|---|
+| 1 | Project Initialization & Environment Setup | **Selesai** |
+| 2 | Data Collection & Data Management | **Berjalan** |
+| 3 | Data Preprocessing | Belum mulai |
+| 4 | Model Training & Fine-Tuning | Belum mulai |
+| 5 | Model Evaluation | Belum mulai |
+| 6 | Sentiment Inference Engine | Belum mulai |
+| 7 | Rule-Based Marketing Recommendation | Belum mulai |
+| 8 | Dashboard Development | Belum mulai |
+| 9 | Testing & Validation | Belum mulai |
+| 10 | Deployment & Documentation | Belum mulai |
 
 ## Checklist Gate Global
-- [x] Struktur folder project sudah modular.
+
+- [x] Struktur folder project sudah modular (sesuai TRD v2).
 - [x] Environment Python aktif dan terdokumentasi.
+- [x] requirements.txt terisi dependensi yang diperlukan.
+- [~] Dataset publik berhasil diunduh & diverifikasi — SmSA ✔, PRDECT-ID ✔; Kaggle PENDING.
+- [ ] Dataset OmorfoShop berhasil diambil via Shopee Open Platform API — PENDING kredensial (fallback CSV siap).
+- [x] Unified dataset tersedia dengan split 80/10/10 (17.962 baris; stratified, seed=42).
 - [ ] Data flow antar fase terdokumentasi.
-- [ ] Output tiap fase tersimpan sebagai artefak.
+- [ ] Output tiap fase tersimpan sebagai artefak di `outputs/`.
 - [ ] Setiap fase punya checklist selesai sebelum pindah.
-- [ ] File catatan revisi terpisah dan selalu diperbarui.
+- [ ] File catatan revisi diperbarui setiap ada perubahan signifikan.
 
-## Urutan Kerja
-### Fase 1
-- Siapkan struktur project, virtual environment, dan konfigurasi dasar.
-- Output: struktur folder, requirements, konfigurasi awal.
+## Ringkasan Output per Fase
 
-### Fase 2
-- Kumpulkan dan kelola data ulasan.
-- Output: dataset mentah yang siap diproses.
-
-### Fase 3
-- Bersihkan dan normalisasi data.
-- Output: dataset hasil preprocessing.
-
-### Fase 4
-- Latih dan fine-tune IndoBERT.
-- Output: model terlatih dan checkpoint terbaik.
-
-### Fase 5
-- Evaluasi performa model.
-- Output: metrik evaluasi dan analisis hasil.
-
-### Fase 6
-- Bangun mesin inferensi sentimen.
-- Output: endpoint atau modul prediksi sentimen.
-
-### Fase 7
-- Tambahkan rekomendasi pemasaran berbasis aturan.
-- Output: modul rekomendasi yang terhubung ke hasil sentimen.
-
-### Fase 8
-- Kembangkan dashboard Streamlit.
-- Output: antarmuka visual untuk monitoring dan analisis.
-
-### Fase 9
-- Lakukan testing dan validasi menyeluruh.
-- Output: laporan uji dan perbaikan akhir.
-
-### Fase 10
-- Siapkan deployment dan dokumentasi.
-- Output: panduan penggunaan, deployment notes, dan dokumentasi final.
+| Fase | Output Utama |
+|---|---|
+| 1 | Struktur project, virtual env, requirements.txt |
+| 2 | Unified dataset 9K–12K ulasan, dataset OmorfoShop ±1.200, split 80/10/10 |
+| 3 | Pipeline preprocessing (tanpa stemming), dataset siap training |
+| 4 | Best model IndoBERT, hyperparameter log, 5-fold CV report, training log |
+| 5 | Metrik evaluasi (accuracy, F1 macro ≥85%), confusion matrix, learning curve |
+| 6 | Inference engine (real-time & batch), hasil prediksi dataset OmorfoShop |
+| 7 | Rule engine 5 kategori, rekomendasi strategi pemasaran |
+| 8 | Dashboard Streamlit 6 modul (termasuk Settings & Open Platform Connector) |
+| 9 | Testing report, bug fix, validation report dari praktisi OmorfoShop |
+| 10 | Dashboard online, repo GitHub, dokumentasi lengkap |
 
 ## Cara Memakai
-1. Kerjakan file fase secara berurutan.
-2. Tandai checklist sebelum pindah ke fase berikutnya.
-3. Catat revisi non-fase di file khusus catatan revisi.
+1. Kerjakan file `fase-NN-*.md` secara berurutan.
+2. Tandai seluruh checklist fase sebelum pindah ke fase berikutnya.
+3. Catat setiap perubahan signifikan di `02-catatan-revisi.md`.
+4. Simpan output setiap fase di `outputs/reports/` atau `data/processed/`.

@@ -1,0 +1,84 @@
+# Source Manifest — Fase 2 (Data Collection & Data Management)
+# Metadata seluruh sumber data. Diperbarui setiap ada perubahan sumber.
+
+version: 2
+updated: 2026-06-07
+canonical_labels: [positive, negative, neutral]
+
+sources:
+  smsa:
+    name: SmSA (IndoNLU)
+    url: https://github.com/IndoNLP/indonlu
+    license: CC-BY-SA 4.0
+    purpose: training & evaluasi
+    format: TSV [text, label]
+    location: data/raw/smsa/{train,validation,test}_preprocess.tsv
+    label_scheme: "integer {0: positive, 1: neutral, 2: negative}"
+    rows:
+      train: 11000
+      validation: 1260
+      test: 500
+    notes: >
+      Satu-satunya sumber yang menyediakan kelas neutral. Label integer dipetakan
+      ke label kanonik via src/utils/label_harmonizer.harmonize_smsa_int.
+
+  prdect_id:
+    name: PRDECT-ID (snapshot)
+    url: https://data.mendeley.com/datasets/574v66hf2v
+    license: CC-BY 4.0
+    purpose: training & evaluasi
+    format: CSV [text, label]
+    location: data/raw/prdect_id/prdect_snapshot.csv
+    label_scheme: "string {positive, negative}"
+    rows: 5400
+    notes: >
+      Snapshot diekstrak dari korpus Fase 2 sebelumnya (kolom source=prdect_id).
+      TIDAK memiliki kelas neutral. Disimpan sebagai sumber raw agar pipeline
+      reproducible.
+
+  kaggle_ecommerce:
+    name: Indonesian E-Commerce Review (rizqinugroho)
+    url: https://www.kaggle.com/datasets/rizqinugroho/indonesian-e-commerce-review
+    license: lihat halaman Kaggle
+    purpose: training & evaluasi
+    format: CSV [review_text, rating, sentiment_label]
+    location: data/raw/kaggle_ecommerce/*.csv
+    label_scheme: "rating 1-5 (1-2 negative, 3 neutral, 4-5 positive) ATAU sentiment_label string"
+    rows: null  # BELUM diunduh — placeholder sampai dataset ditambahkan
+    status: PENDING_DOWNLOAD
+    notes: >
+      Unduh dataset lalu letakkan CSV di data/raw/kaggle_ecommerce/ dan jalankan
+      ulang `python -m src.data_management`. Loader mendeteksi kolom otomatis.
+
+implementation:
+  omorfoshop:
+    name: OmorfoShop Official Store
+    method: Shopee Open Platform API (REST v2.0, OAuth2, endpoint get_rating)
+    purpose: implementasi saja (BUKAN training)
+    target_rows: 1200
+    location: data/implementation/omorfo_reviews.csv
+    status: PENDING_API_CREDENTIALS
+    fallback: input CSV manual (template kolom review_id, review_text, rating, product_name, product_category, date_review)
+    notes: >
+      Kredensial Open Platform sedang dalam proses pendaftaran. Sampai tersedia,
+      gunakan fallback CSV. Modul klien ada di src/shopee_api/.
+
+# Output pipeline Fase 2
+outputs:
+  unified_corpus: data/processed/unified_corpus.csv
+  splits:
+    train: data/processed/train.csv
+    validation: data/processed/validation.csv
+    test: data/processed/test.csv
+  split_stats: outputs/reports/phase2_split_stats.json
+  split_ratio: 80/10/10 (stratified per label, seed=42)
+
+# Catatan penting Fase 2
+notes:
+  - >
+    Korpus lama (phase2_sentiment_corpus*.csv) DITINGGALKAN: builder-nya hilang
+    (file kosong) dan label SmSA-nya terbalik (review positif ter-label negative).
+  - >
+    Class imbalance signifikan: neutral hanya ~7.5% (hanya dari SmSA). Spread > 15%
+    -> wajib class_weight saat training; pertimbangkan augmentasi. Menambah Kaggle
+    (rating=3 -> neutral) diharapkan menambah proporsi neutral.
