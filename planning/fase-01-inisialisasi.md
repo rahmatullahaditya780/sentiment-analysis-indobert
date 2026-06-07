@@ -1,32 +1,100 @@
-# Fase 1 - Project Initialization & Environment Setup
+# Fase 1 — Project Initialization & Environment Setup (Checkpoint 1)
 
 ## Tujuan
-Menyiapkan fondasi pengembangan agar coding, training model, dan deployment bisa berjalan rapi dan reproducible.
+Mempersiapkan seluruh kebutuhan dasar pengembangan sistem agar proses coding, training model, dan deployment dapat berjalan secara terstruktur dan reproducible.
 
-## Deliverables
-- Struktur project modular.
-- Virtual environment Python.
-- Konfigurasi environment untuk development dan deployment.
-- Baseline dependency list.
+## Functional Requirements
+| ID | Requirement |
+|---|---|
+| FR-1.1 | Sistem harus menyediakan struktur project modular. |
+| FR-1.2 | Sistem harus menggunakan virtual environment Python. |
+| FR-1.3 | Sistem harus menyediakan konfigurasi environment untuk development dan deployment. |
+| FR-1.4 | Sistem harus menyediakan file dependency `requirements.txt`. |
+| FR-1.5 | Sistem harus menyediakan struktur folder dataset, model, dan dashboard. |
+
+## Non-Functional Requirements
+| ID | Requirement |
+|---|---|
+| NFR-1.1 | Sistem harus dapat dijalankan minimal pada Python 3.10. |
+| NFR-1.2 | Struktur project harus mudah dipelihara dan scalable. |
+| NFR-1.3 | Sistem harus mendukung penggunaan GPU jika tersedia (Google Colab / lokal). |
+
+## Struktur Folder (TRD v2)
+
+```
+project_root/
+│
+├── data/
+│   ├── raw/             # Dataset mentah (SmSA, Kaggle, OmorfoShop)
+│   ├── processed/       # Dataset setelah preprocessing & split
+│   └── implementation/  # Dataset OmorfoShop hasil Open Platform API
+│
+├── notebooks/           # Jupyter/Colab notebooks eksperimen
+│
+├── src/
+│   ├── scraping/        # Scraping statis OmorfoShop (backup)
+│   ├── shopee_api/      # Shopee Open Platform client (OAuth2)
+│   ├── preprocessing/   # Pipeline preprocessing teks
+│   ├── modeling/        # Fine-tuning & hyperparameter tuning
+│   ├── evaluation/      # Evaluasi metrik & cross-validation
+│   ├── recommendation/  # Rule-based mapping engine
+│   ├── dashboard/       # Komponen Streamlit
+│   └── utils/           # Helper functions
+│
+├── models/              # Bobot model (best model, tokenizer)
+│
+├── outputs/
+│   ├── charts/          # Visualisasi (confusion matrix, learning curve)
+│   ├── reports/         # Laporan evaluasi (.json, .csv)
+│   └── logs/            # Training log
+│
+├── planning/            # Dokumentasi fase & roadmap
+├── app.py               # Entry point Streamlit
+├── requirements.txt
+├── requirements-dev.txt
+└── .env.example
+```
+
+## Tech Stack
+
+| Komponen | Teknologi |
+|---|---|
+| Backend | Python 3.10+ |
+| NLP Model | IndoBERT (`indolem/indobert-base-uncased`) |
+| Transformer Library | HuggingFace Transformers |
+| Machine Learning | Scikit-learn |
+| Dashboard | Streamlit |
+| Data Processing | Pandas, NumPy |
+| Visualization | Plotly, Matplotlib, WordCloud |
+| Text Utilities | Regex (`re`) — cleaning teks |
+| API Client | `requests` + OAuth2 (Shopee Open Platform) |
+| Environment Eksperimen | Jupyter Notebook / Google Colab |
+| Deployment | Streamlit Cloud / HuggingFace Spaces |
+
+**Catatan:** Sastrawi **TIDAK** digunakan — preprocessing IndoBERT tidak memerlukan stemming/stopword removal.
 
 ## Checklist Selesai Fase
-- [x] Struktur folder project sudah modular.
-- [x] Virtual environment Python berhasil dibuat dan diaktifkan.
-- [x] Dependency dasar tercatat.
-- [x] Konfigurasi development dan deployment sudah dipisahkan.
-- [x] Artefak setup tersimpan dan bisa dipakai ulang.
 
-## Implementasi Awal
-- Buat struktur folder untuk data, model, app, dan dokumentasi.
-- Tetapkan standar penamaan file dan output tiap fase.
-- Siapkan file konfigurasi dan requirements.
+- [x] Struktur folder project sudah modular sesuai TRD v2.
+- [x] Virtual environment Python berhasil dibuat dan diaktifkan (`.venv/`).
+- [x] `requirements.txt` terisi dependensi runtime.
+- [x] `requirements-dev.txt` terisi dependensi development (black, ruff, pytest, ipykernel).
+- [x] Konfigurasi development dan deployment tersedia (`config/`).
+- [x] `.env.example` tersedia dengan template variabel Shopee Open Platform API.
+- [x] Repository Git siap digunakan dengan `.gitignore` yang sesuai.
+- [x] `app.py` placeholder tersedia sebagai entry point Streamlit.
+- [x] Semua submodul `src/` tersedia dengan `__init__.py`.
 
 ## Hasil Implementasi
-- Struktur folder modular tersedia untuk `app/`, `artifacts/`, `config/`, `data/`, `scripts/`, dan `src/`.
+
+- Struktur folder modular tersedia sesuai TRD v2 (termasuk `notebooks/`, `src/` submodul, `models/`, `outputs/`).
 - Virtual environment lokal tersedia pada `.venv/`.
-- Baseline dependency tercatat di `requirements.txt` dan `requirements-dev.txt`.
-- Konfigurasi development dan deployment dipisahkan di `config/development.yaml` dan `config/deployment.yaml`.
-- Artefak awal terdokumentasi di `README.md` dan file penanda folder sudah disiapkan untuk menjaga struktur.
+- Dependensi runtime tercatat di `requirements.txt` (transformers, torch, streamlit, plotly, wordcloud, dll.).
+- Dependensi development tercatat di `requirements-dev.txt` (black, ruff, pytest, ipykernel).
+- Environment variables template di `.env.example` sudah mencakup konfigurasi Shopee Open Platform API.
+- `.gitignore` dikonfigurasi untuk mengabaikan `models/`, `outputs/logs/`, credentials Shopee.
+- `app.py` placeholder Streamlit tersedia di root project.
 
 ## Gate ke Fase Berikutnya
-Lanjut hanya jika semua checklist di atas sudah selesai dan tervalidasi.
+
+Lanjut ke Fase 2 hanya jika semua checklist di atas sudah selesai dan tervalidasi.

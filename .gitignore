@@ -23,14 +23,15 @@ Thumbs.db
 # Generated artifacts
 *.log
 
-# Data sensitif Shopee (session browser & kredensial)
+# Model weights & checkpoints (ukuran besar, simpan di HF Hub / GDrive)
+models/
+outputs/logs/
+
+# Shopee Open Platform credentials & session
 data/raw/shopee/chrome_profile_pw/
 data/raw/shopee/cookie_header.txt
 data/raw/shopee/api_headers.txt
-
-# Model dan checkpoint (ukuran besar)
-artifacts/models/
-artifacts/checkpoints/
+data/raw/shopee/shopee_state.json
 
 # Jupyter
 .ipynb_checkpoints/
