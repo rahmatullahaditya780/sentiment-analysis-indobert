@@ -1,27 +1,27 @@
 {
   "metrics": {
-    "accuracy": 0.937,
-    "precision_macro": 0.9077,
-    "recall_macro": 0.8882,
-    "f1_macro": 0.8971
+    "accuracy": 0.9419,
+    "precision_macro": 0.9145,
+    "recall_macro": 0.8937,
+    "f1_macro": 0.9031
   },
   "per_class": {
     "negative": {
-      "precision": 0.9061,
-      "recall": 0.9439,
-      "f1": 0.9246,
+      "precision": 0.9053,
+      "recall": 0.9496,
+      "f1": 0.927,
       "support": 695
     },
     "neutral": {
-      "precision": 0.8519,
-      "recall": 0.7667,
-      "f1": 0.807,
+      "precision": 0.8657,
+      "recall": 0.7733,
+      "f1": 0.8169,
       "support": 150
     },
     "positive": {
-      "precision": 0.9651,
-      "recall": 0.9541,
-      "f1": 0.9596,
+      "precision": 0.9725,
+      "recall": 0.9582,
+      "f1": 0.9653,
       "support": 1219
     }
   },
@@ -33,19 +33,19 @@
     ],
     "matrix": [
       [
-        656,
-        10,
-        29
+        660,
+        9,
+        26
       ],
       [
-        22,
-        115,
-        13
+        27,
+        116,
+        7
       ],
       [
-        46,
-        10,
-        1163
+        42,
+        9,
+        1168
       ]
     ]
   },
@@ -62,5 +62,11 @@
       0.9138
     ],
     "source": "cross_validation_report.json"
+  },
+  "overfitting": {
+    "train_f1_macro": 0.9745,
+    "val_f1_macro": 0.8879,
+    "gap": 0.0866,
+    "passed": false
   }
 }
