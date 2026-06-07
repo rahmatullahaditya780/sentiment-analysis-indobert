@@ -36,19 +36,26 @@ sources:
       TIDAK memiliki kelas neutral. Disimpan sebagai sumber raw agar pipeline
       reproducible.
 
-  kaggle_ecommerce:
-    name: Indonesian E-Commerce Review (rizqinugroho)
-    url: https://www.kaggle.com/datasets/rizqinugroho/indonesian-e-commerce-review
+  kaggle_shopee:
+    name: Review Product Shopee (mdhimaspamungkas)
+    url: https://www.kaggle.com/datasets/mdhimaspamungkas/review-product-shopee
     license: lihat halaman Kaggle
     purpose: training & evaluasi
-    format: CSV [review_text, rating, sentiment_label]
-    location: data/raw/kaggle_ecommerce/*.csv
-    label_scheme: "rating 1-5 (1-2 negative, 3 neutral, 4-5 positive) ATAU sentiment_label string"
-    rows: null  # BELUM diunduh — placeholder sampai dataset ditambahkan
-    status: PENDING_DOWNLOAD
+    format: CSV [username, rating, comment]
+    location: data/raw/kaggle/data.csv
+    label_scheme: "rating 1-5 -> (1-2 negative, 3 neutral, 4-5 positive); teks ada di kolom comment"
+    rows: 3020  # baris valid pandas; wc -l lebih besar karena comment multi-baris
+    label_distribution:
+      negative: 199   # rating 1 (137) + rating 2 (62)
+      neutral: 143    # rating 3
+      positive: 2678  # rating 4 (419) + rating 5 (2259)
+    null_comment: 316  # baris tanpa teks comment -> WAJIB di-drop saat loading
+    status: DOWNLOADED
     notes: >
-      Unduh dataset lalu letakkan CSV di data/raw/kaggle_ecommerce/ dan jalankan
-      ulang `python -m src.data_management`. Loader mendeteksi kolom otomatis.
+      Pengganti dataset rizqinugroho (tidak lagi tersedia di Kaggle). Sumber Shopee,
+      sesuai konteks OmorfoShop. Loader harus: drop comment null (316 baris), petakan
+      rating ke label kanonik. Distribusi sangat positif-berat (rating 5 = 2259) dan
+      hanya menambah 143 neutral -> tetap andalkan SmSA untuk neutral & pakai class_weight.
 
 implementation:
   omorfoshop:
@@ -80,5 +87,6 @@ notes:
     (file kosong) dan label SmSA-nya terbalik (review positif ter-label negative).
   - >
     Class imbalance signifikan: neutral hanya ~7.5% (hanya dari SmSA). Spread > 15%
-    -> wajib class_weight saat training; pertimbangkan augmentasi. Menambah Kaggle
-    (rating=3 -> neutral) diharapkan menambah proporsi neutral.
+    -> wajib class_weight saat training; pertimbangkan augmentasi. Dataset Shopee
+    (kaggle_shopee) hanya menambah 143 neutral (rating=3) dan sangat positif-berat,
+    jadi kontribusinya kecil -> neutral tetap mengandalkan SmSA.
