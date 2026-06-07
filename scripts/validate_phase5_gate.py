@@ -35,6 +35,7 @@ from src.evaluation.config import (  # noqa: E402
     EVALUATION_FINAL_JSON,
     LABEL2ID,
     LEARNING_CURVE_PNG,
+    MAX_OVERFITTING_GAP,
     NUM_LABELS,
     TARGET_ACCURACY,
     TARGET_F1_MACRO,
@@ -79,6 +80,22 @@ def validate() -> bool:
     ok &= _check(CONFUSION_MATRIX_PNG.exists(), "confusion_matrix.png ada")
     ok &= _check(LEARNING_CURVE_PNG.exists(), "learning_curve.png ada")
     ok &= _check(CV_REPORT_JSON.exists(), "cross_validation_report.json terbaca (dari Fase 4)")
+
+    # C. Cek overfitting — WARNING saja, TIDAK memblokir gate.
+    # Metrik utama (F1 macro >= 0.85) adalah penentu gate; gap train-val dicatat
+    # sebagai keterbatasan untuk dibahas di skripsi (keputusan: warning non-blokir).
+    if eval_ok:
+        of = data.get("overfitting")
+        if of is not None:
+            gap = float(of.get("gap", 0.0))
+            if gap <= MAX_OVERFITTING_GAP:
+                _check(True, f"overfitting gap <= {MAX_OVERFITTING_GAP}", f"gap={gap:.4f}")
+            else:
+                print(
+                    f"  [WARN] overfitting gap {gap:.4f} > target {MAX_OVERFITTING_GAP} "
+                    f"(train F1 {of.get('train_f1_macro')} vs val F1 {of.get('val_f1_macro')}) "
+                    "— tidak memblokir; lihat catatan di planning/fase-05."
+                )
 
     return ok
 
