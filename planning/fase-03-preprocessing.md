@@ -50,12 +50,31 @@ Processed Dataset (siap untuk training / inference)
 
 ## Deliverables Checkpoint 3
 
-- [ ] Pipeline preprocessing selesai dan terdokumentasi di `src/preprocessing/`.
-- [ ] Verifikasi bahwa stemming/stopword removal tidak dilakukan.
-- [ ] Dataset training/validation/test berhasil dipreprocess.
-- [ ] Tokenization dengan IndoBERT tokenizer berhasil (output: `input_ids`, `attention_mask`).
-- [ ] Dataset siap untuk Fase 4 training.
-- [ ] Tidak ada baris dengan teks kosong atau label kosong.
+- [x] Pipeline preprocessing selesai dan terdokumentasi di `src/preprocessing/` (`cleaner.py`, `tokenizer_wrapper.py`, `pipeline.py`).
+- [x] Verifikasi bahwa stemming/stopword removal tidak dilakukan (gate cek tanpa impor Sastrawi/NLTK).
+- [x] Dataset training/validation/test berhasil dipreprocess → `data/processed/clean_{train,validation,test}.csv`.
+- [x] Tokenization dengan IndoBERT tokenizer berhasil (output: `input_ids`, `attention_mask`) — wrapper `IndoBERTTokenizerWrapper` siap; eksekusi aktual di Colab (Fase 4).
+- [x] Dataset siap untuk Fase 4 training.
+- [x] Tidak ada baris dengan teks kosong atau label kosong (diverifikasi gate Fase 3).
+
+## Hasil Eksekusi (2026-06-07)
+
+| Split | Input | Output | Buang (kosong / label hilang / label invalid / duplikat) |
+|---|---|---|---|
+| train | 16.485 | **16.477** | 2 / 0 / 0 / 6 |
+| validation | 2.059 | **2.059** | 0 / 0 / 0 / 0 |
+| test | 2.064 | **2.064** | 0 / 0 / 0 / 0 |
+
+Distribusi kelas pasca-cleaning tetap stabil (≈ positif 59,1% / negatif 33,7% / neutral 7,2%) → strategi `class_weight` Fase 4 tetap berlaku.
+
+**Artefak:**
+- Pipeline: `src/preprocessing/{cleaner,tokenizer_wrapper,pipeline}.py`
+- Runner: `src/phase3_preprocessing.py` (`python -m src.phase3_preprocessing`)
+- Output data: `data/processed/clean_{train,validation,test}.csv`
+- Laporan: `outputs/reports/phase3_preprocessing_stats.json`
+- Gate validator: `scripts/validate_phase3_gate.py` → **LULUS**
+
+> **Catatan tokenization:** `transformers`/`torch` tidak terpasang lokal (training di Colab). Tokenization aktual atas korpus bersih dijalankan di Colab Fase 4 via `PreprocessingPipeline.tokenizer.tokenize_dataset(...)` (padding `max_length`, truncation, `max_length=128`).
 
 ## Implementasi Kode
 

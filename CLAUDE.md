@@ -8,15 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **Shopee Open Platform API (REST v2.0, OAuth2)** — bukan web scraping.
 
-Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 2 (Data Collection) sudah lulus gate untuk korpus training; saat ini siap memulai Fase 3 (Data Preprocessing). Pengambilan data implementasi OmorfoShop via Shopee API di-*defer* (menunggu kredensial) dan dikerjakan paralel — bukan dependensi Fase 3–5.
+Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 2 (Data Collection) dan Fase 3 (Data Preprocessing) sudah lulus gate; saat ini siap memulai Fase 4 (Model Training & Fine-Tuning). Pengambilan data implementasi OmorfoShop via Shopee API di-*defer* (menunggu kredensial) dan dikerjakan paralel — bukan dependensi Fase 3–5.
 
 ## Arsitektur Tingkat Tinggi
 
 ```
 Fase 1:  Project Initialization & Environment Setup  ✅ SELESAI
 Fase 2:  Data Collection & Data Management           ✅ SELESAI (OmorfoShop deferred-paralel)
-Fase 3:  Data Preprocessing                          🔄 SIAP MULAI
-Fase 4:  Model Training & Fine-Tuning                ⏳ Belum mulai
+Fase 3:  Data Preprocessing                          ✅ SELESAI
+Fase 4:  Model Training & Fine-Tuning                🔄 SIAP MULAI
 Fase 5:  Model Evaluation                            ⏳ Belum mulai
 Fase 6:  Sentiment Inference Engine                  ⏳ Belum mulai
 Fase 7:  Rule-Based Marketing Recommendation         ⏳ Belum mulai
@@ -215,12 +215,13 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 | Modul | Status |
 |---|---|
 | `src/shopee_api/` | Dibangun (OAuth2/auth, client get_item_list/get_rating, normalizer) — tes live menunggu kredensial |
-| `src/preprocessing/` | Skeleton kosong — dikerjakan Fase 3 |
+| `src/preprocessing/` | Selesai (cleaner regex, tokenizer_wrapper IndoBERT, PreprocessingPipeline) — Fase 3 lulus gate |
 | `src/modeling/` | Skeleton kosong — dikerjakan Fase 4 |
 | `src/evaluation/` | Skeleton kosong — dikerjakan Fase 5 |
 | `src/recommendation/` | Skeleton kosong — dikerjakan Fase 7 |
 | `src/dashboard/` | Skeleton kosong — dikerjakan Fase 8 |
 | `data/raw/{smsa,prdect_id,kaggle}/` | Ada (3 sumber training mentah) |
 | `data/processed/unified_corpus.csv` + `train/validation/test.csv` | Ada (20.608 baris, split 80/10/10 stratified seed=42) — input Fase 3 |
+| `data/processed/clean_{train,validation,test}.csv` | Ada (16.477/2.059/2.064 baris, hasil cleaning Fase 3) — input Fase 4 training |
 | `data/implementation/omorfo_reviews_TEMPLATE.csv` | Template fallback — data live menunggu kredensial Shopee API |
 | `app.py` | Placeholder — dikerjakan Fase 8 |

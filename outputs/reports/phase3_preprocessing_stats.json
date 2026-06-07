@@ -1,0 +1,79 @@
+{
+  "model_name": "indolem/indobert-base-uncased",
+  "max_length": 128,
+  "stemming": false,
+  "stopword_removal": false,
+  "tokenization_executed_here": false,
+  "tokenization_note": "Tokenization IndoBERT dijalankan di Google Colab (Fase 4); wrapper: src/preprocessing/tokenizer_wrapper.py",
+  "splits": {
+    "train": {
+      "cleaning": {
+        "rows_in": 16485,
+        "rows_out": 16477,
+        "dropped_empty_text": 2,
+        "dropped_missing_label": 0,
+        "dropped_invalid_label": 0,
+        "dropped_duplicate": 6
+      },
+      "distribution": {
+        "total": 16477,
+        "counts": {
+          "positive": 9735,
+          "negative": 5552,
+          "neutral": 1190
+        },
+        "pct": {
+          "positive": 59.08,
+          "negative": 33.7,
+          "neutral": 7.22
+        }
+      }
+    },
+    "validation": {
+      "cleaning": {
+        "rows_in": 2059,
+        "rows_out": 2059,
+        "dropped_empty_text": 0,
+        "dropped_missing_label": 0,
+        "dropped_invalid_label": 0,
+        "dropped_duplicate": 0
+      },
+      "distribution": {
+        "total": 2059,
+        "counts": {
+          "positive": 1217,
+          "negative": 694,
+          "neutral": 148
+        },
+        "pct": {
+          "positive": 59.11,
+          "negative": 33.71,
+          "neutral": 7.19
+        }
+      }
+    },
+    "test": {
+      "cleaning": {
+        "rows_in": 2064,
+        "rows_out": 2064,
+        "dropped_empty_text": 0,
+        "dropped_missing_label": 0,
+        "dropped_invalid_label": 0,
+        "dropped_duplicate": 0
+      },
+      "distribution": {
+        "total": 2064,
+        "counts": {
+          "positive": 1219,
+          "negative": 695,
+          "neutral": 150
+        },
+        "pct": {
+          "positive": 59.06,
+          "negative": 33.67,
+          "neutral": 7.27
+        }
+      }
+    }
+  }
+}
