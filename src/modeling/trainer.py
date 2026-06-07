@@ -23,7 +23,9 @@ from src.modeling.config import (
     ID2LABEL,
     LABEL2ID,
     NUM_LABELS,
+    TRAINING_LOG_CSV,
     TrainingConfig,
+    ensure_output_dirs,
 )
 
 
@@ -169,3 +171,42 @@ def train_model(
             tokenizer.save_pretrained(str(output_dir))
 
     return trainer, metrics
+
+
+# ── Ekspor riwayat loss (untuk learning curve Fase 5, FR-5.6) ─────────────────
+def export_loss_history_csv(trainer, path=TRAINING_LOG_CSV):
+    """Tulis loss per epoch (train & validation) ke CSV untuk learning curve.
+
+    Parse `trainer.state.log_history` (HF Trainer) menjadi baris per epoch:
+    kolom epoch, train_loss, val_loss. Dipakai Fase 5 (`visualizer.plot_learning_curve`)
+    karena `save_model()` TIDAK menyertakan trainer_state.json. Panggil setelah
+    `train_model(...)`. Mengembalikan path file yang ditulis.
+    """
+    import csv
+
+    by_epoch: dict[float, dict] = {}
+    for entry in trainer.state.log_history:
+        epoch = entry.get("epoch")
+        if epoch is None:
+            continue
+        bucket = by_epoch.setdefault(epoch, {})
+        if "loss" in entry:
+            bucket["train_loss"] = entry["loss"]
+        if "eval_loss" in entry:
+            bucket["val_loss"] = entry["eval_loss"]
+
+    rows = [
+        (round(ep, 2), v["train_loss"], v["val_loss"])
+        for ep, v in sorted(by_epoch.items())
+        if "train_loss" in v and "val_loss" in v
+    ]
+
+    from pathlib import Path
+
+    path = Path(path)
+    ensure_output_dirs()
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["epoch", "train_loss", "val_loss"])
+        writer.writerows(rows)
+    return path
