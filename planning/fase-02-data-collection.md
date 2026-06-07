@@ -100,24 +100,28 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 
 ## Deliverables Checkpoint 2
 
-> Keputusan 2026-06-07: dataset training = **gabung 3 sumber** (SmSA + PRDECT-ID + Kaggle).
-> Shopee API kredensial **sedang proses daftar** → modul dibangun, tes live menyusul, sementara fallback CSV.
+> Keputusan 2026-06-07: dataset training = **gabung 3 sumber** (SmSA + PRDECT-ID + Kaggle Shopee).
+> Dataset Kaggle rizqinugroho (tidak tersedia lagi) **diganti** dengan Review Product Shopee (mdhimaspamungkas) → sudah terintegrasi.
+> Shopee Open Platform API kredensial **sedang proses daftar** → modul dibangun, tes live menyusul, sementara fallback CSV.
 
-- [~] Dataset publik berhasil diunduh dan diverifikasi — SmSA ✔, PRDECT-ID ✔ (snapshot). **Kaggle rizqinugroho PENDING download.**
-- [x] Label sentimen harmonisasi selesai (`src/utils/label_harmonizer.py`; SmSA 0/1/2, PRDECT string, Kaggle rating).
-- [x] Dataset bebas duplikat (deduplication berbasis teks ternormalisasi; 198 duplikat dibuang).
-- [x] Unified dataset tersimpan di `data/processed/unified_corpus.csv` (**17.962 baris**; akan +Kaggle).
-- [x] Stratified split 80/10/10 selesai → `train.csv` (14.369), `validation.csv` (1.795), `test.csv` (1.798).
-- [~] Strategi class imbalance **terdokumentasi** (`outputs/reports/phase2_split_stats.json`; spread 47.3%, perlu `class_weight`). Implementasi di Fase 4.
-- [ ] Dataset OmorfoShop berhasil diambil via Open Platform API (±1.200 ulasan) — **PENDING kredensial** (fallback CSV: `data/implementation/omorfo_reviews_TEMPLATE.csv`).
-- [ ] Dataset OmorfoShop tersimpan di `data/implementation/` format CSV — **PENDING**.
+- [x] Dataset publik berhasil diunduh dan diverifikasi — SmSA ✔, PRDECT-ID ✔ (snapshot), Kaggle Shopee ✔ (Review Product Shopee, 2.646 baris terpakai).
+- [x] Label sentimen harmonisasi selesai (`src/utils/label_harmonizer.py`; SmSA 0/1/2, PRDECT string, Kaggle rating 1–5).
+- [x] Dataset bebas duplikat (deduplication berbasis teks ternormalisasi).
+- [x] Unified dataset tersimpan di `data/processed/unified_corpus.csv` (**20.608 baris**: SmSA 12.679 + PRDECT-ID 5.283 + Kaggle Shopee 2.646).
+- [x] Stratified split 80/10/10 selesai → `train.csv` (16.485), `validation.csv` (2.059), `test.csv` (2.064).
+- [x] Strategi class imbalance **terdokumentasi** (`outputs/reports/phase2_split_stats.json`; spread 51.9%, `needs_handling=true`, perlu `class_weight`). Implementasi di Fase 4.
 - [x] `data/raw/source_manifest.yaml` diperbarui dengan metadata semua sumber.
+- [DEFERRED] Dataset OmorfoShop via Open Platform API (±1.200 ulasan) — **PENDING kredensial** (fallback CSV: `data/implementation/omorfo_reviews_TEMPLATE.csv`). **Bukan dependensi Fase 3** (data implementasi, dipakai mulai Fase 6). Dikejar paralel.
+- [DEFERRED] Dataset OmorfoShop tersimpan di `data/implementation/` format CSV — menyusul setelah kredensial keluar.
 - [~] Modul `src/shopee_api/` dibangun: OAuth2 (`auth.py`), `get_item_list`/`get_rating`+pagination (`client.py`), normalizer (`normalizer.py`). **Tes live menyusul saat kredensial keluar.**
 
 ### Catatan eksekusi Fase 2 (2026-06-07)
-- Korpus lama (`phase2_sentiment_corpus*.csv`) **ditinggalkan**: builder hilang (file 0 byte) dan label SmSA terbalik (review positif ter-label `negative`). File lama belum dihapus dari disk — perlu dihapus manual.
+- Korpus lama (`phase2_sentiment_corpus*.csv`) **ditinggalkan & dihapus**: builder hilang (file 0 byte) dan label SmSA terbalik (review positif ter-label `negative`). Dihapus dari git + disk 2026-06-07.
 - Sisa scraping lama (`data/raw/shopee/chrome_profile_pw/`, `shopee_state.json`, dll.) masih ada di disk — perlu dihapus manual (sudah di-gitignore).
-- **Risiko:** kelas `neutral` hanya ~7.5% (hanya dari SmSA; PRDECT-ID tak punya neutral). Menambah Kaggle (rating=3) diharapkan menaikkan proporsi neutral.
+- **Risiko (dibawa ke Fase 3/4):** kelas `neutral` hanya ~7.2% (1.489 dari 20.608; mayoritas dari SmSA, PRDECT-ID tak punya neutral, Kaggle Shopee hanya +143). Spread > 15% → **wajib `class_weight`** saat training + F1 macro sebagai metrik utama; pertimbangkan augmentasi back-translation untuk kelas neutral.
+
+### Status gate Fase 2
+**LULUS untuk lanjut ke Fase 3.** Seluruh deliverable korpus training (input Fase 3) selesai. Item `OmorfoShop via Shopee API` di-*defer* sebagai pekerjaan paralel karena (a) terblokir kredensial eksternal dan (b) bukan dependensi preprocessing — data implementasi baru dipakai di Fase 6.
 
 ## Implementasi Kode
 

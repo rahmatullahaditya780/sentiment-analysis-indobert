@@ -17,8 +17,8 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | Fase | Nama | Status |
 |---|---|---|
 | 1 | Project Initialization & Environment Setup | **Selesai** |
-| 2 | Data Collection & Data Management | **Berjalan** |
-| 3 | Data Preprocessing | Belum mulai |
+| 2 | Data Collection & Data Management | **Selesai** (korpus training; OmorfoShop deferred-paralel) |
+| 3 | Data Preprocessing | **Siap mulai** |
 | 4 | Model Training & Fine-Tuning | Belum mulai |
 | 5 | Model Evaluation | Belum mulai |
 | 6 | Sentiment Inference Engine | Belum mulai |
@@ -32,9 +32,9 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 - [x] Struktur folder project sudah modular (sesuai TRD v2).
 - [x] Environment Python aktif dan terdokumentasi.
 - [x] requirements.txt terisi dependensi yang diperlukan.
-- [~] Dataset publik berhasil diunduh & diverifikasi — SmSA ✔, PRDECT-ID ✔; Kaggle PENDING.
-- [ ] Dataset OmorfoShop berhasil diambil via Shopee Open Platform API — PENDING kredensial (fallback CSV siap).
-- [x] Unified dataset tersedia dengan split 80/10/10 (17.962 baris; stratified, seed=42).
+- [x] Dataset publik berhasil diunduh & diverifikasi — SmSA ✔, PRDECT-ID ✔, Kaggle Shopee ✔.
+- [DEFERRED] Dataset OmorfoShop via Shopee Open Platform API — PENDING kredensial (fallback CSV siap). Data implementasi, bukan dependensi Fase 3–5.
+- [x] Unified dataset tersedia dengan split 80/10/10 (20.608 baris; stratified, seed=42).
 - [ ] Data flow antar fase terdokumentasi.
 - [ ] Output tiap fase tersimpan sebagai artefak di `outputs/`.
 - [ ] Setiap fase punya checklist selesai sebelum pindah.
