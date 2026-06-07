@@ -44,10 +44,20 @@ Mengukur performa model klasifikasi sentimen menggunakan test set yang belum per
 
 ## Implementasi Kode
 
-- `src/evaluation/metrics.py` — Hitung accuracy, precision, recall, F1 macro
-- `src/evaluation/visualizer.py` — Plot confusion matrix, learning curve, export ke `outputs/charts/`
-- `src/evaluation/cross_val_report.py` — Summarize hasil 5-fold CV dari Fase 4
+- `src/evaluation/config.py` — Path artefak input/output & target gate; re-export pemetaan label kanonik dari Fase 4 (urutan kelas konsisten)
+- `src/evaluation/metrics.py` — Fungsi murni: accuracy, precision/recall/F1 macro, per-kelas, confusion matrix, cek overfitting, perakit `evaluation_final.json`
+- `src/evaluation/evaluator.py` — Orkestrasi: muat best model Fase 4, inferensi test set, rakit laporan (impor torch/transformers lazy)
+- `src/evaluation/visualizer.py` — Plot confusion matrix & learning curve (loss per epoch dari `trainer_state.json`/`training_log.csv`), export ke `outputs/charts/`
+- `src/evaluation/cross_val_report.py` — Ringkas hasil 5-fold CV dari Fase 4 (`cross_validation_report.json`)
+- Notebook Colab: `notebooks/fase05_evaluation.ipynb` (eksekusi inferensi & visualisasi di GPU Colab)
+- Gate: `scripts/validate_phase5_gate.py` (lapis A kerangka + lapis B deliverable, target F1 macro & accuracy ≥ 0.85)
 - Output: `outputs/reports/evaluation_final.json`, `outputs/charts/confusion_matrix.png`, `outputs/charts/learning_curve.png`
+
+## Catatan
+
+- GPU lokal (AMD Radeon Vega 7) tidak didukung PyTorch CUDA → inferensi evaluasi dijalankan di **Google Colab** (sama seperti training Fase 4).
+- Dependency berat (`torch`/`transformers`/`sklearn`/`matplotlib`) di-impor **lazy** di dalam fungsi; modul tetap bisa di-import lokal untuk cek kerangka tanpa instalasi penuh.
+- Status saat ini: kerangka siap (gate lapis A hijau); lapis B terisi setelah notebook Colab dijalankan & artefak diunduh.
 
 ## Gate ke Fase Berikutnya
 

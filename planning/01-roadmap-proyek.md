@@ -20,7 +20,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 2 | Data Collection & Data Management | **Selesai** (korpus training; OmorfoShop deferred-paralel) |
 | 3 | Data Preprocessing | **Selesai** |
 | 4 | Model Training & Fine-Tuning | **Selesai** (F1 macro test 0.8971; CV 0.9016 ± 0.010) |
-| 5 | Model Evaluation | **Siap mulai** |
+| 5 | Model Evaluation | **Berjalan** (kerangka siap; evaluasi test set menunggu eksekusi Colab) |
 | 6 | Sentiment Inference Engine | Belum mulai |
 | 7 | Rule-Based Marketing Recommendation | Belum mulai |
 | 8 | Dashboard Development | Belum mulai |
