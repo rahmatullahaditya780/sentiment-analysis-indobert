@@ -122,9 +122,22 @@ class DataConfig:
     text_column: str = "text"
     label_column: str = "label"
     processed_dir: Path = field(default=PROCESSED_DIR)
+    # Bila True, split "train" memakai clean_train_augmented.csv (hasil
+    # back-translation kelas minoritas, lihat src/modeling/augmentation.py).
+    # Validation & test TETAP memakai data asli agar evaluasi jujur terhadap
+    # distribusi nyata.
+    use_augmented_train: bool = False
 
     def clean_path(self, split: str) -> Path:
-        """Path ke clean_{split}.csv (split: train/validation/test)."""
+        """Path ke clean_{split}.csv (split: train/validation/test).
+
+        Jika `use_augmented_train` aktif, split "train" diarahkan ke
+        clean_train_augmented.csv (fallback ke clean_train.csv bila belum ada).
+        """
+        if split == "train" and self.use_augmented_train:
+            aug = self.processed_dir / "clean_train_augmented.csv"
+            if aug.exists():
+                return aug
         return self.processed_dir / f"clean_{split}.csv"
 
 

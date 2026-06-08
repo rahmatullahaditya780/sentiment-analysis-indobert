@@ -33,6 +33,9 @@ data/raw/shopee/cookie_header.txt
 data/raw/shopee/api_headers.txt
 data/raw/shopee/shopee_state.json
 
+# Cache antara augmentasi back-translation (resumable, bukan deliverable)
+data/processed/_bt_neutral_cache.csv
+
 # Jupyter
 .ipynb_checkpoints/
 
