@@ -21,7 +21,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 3 | Data Preprocessing | **Selesai** |
 | 4 | Model Training & Fine-Tuning | **Selesai** (F1 macro test 0.8971; CV 0.9016 ± 0.010) |
 | 5 | Model Evaluation | **Gate LULUS** (F1 macro test 0.9031; CV 0.9016 ± 0.010) — finalisasi anti-overfitting via re-train 2 epoch (pending GPU) |
-| 6 | Sentiment Inference Engine | Belum mulai |
+| 6 | Sentiment Inference Engine | **Kerangka siap** (real-time + batch terverifikasi lokal; analisis OmorfoShop ⏳ menunggu data live Shopee API) |
 | 7 | Rule-Based Marketing Recommendation | Belum mulai |
 | 8 | Dashboard Development | Belum mulai |
 | 9 | Testing & Validation | Belum mulai |

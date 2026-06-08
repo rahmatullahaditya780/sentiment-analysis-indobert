@@ -1,9 +1,9 @@
-"""Paket modeling Fase 4 — fine-tuning IndoBERT (training, search, CV).
+"""Paket modeling — fine-tuning IndoBERT (Fase 4) & inference engine (Fase 6).
 
-Hanya simbol ringan (config & data) yang diekspor di level paket; fungsi
-training (trainer/hyperparameter_search/cross_validation) meng-impor
-torch/transformers secara lazy, jadi impor langsung dari submodul-nya saat
-dibutuhkan (umumnya di notebook Colab).
+Hanya simbol ringan (config, data, kelas inference) yang diekspor di level
+paket; fungsi training (trainer/hyperparameter_search/cross_validation) dan
+inferensi (inference) meng-impor torch/transformers secara lazy, jadi impor
+langsung dari submodul-nya saat dibutuhkan (umumnya di notebook Colab).
 """
 
 from src.modeling.config import (
@@ -23,6 +23,12 @@ from src.modeling.data import (
     load_clean_split,
     stratified_subset,
 )
+from src.modeling.inference import (
+    OMORFO_PREDICTIONS_CSV,
+    PredictionResult,
+    SentimentPredictor,
+    analyze_omorfo_reviews,
+)
 
 __all__ = [
     "BASELINE_CONFIG",
@@ -38,4 +44,8 @@ __all__ = [
     "label_distribution",
     "load_clean_split",
     "stratified_subset",
+    "OMORFO_PREDICTIONS_CSV",
+    "PredictionResult",
+    "SentimentPredictor",
+    "analyze_omorfo_reviews",
 ]

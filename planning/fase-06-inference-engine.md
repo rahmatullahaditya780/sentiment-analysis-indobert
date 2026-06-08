@@ -40,20 +40,29 @@ Output: label prediksi, confidence score, prediction time
 
 ## Deliverables Checkpoint 6
 
-- [ ] Real-time inference untuk input tunggal berjalan.
-- [ ] Batch prediction dari CSV berjalan.
-- [ ] Confidence score ditampilkan untuk setiap prediksi.
-- [ ] Dataset OmorfoShop berhasil dianalisis dan distribusi sentimen tersedia.
-- [ ] Prediction time direkam per prediksi/batch.
-- [ ] Inference module siap diintegrasikan ke dashboard (Fase 8).
+- [x] Real-time inference untuk input tunggal berjalan. *(`SentimentPredictor.predict`, terverifikasi lokal CPU)*
+- [x] Batch prediction dari CSV berjalan. *(`SentimentPredictor.predict_batch`, terverifikasi)*
+- [x] Confidence score ditampilkan untuk setiap prediksi. *(softmax max prob + `scores` per kelas)*
+- [ ] Dataset OmorfoShop berhasil dianalisis dan distribusi sentimen tersedia. *(jalur `analyze_omorfo_reviews` SIAP & terverifikasi dengan data sintetis; menunggu data live Shopee API — template `data/implementation/omorfo_reviews_TEMPLATE.csv` masih 0 baris)*
+- [x] Prediction time direkam per prediksi/batch. *(`prediction_time` per prediksi; `total/avg_prediction_time` di `.attrs` batch)*
+- [x] Inference module siap diintegrasikan ke dashboard (Fase 8). *(API kelas + fungsi sudah diekspor dari `src.modeling`)*
 
 ## Implementasi Kode
 
-- `src/modeling/inference.py` — `SentimentPredictor` class: `predict(text)` dan `predict_batch(df)`
-- Input: teks string ATAU DataFrame dengan kolom `review_text`
-- Output: label, confidence score, prediction time
-- Output batch: `outputs/reports/omorfo_predictions.csv`
+- `src/modeling/inference.py`
+  - `SentimentPredictor` — `predict(text)` (real-time) & `predict_batch(data, text_column='review_text')` (batch CSV/list/API)
+    - load lazy `models/best_model/` (torch/transformers), auto-deteksi device (cpu/cuda)
+    - preprocessing inferensi **identik training**: `src.preprocessing.cleaner.preprocess_text` (case fold + clean, tanpa stemming/stopword)
+    - pemetaan id→label diambil dari `config.json` model (fallback `ID2LABEL` Fase 4) — konsisten: negative=0, neutral=1, positive=2
+  - `PredictionResult` — dataclass: `text`, `label`, `confidence`, `prediction_time`, `scores` (prob per kelas)
+  - `analyze_omorfo_reviews(input_csv, ...)` — terapkan model ke dataset OmorfoShop (FR-6.5) → tulis CSV + ringkasan distribusi (dipakai rule-based Fase 7)
+- Input: teks string ATAU DataFrame/list dengan kolom `review_text`
+- Output batch: `outputs/reports/omorfo_predictions.csv` (`OMORFO_PREDICTIONS_CSV`)
+
+## Status Implementasi
+
+Kerangka engine **selesai & terverifikasi lokal** (torch 2.12 CPU, transformers 5.10). Tersisa satu item gate yang **terblokir data**: analisis dataset OmorfoShop nyata menunggu kredensial Shopee Open Platform API (deferred-paralel). Jalur kodenya sudah siap — begitu CSV live tersedia, jalankan `analyze_omorfo_reviews(<csv>)`.
 
 ## Gate ke Fase Berikutnya
 
-Lanjut ke Fase 7 hanya jika prediksi sentimen konsisten, confidence score tersedia, dan distribusi sentimen OmorfoShop sudah dihasilkan.
+Lanjut ke Fase 7 hanya jika prediksi sentimen konsisten, confidence score tersedia, dan distribusi sentimen OmorfoShop sudah dihasilkan. **Saat ini:** prediksi & confidence ✅; distribusi OmorfoShop ⏳ (menunggu data live Shopee API).
