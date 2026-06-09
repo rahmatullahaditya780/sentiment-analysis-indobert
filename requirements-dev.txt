@@ -2,3 +2,6 @@ black
 ipykernel
 pytest
 ruff
+# Scraping ulasan implementasi OmorfoShop (otomasi browser, tanpa API).
+# Setelah install: `python -m playwright install chromium`
+playwright>=1.40
