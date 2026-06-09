@@ -1,7 +1,7 @@
 # Fase 6 — Sentiment Inference Engine (Checkpoint 6)
 
 ## Tujuan
-Membangun engine untuk melakukan prediksi sentimen secara batch (dari CSV maupun ulasan yang diambil via Shopee Open Platform API), serta menerapkan model pada dataset OmorfoShop untuk menghasilkan insight bisnis.
+Membangun engine untuk melakukan prediksi sentimen secara batch (dari CSV maupun data hasil **web scraping** OmorfoShop), serta menerapkan model pada dataset OmorfoShop untuk menghasilkan insight bisnis.
 
 ## Functional Requirements
 | ID | Requirement |
@@ -11,7 +11,7 @@ Membangun engine untuk melakukan prediksi sentimen secara batch (dari CSV maupun
 | FR-6.3 | Sistem harus mendukung batch prediction dari file CSV. |
 | FR-6.4 | Sistem harus menghasilkan output prediction time untuk monitoring performa inferensi. |
 | FR-6.5 | Sistem harus menerapkan model pada dataset OmorfoShop (±1.200 ulasan) untuk menghasilkan distribusi sentimen. |
-| FR-6.6 | Sistem harus dapat menerima ulasan yang diambil via Open Platform API (`get_rating`) dan meneruskannya ke pipeline inferensi secara otomatis. |
+| FR-6.6 | Sistem harus dapat menerima data ulasan yang telah dikumpulkan via **web scraping** maupun **upload CSV**, dan meneruskannya ke pipeline inferensi secara otomatis. |
 
 ## Prediction Output
 
@@ -25,7 +25,7 @@ Membangun engine untuk melakukan prediksi sentimen secara batch (dari CSV maupun
 ## Arsitektur Inference Engine
 
 ```
-Input (single text ATAU batch CSV ATAU API result)
+Input (single text ATAU batch CSV ATAU hasil web scraping)
   ↓
 Preprocessing Pipeline (Case Fold → Clean → Tokenize)
   ↓
@@ -43,7 +43,7 @@ Output: label prediksi, confidence score, prediction time
 - [x] Real-time inference untuk input tunggal berjalan. *(`SentimentPredictor.predict`, terverifikasi lokal CPU)*
 - [x] Batch prediction dari CSV berjalan. *(`SentimentPredictor.predict_batch`, terverifikasi)*
 - [x] Confidence score ditampilkan untuk setiap prediksi. *(softmax max prob + `scores` per kelas)*
-- [ ] Dataset OmorfoShop berhasil dianalisis dan distribusi sentimen tersedia. *(jalur `analyze_omorfo_reviews` SIAP & terverifikasi dengan data sintetis; menunggu data live Shopee API — template `data/implementation/omorfo_reviews_TEMPLATE.csv` masih 0 baris)*
+- [ ] Dataset OmorfoShop berhasil dianalisis dan distribusi sentimen tersedia. *(jalur `analyze_omorfo_reviews` SIAP & terverifikasi dengan data sintetis; menunggu hasil **web scraping** OmorfoShop penuh — awal: `data/implementation/omorfo_reviews_extension.csv`, 20 ulasan)*
 - [x] Prediction time direkam per prediksi/batch. *(`prediction_time` per prediksi; `total/avg_prediction_time` di `.attrs` batch)*
 - [x] Inference module siap diintegrasikan ke dashboard (Fase 8). *(API kelas + fungsi sudah diekspor dari `src.modeling`)*
 
@@ -61,8 +61,8 @@ Output: label prediksi, confidence score, prediction time
 
 ## Status Implementasi
 
-Kerangka engine **selesai & terverifikasi lokal** (torch 2.12 CPU, transformers 5.10). Tersisa satu item gate yang **terblokir data**: analisis dataset OmorfoShop nyata menunggu kredensial Shopee Open Platform API (deferred-paralel). Jalur kodenya sudah siap — begitu CSV live tersedia, jalankan `analyze_omorfo_reviews(<csv>)`.
+Kerangka engine **selesai & terverifikasi lokal** (torch 2.12 CPU, transformers 5.10). Tersisa satu item gate yang **terblokir data**: analisis dataset OmorfoShop nyata menunggu hasil **web scraping** penuh (±1.200 ulasan; deferred-paralel di Fase 2). Jalur kodenya sudah siap — begitu CSV hasil scraping tersedia, jalankan `analyze_omorfo_reviews(<csv>)`.
 
 ## Gate ke Fase Berikutnya
 
-Lanjut ke Fase 7 hanya jika prediksi sentimen konsisten, confidence score tersedia, dan distribusi sentimen OmorfoShop sudah dihasilkan. **Saat ini:** prediksi & confidence ✅; distribusi OmorfoShop ⏳ (menunggu data live Shopee API).
+Lanjut ke Fase 7 hanya jika prediksi sentimen konsisten, confidence score tersedia, dan distribusi sentimen OmorfoShop sudah dihasilkan. **Saat ini:** prediksi & confidence ✅; distribusi OmorfoShop ⏳ (menunggu hasil web scraping OmorfoShop penuh).

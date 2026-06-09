@@ -21,7 +21,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 3 | Data Preprocessing | **Selesai** |
 | 4 | Model Training & Fine-Tuning | **Selesai** (F1 macro test 0.8971; CV 0.9016 ± 0.010) |
 | 5 | Model Evaluation | **Gate LULUS** (F1 macro test 0.9031; CV 0.9016 ± 0.010) — finalisasi anti-overfitting via re-train 2 epoch (pending GPU) |
-| 6 | Sentiment Inference Engine | **Kerangka siap** (real-time + batch terverifikasi lokal; analisis OmorfoShop ⏳ menunggu data live Shopee API) |
+| 6 | Sentiment Inference Engine | **Kerangka siap** (real-time + batch terverifikasi lokal; analisis OmorfoShop ⏳ menunggu hasil web scraping OmorfoShop penuh) |
 | 7 | Rule-Based Marketing Recommendation | Belum mulai |
 | 8 | Dashboard Development | Belum mulai |
 | 9 | Testing & Validation | Belum mulai |
@@ -51,7 +51,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 5 | Metrik evaluasi (accuracy, F1 macro ≥85%), confusion matrix, learning curve |
 | 6 | Inference engine (real-time & batch), hasil prediksi dataset OmorfoShop |
 | 7 | Rule engine 5 kategori, rekomendasi strategi pemasaran |
-| 8 | Dashboard Streamlit 6 modul (termasuk Settings & Open Platform Connector) |
+| 8 | Dashboard Streamlit 6 modul (termasuk Settings & Shopee Review Collector berlapis: CSV/ekstensi/URL Auto-Fetch) |
 | 9 | Testing report, bug fix, validation report dari praktisi OmorfoShop |
 | 10 | Dashboard online, repo GitHub, dokumentasi lengkap |
 

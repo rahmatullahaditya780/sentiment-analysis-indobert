@@ -27,13 +27,13 @@ project_root/
 ├── data/
 │   ├── raw/             # Dataset mentah (SmSA, Kaggle, OmorfoShop)
 │   ├── processed/       # Dataset setelah preprocessing & split
-│   └── implementation/  # Dataset OmorfoShop hasil Open Platform API
+│   └── implementation/  # Dataset OmorfoShop hasil web scraping (CSV)
 │
 ├── notebooks/           # Jupyter/Colab notebooks eksperimen
 │
 ├── src/
-│   ├── scraping/        # Scraping statis OmorfoShop (backup)
-│   ├── shopee_api/      # Shopee Open Platform client (OAuth2)
+│   ├── scraping/        # Scraper Playwright OmorfoShop (modul AKTIF — metode utama)
+│   ├── shopee_api/      # Open Platform client (OPSIONAL/future: persona toko sendiri)
 │   ├── preprocessing/   # Pipeline preprocessing teks
 │   ├── modeling/        # Fine-tuning & hyperparameter tuning
 │   ├── evaluation/      # Evaluasi metrik & cross-validation
@@ -67,7 +67,9 @@ project_root/
 | Data Processing | Pandas, NumPy |
 | Visualization | Plotly, Matplotlib, WordCloud |
 | Text Utilities | Regex (`re`) — cleaning teks |
-| API Client | `requests` + OAuth2 (Shopee Open Platform) |
+| Web Scraping | Python + **Playwright (Chromium)** — render DOM halaman publik Shopee, sesi login persisten (metode utama) |
+| Konversi Ekstensi | Python (Pandas) — konversi CSV hasil ekstensi browser → skema implementasi |
+| (Opsional/future) API Client | `requests` + HMAC-SHA256 (OAuth2) — hanya untuk persona seller-toko-sendiri |
 | Environment Eksperimen | Jupyter Notebook / Google Colab |
 | Deployment | Streamlit Cloud / HuggingFace Spaces |
 
@@ -80,7 +82,7 @@ project_root/
 - [x] `requirements.txt` terisi dependensi runtime.
 - [x] `requirements-dev.txt` terisi dependensi development (black, ruff, pytest, ipykernel).
 - [x] Konfigurasi development dan deployment tersedia (`config/`).
-- [x] `.env.example` tersedia dengan template variabel Shopee Open Platform API.
+- [x] `.env.example` tersedia dengan template variabel (termasuk Shopee Open Platform API — **opsional/future**, bukan metode utama).
 - [x] Repository Git siap digunakan dengan `.gitignore` yang sesuai.
 - [x] `app.py` placeholder tersedia sebagai entry point Streamlit.
 - [x] Semua submodul `src/` tersedia dengan `__init__.py`.
@@ -91,7 +93,7 @@ project_root/
 - Virtual environment lokal tersedia pada `.venv/`.
 - Dependensi runtime tercatat di `requirements.txt` (transformers, torch, streamlit, plotly, wordcloud, dll.).
 - Dependensi development tercatat di `requirements-dev.txt` (black, ruff, pytest, ipykernel).
-- Environment variables template di `.env.example` sudah mencakup konfigurasi Shopee Open Platform API.
+- Environment variables template di `.env.example` mencakup konfigurasi Shopee Open Platform API (**opsional/future** — dipertahankan untuk persona seller-toko-sendiri; metode utama = web scraping Playwright).
 - `.gitignore` dikonfigurasi untuk mengabaikan `models/`, `outputs/logs/`, credentials Shopee.
 - `app.py` placeholder Streamlit tersedia di root project.
 

@@ -23,6 +23,27 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 | Repository Kode | GitHub | Repository publik dengan dokumentasi lengkap |
 | Dataset Publik | Tetap di sumber asli (IndoNLU, Kaggle) | Tidak perlu re-upload; gunakan link ke sumber asli |
 
+### Matriks Fitur: Versi Cloud vs Lokal/Desktop
+
+| Komponen | Versi Cloud | Versi Lokal/Desktop |
+|---|---|---|
+| Tier 1 — CSV Upload | Aktif | Aktif |
+| Tier 2 — Import Ekstensi | Aktif | Aktif |
+| Tier 3 — URL Auto-Fetch | **Dinonaktifkan** (FR-8.14) | Aktif (Playwright headful + login sekali) |
+| Model IndoBERT | Load dari HuggingFace Hub / Google Drive | Load lokal dari `models/` |
+| Platform hosting | Streamlit Cloud / HuggingFace Spaces | Lokal (`python app.py` / `streamlit run`) |
+
+### Batasan Streamlit Community Cloud (free) — dasar keputusan deployment
+
+| Batasan | Implikasi Desain | Solusi |
+|---|---|---|
+| RAM 1 GB per app | IndoBERT (~500 MB) + Chromium = risiko OOM | Gunakan HF Spaces atau model quantization |
+| Chromium headless saja (via `packages.txt`) | Login manual (human-in-the-loop) mustahil di cloud | URL Auto-Fetch dinonaktifkan di cloud (FR-8.14) |
+| IP datacenter + headless | Persis pola yang diblokir anti-bot Shopee | Jalur scraping hanya dijalankan lokal |
+| Filesystem ephemeral + app sleep | Sesi login persisten tidak bertahan | Hanya upload (Tier 1 & 2) yang cocok untuk cloud |
+
+> **Keputusan deployment:** Versi cloud (Streamlit/HF Spaces) hanya mengaktifkan **Tier 1 (CSV)** + **Tier 2 (Ekstensi)**; jalur URL Auto-Fetch (Tier 3) hanya tersedia di versi lokal/desktop. Detail di `planning/trd-revisi-pengambilan-data-implementasi.md` §C.
+
 ## Documentation Requirements
 
 | Dokumen | Isi | Format |
@@ -36,21 +57,21 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 
 ## Identifikasi Risiko & Mitigasi
 
-| No | Risiko | Probabilitas | Mitigasi |
-|---|---|---|---|
-| R-01 | Keterbatasan GPU lokal (AMD Radeon Vega 7, bukan NVIDIA) | Tinggi | Gunakan Google Colab untuk training |
-| R-02 | Streamlit Cloud melampaui batas memori ~1GB saat memuat IndoBERT (~500MB) | Tinggi | Gunakan HuggingFace Spaces; pertimbangkan model quantization |
-| R-03 | Akses Open Platform API terkendala (kredensial, token, otorisasi toko) | Rendah–Sedang | Daftarkan app sejak awal; implementasikan auto-refresh token + retry + fallback CSV |
-| R-04 | Class imbalance ekstrem pada unified dataset (selisih > 25%) | Sedang | Stratified split + class weight + data augmentation (back-translation) |
-| R-05 | Dataset SmSA atau Kaggle tidak tersedia | Rendah | Download dan simpan snapshot lokal di awal; dokumentasikan versi |
-| R-06 | Performa model tidak mencapai target (F1 macro < 85%) | Sedang | Lakukan focused random search lebih luas; periksa kualitas label dataset |
-| R-07 | Inferensi IndoBERT lambat (> 5 detik) di CPU | Sedang | `st.session_state` untuk cache model; batasi batch size inference; tambahkan loading spinner |
-| R-08 | Expert validation memberi nilai rendah pada relevansi rekomendasi | Rendah–Sedang | Iterasi rule-based mapping berdasarkan masukan; diskusi dengan praktisi |
-| R-09 | Deprecation/perubahan endpoint Open Platform API | Sedang | Tangani dengan try/except; tampilkan error + panduan fallback CSV; catat versi API dalam dokumentasi |
+| No | Risiko | Dampak | Probabilitas | Strategi Mitigasi |
+|---|---|---|---|---|
+| R-01 | Keterbatasan GPU lokal (AMD Radeon Vega 7, bukan NVIDIA) | Training IndoBERT sangat lambat | Tinggi | Gunakan Google Colab (gratis/Pro) untuk training |
+| R-02 | Streamlit Cloud melampaui batas memori (~1 GB) saat memuat IndoBERT (~500 MB) | Dashboard crash saat runtime | Tinggi | Gunakan HuggingFace Spaces; pertimbangkan model quantization / caching model di cloud storage |
+| R-03 | Anti-bot Shopee memblokir scraping (IP datacenter, Chromium headless) | Dataset implementasi tidak terkumpul di cloud | Sedang | Jalankan scraping hanya di lokal (Tier 3); versi cloud hanya Tier 1 & 2; sediakan fallback CSV |
+| R-04 | Selektor DOM Shopee berubah (maintenance / redesign layout) | Scraper gagal mengekstrak data | Sedang | Gunakan `selectors_shopee.json` eksternal agar selektor dapat diperbarui tanpa ubah kode; monitor & update berkala |
+| R-05 | Class imbalance ekstrem pada unified dataset (selisih > 25%) | Model bias terhadap kelas mayoritas | Sedang | Stratified split + class weight; jika masih ekstrem, augmentasi back-translation untuk kelas minoritas |
+| R-06 | Dataset SmSA atau Kaggle tidak tersedia | Training tidak dapat dilakukan | Rendah | Download & simpan snapshot lokal di awal; dokumentasikan versi |
+| R-07 | Performa model tidak mencapai target (F1 macro < 85%) | Gagal memenuhi requirement evaluasi | Sedang | Focused random search lebih luas; periksa kualitas label (label noise); dokumentasikan hasil meski tak capai target |
+| R-08 | Inferensi IndoBERT lambat (> 5 detik) di CPU | Pengalaman pengguna buruk | Sedang | `st.session_state` untuk cache model; loading spinner; batasi batch size inference |
+| R-09 | Validasi praktisi memberi nilai rendah pada relevansi rekomendasi | Kualitas rule-based mapping perlu diperbaiki | Rendah–Sedang | Iterasi rule-based mapping berdasarkan masukan; sesi diskusi dengan praktisi |
 
 ## Deliverables Checkpoint 10
 
-- [ ] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces).
+- [ ] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces) — **Tier 1–2 di cloud, Tier 1–3 di lokal**.
 - [ ] Repository GitHub selesai dengan dokumentasi lengkap.
 - [ ] `README.md` lengkap dan informatif.
 - [ ] User Guide tersedia (PDF atau Markdown).
