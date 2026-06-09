@@ -1,0 +1,72 @@
+{
+  "metrics": {
+    "accuracy": 0.938,
+    "precision_macro": 0.8893,
+    "recall_macro": 0.9082,
+    "f1_macro": 0.8983
+  },
+  "per_class": {
+    "negative": {
+      "precision": 0.9111,
+      "recall": 0.9439,
+      "f1": 0.9272,
+      "support": 695
+    },
+    "neutral": {
+      "precision": 0.7812,
+      "recall": 0.8333,
+      "f1": 0.8065,
+      "support": 150
+    },
+    "positive": {
+      "precision": 0.9755,
+      "recall": 0.9475,
+      "f1": 0.9613,
+      "support": 1219
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      "negative",
+      "neutral",
+      "positive"
+    ],
+    "matrix": [
+      [
+        656,
+        15,
+        24
+      ],
+      [
+        20,
+        125,
+        5
+      ],
+      [
+        44,
+        20,
+        1155
+      ]
+    ]
+  },
+  "n_test_samples": 2064,
+  "cross_validation": {
+    "n_splits": 5,
+    "f1_macro_mean": 0.9016,
+    "f1_macro_std": 0.01,
+    "f1_per_fold": [
+      0.8932,
+      0.9111,
+      0.8879,
+      0.9021,
+      0.9138
+    ],
+    "source": "cross_validation_report.json"
+  },
+  "overfitting": {
+    "train_f1_macro": 0.9732,
+    "val_f1_macro": 0.8995,
+    "gap": 0.0737,
+    "passed": false
+  }
+}
