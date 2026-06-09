@@ -1,0 +1,21 @@
+{
+  "source": "D:\\Documents\\SKRIPSI\\sistem\\data\\implementation\\omorfo_reviews.csv",
+  "n_reviews": 3739,
+  "distribution": {
+    "negative": {
+      "count": 398,
+      "proportion": 0.1064
+    },
+    "neutral": {
+      "count": 31,
+      "proportion": 0.0083
+    },
+    "positive": {
+      "count": 3310,
+      "proportion": 0.8853
+    }
+  },
+  "total_prediction_time": 406.3448,
+  "avg_prediction_time": 0.108677,
+  "output_csv": "D:\\Documents\\SKRIPSI\\sistem\\outputs\\reports\\omorfo_predictions.csv"
+}

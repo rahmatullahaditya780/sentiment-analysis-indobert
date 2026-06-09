@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Sentara** (slug teknis: `sistem analisis sentimen berbasis IndoBERT`) adalah sistem analisis sentimen untuk ulasan produk e-commerce OmorfoShop. Ini adalah proyek skripsi yang mengimplementasikan pipeline lengkap untuk mengumpulkan, memproses, melatih, dan menganalisis sentimen dari ulasan produk berbahasa Indonesia.
 
-Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **web scraping halaman produk publik (Playwright)** — sesuai proposal. Modul `src/shopee_api/` (Open Platform API) diturunkan menjadi opsi *future work* khusus persona seller-toko-sendiri (lihat `planning/trd-revisi-pengambilan-data-implementasi.md`).
+Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **endpoint JSON internal Shopee** (`fetch('/api/v2/item/get_ratings')` dieksekusi dari dalam sesi browser ber-login — lihat catatan di bawah). DOM scraping Playwright (`src/scraping/scrape_omorfo_reviews.py`) diblokir anti-bot Shopee → diturunkan jadi fallback. Modul `src/shopee_api/` (Open Platform API) tetap opsi *future work* (persona seller-toko-sendiri). Lihat `planning/trd-revisi-pengambilan-data-implementasi.md` & catatan revisi 2026-06-10.
 
-Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 1–5 sudah lulus gate (IndoBERT fine-tuned: F1 macro test **0.9031**, CV **0.9016 ± 0.010**; model **baseline 3-epoch** final — augmentasi back-translation & re-train 2-epoch diuji tapi terbukti lebih buruk). Fase 6 (Inference Engine) kerangkanya **siap & terverifikasi lokal**, tersisa satu item gate yang terblokir data: analisis distribusi sentimen OmorfoShop nyata (menunggu hasil web scraping penuh ±1.200 ulasan). **Fokus saat ini: menyelesaikan web scraping OmorfoShop** untuk membuka gate Fase 6. Pengambilan data implementasi dikerjakan paralel — bukan dependensi Fase 3–5 (data implementasi baru dipakai mulai Fase 6).
+Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 1–6 sudah lulus gate (IndoBERT fine-tuned: F1 macro test **0.9031**, CV **0.9016 ± 0.010**; model **baseline 3-epoch** final — augmentasi back-translation & re-train 2-epoch diuji tapi terbukti lebih buruk). Fase 6 selesai: **3.739 ulasan OmorfoShop nyata** (5 produk terlaris) dianalisis → distribusi **88,5% positif / 10,6% negatif / 0,8% netral** (= Excellent Performance). **Fokus saat ini: Fase 7 (Rule-Based Marketing Recommendation)** — `src/recommendation/` masih kosong.
 
 ## Arsitektur Tingkat Tinggi
 
@@ -18,8 +18,8 @@ Fase 2:  Data Collection & Data Management           ✅ SELESAI (OmorfoShop def
 Fase 3:  Data Preprocessing                          ✅ SELESAI
 Fase 4:  Model Training & Fine-Tuning                ✅ SELESAI (F1 macro 0.8971; CV 0.9016 ± 0.010)
 Fase 5:  Model Evaluation                            ✅ SELESAI (F1 macro test 0.9031 ≥ 0.85)
-Fase 6:  Sentiment Inference Engine                  🔄 KERANGKA SIAP (distribusi OmorfoShop ⏳ menunggu scraping)
-Fase 7:  Rule-Based Marketing Recommendation         ⏳ Belum mulai
+Fase 6:  Sentiment Inference Engine                  ✅ SELESAI (3.739 ulasan OmorfoShop → 88,5% pos / 10,6% neg / 0,8% net)
+Fase 7:  Rule-Based Marketing Recommendation         🔄 SIAP MULAI
 Fase 8:  Dashboard Development (Streamlit)           ⏳ Belum mulai
 Fase 9:  Testing & Validation                        ⏳ Belum mulai
 Fase 10: Deployment & Documentation                  ⏳ Belum mulai
@@ -205,7 +205,7 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 ## Catatan Penting
 
 - **TIDAK** menggunakan Sastrawi (stemming) atau NLTK stopwords — merusak representasi konteks IndoBERT.
-- Data implementasi via **web scraping halaman publik** (Playwright, sesi ber-login) — sesuai proposal; hanya ulasan publik, tanpa identitas pelanggan, jeda rate-limit. Input dashboard **berlapis**: CSV upload / import ekstensi / URL auto-fetch (lokal saja). Lihat `planning/trd-revisi-pengambilan-data-implementasi.md`.
+- Data implementasi diambil via **endpoint JSON internal Shopee** (`scrape_omorfo_api.py`: `fetch('/api/v2/item/get_ratings')` dari dalam sesi browser ber-login — lolos anti-bot yang memblokir DOM scraping). Hanya ulasan publik, tanpa identitas pelanggan, jeda rate-limit. **Bab metodologi skripsi WAJIB diselaraskan**: sumber = "ulasan publik via endpoint JSON internal situs dari sesi browser sah" (bukan render-DOM, bukan Open Platform API). Input dashboard tetap **berlapis**: CSV / ekstensi / auto-fetch. Lihat `planning/trd-revisi-pengambilan-data-implementasi.md` & catatan revisi 2026-06-10.
 - GPU lokal (AMD Radeon Vega 7) tidak didukung PyTorch CUDA → gunakan **Google Colab** untuk training Fase 4.
 - Model IndoBERT (~500MB) → siapkan **HuggingFace Spaces** sebagai alternatif jika Streamlit Cloud melebihi batas memori ~1GB.
 - F1 macro-average adalah metrik evaluasi **utama** (target ≥ 85%).
@@ -214,7 +214,7 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 
 | Modul | Status |
 |---|---|
-| `src/scraping/` | Selesai (scraper satu-produk + orkestrator multi-produk + iterasi filter rating + selektor eksternal) — metode utama; tinggal run aktual dgn sesi login |
+| `src/scraping/` | Selesai. **Metode aktual: `scrape_omorfo_api.py`** (endpoint JSON internal via in-browser fetch, mode hybrid-multi) — 3.739 ulasan terkumpul. `scrape_omorfo_reviews.py`/`scrape_omorfo_batch.py` (DOM, diblokir anti-bot) = fallback |
 | `src/shopee_api/` | Dibangun (OAuth2/client/normalizer) — **opsional/future** (persona seller-toko-sendiri), bukan metode utama |
 | `src/preprocessing/` | Selesai (cleaner regex, tokenizer_wrapper IndoBERT, PreprocessingPipeline) — Fase 3 lulus gate |
 | `src/modeling/` | Selesai (trainer, hyperparameter_search, cross_validation, augmentation, inference) — Fase 4 lulus gate; Fase 6 inference terverifikasi lokal |
@@ -224,5 +224,5 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 | `data/raw/{smsa,prdect_id,kaggle}/` | Ada (3 sumber training mentah) |
 | `data/processed/unified_corpus.csv` + `train/validation/test.csv` | Ada (20.608 baris, split 80/10/10 stratified seed=42) — input Fase 3 |
 | `data/processed/clean_{train,validation,test}.csv` | Ada (16.477/2.059/2.064 baris, hasil cleaning Fase 3) — input Fase 4 training |
-| `data/implementation/omorfo_reviews_TEMPLATE.csv` | Template skema. Data aktual via scraping/ekstensi (`omorfo_reviews_extension.csv` = 20 ulasan awal; target penuh `omorfo_reviews.csv` ±1.200 via `scrape_omorfo_batch.py` — PENDING run) |
+| `data/implementation/omorfo_reviews.csv` | **3.739 ulasan nyata** (5 produk terlaris, 5 kategori) via endpoint JSON internal — input Fase 6/7. `omorfo_reviews_minoritas.csv` = 669 ulasan bintang 1–4 (bukti deteksi negatif). `*_TEMPLATE.csv`/`*_extension.csv` = artefak awal |
 | `app.py` | Placeholder — dikerjakan Fase 8 |

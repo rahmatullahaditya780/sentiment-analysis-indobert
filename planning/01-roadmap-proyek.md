@@ -21,7 +21,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 3 | Data Preprocessing | **Selesai** |
 | 4 | Model Training & Fine-Tuning | **Selesai** (F1 macro test 0.8971; CV 0.9016 ± 0.010) |
 | 5 | Model Evaluation | **Gate LULUS** (F1 macro test 0.9031; CV 0.9016 ± 0.010). Model **baseline 3-epoch = final**; re-train 2-epoch sudah diuji & terbukti lebih buruk (overfit gap dicatat sebagai keterbatasan, non-blokir) |
-| 6 | Sentiment Inference Engine | **Kerangka siap** (real-time + batch terverifikasi lokal; analisis OmorfoShop ⏳ menunggu hasil web scraping OmorfoShop penuh) |
+| 6 | Sentiment Inference Engine | **Selesai** (real-time + batch terverifikasi; **3.739 ulasan OmorfoShop nyata** dianalisis → distribusi 88,5% positif / 10,6% negatif / 0,8% netral = Excellent Performance) |
 | 7 | Rule-Based Marketing Recommendation | Belum mulai |
 | 8 | Dashboard Development | Belum mulai |
 | 9 | Testing & Validation | Belum mulai |

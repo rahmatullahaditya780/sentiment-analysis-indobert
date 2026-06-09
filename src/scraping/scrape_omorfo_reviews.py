@@ -317,9 +317,22 @@ def scrape_reviews(
         if login_wait > 0:
             print(f"[scrape] menunggu {login_wait}s untuk login manual di jendela browser...")
             time.sleep(login_wait)
+            # Setelah login, Shopee biasanya me-redirect. Muat ulang URL produk dalam
+            # sesi yang sudah login agar konten ulasan tampil (& konteks DOM stabil).
+            try:
+                page.goto(url, wait_until="domcontentloaded")
+            except Exception as exc:  # noqa: BLE001 — navigasi bisa gagal sementara
+                print(f"[warn] gagal memuat ulang URL setelah login: {exc}")
+
+        # Pastikan halaman selesai dimuat sebelum membaca DOM (hindari error
+        # "execution context was destroyed" saat halaman sedang bernavigasi).
+        try:
+            page.wait_for_load_state("domcontentloaded")
+            body_head = page.inner_text("body")[:300]
+        except Exception:  # noqa: BLE001 — defensif terhadap navigasi
+            body_head = ""
 
         # Deteksi login-wall (anti-bot Shopee).
-        body_head = (page.inner_text("body")[:300] if page.query_selector("body") else "")
         if "belum masuk" in body_head.lower() or "halaman tidak tersedia" in body_head.lower():
             print("[warn] terdeteksi login-wall Shopee. Jalankan dengan "
                   "--user-data-dir <folder> --headful --login-wait 60 lalu login manual.")

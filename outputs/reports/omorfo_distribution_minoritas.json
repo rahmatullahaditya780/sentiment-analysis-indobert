@@ -1,0 +1,21 @@
+{
+  "source": "D:\\Documents\\SKRIPSI\\sistem\\data\\implementation\\omorfo_reviews_minoritas.csv",
+  "n_reviews": 669,
+  "distribution": {
+    "negative": {
+      "count": 294,
+      "proportion": 0.4395
+    },
+    "neutral": {
+      "count": 8,
+      "proportion": 0.012
+    },
+    "positive": {
+      "count": 367,
+      "proportion": 0.5486
+    }
+  },
+  "total_prediction_time": 64.6383,
+  "avg_prediction_time": 0.096619,
+  "output_csv": "D:\\Documents\\SKRIPSI\\sistem\\outputs\\reports\\omorfo_predictions_minoritas.csv"
+}

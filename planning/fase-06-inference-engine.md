@@ -43,7 +43,7 @@ Output: label prediksi, confidence score, prediction time
 - [x] Real-time inference untuk input tunggal berjalan. *(`SentimentPredictor.predict`, terverifikasi lokal CPU)*
 - [x] Batch prediction dari CSV berjalan. *(`SentimentPredictor.predict_batch`, terverifikasi)*
 - [x] Confidence score ditampilkan untuk setiap prediksi. *(softmax max prob + `scores` per kelas)*
-- [ ] Dataset OmorfoShop berhasil dianalisis dan distribusi sentimen tersedia. *(jalur `analyze_omorfo_reviews` SIAP & terverifikasi dengan data sintetis; menunggu hasil **web scraping** OmorfoShop penuh — awal: `data/implementation/omorfo_reviews_extension.csv`, 20 ulasan)*
+- [x] Dataset OmorfoShop berhasil dianalisis dan distribusi sentimen tersedia. *(`analyze_omorfo_reviews` dijalankan pada **3.739 ulasan nyata** dari 5 produk terlaris → `outputs/reports/omorfo_distribution.json` + `omorfo_predictions.csv`)*
 - [x] Prediction time direkam per prediksi/batch. *(`prediction_time` per prediksi; `total/avg_prediction_time` di `.attrs` batch)*
 - [x] Inference module siap diintegrasikan ke dashboard (Fase 8). *(API kelas + fungsi sudah diekspor dari `src.modeling`)*
 
@@ -59,10 +59,40 @@ Output: label prediksi, confidence score, prediction time
 - Input: teks string ATAU DataFrame/list dengan kolom `review_text`
 - Output batch: `outputs/reports/omorfo_predictions.csv` (`OMORFO_PREDICTIONS_CSV`)
 
+## Hasil Aktual (Checkpoint 6) — 2026-06-10
+
+Dataset implementasi OmorfoShop dikumpulkan via **endpoint JSON internal Shopee**
+(`src/scraping/scrape_omorfo_api.py`; in-browser `fetch('/api/v2/item/get_ratings')`
+dari sesi browser ber-login — DOM scraping diblokir anti-bot, lihat catatan revisi
+2026-06-10). Strategi **hybrid**: dataset natural (distribusi nyata) + dataset
+minoritas (bintang 1–4, bukti deteksi negatif).
+
+**Distribusi sentimen — dataset natural (3.739 ulasan, 5 produk terlaris):**
+
+| Sentimen | Jumlah | Proporsi |
+|---|---|---|
+| Positif | 3.310 | **88,5%** |
+| Negatif | 398 | 10,6% |
+| Netral | 31 | 0,8% |
+
+→ Memenuhi kriteria **Excellent Performance** Fase 7 (Positif ≥50% AND Negatif ≤20%).
+
+**Distribusi minoritas (669 ulasan bintang 1–4) — bukti model menangkap negatif:**
+Negatif 44,0% (294) / Positif 54,9% (367) / Netral 1,2% (8). Membuktikan model
+mendeteksi sentimen negatif pada data nyata (bintang 1–2 ditangkap negatif; banyak
+bintang-4 memang berteks positif sehingga wajar diprediksi positif).
+
+Artefak: `outputs/reports/omorfo_distribution.json` (+ `_minoritas.json`),
+`outputs/reports/omorfo_predictions.csv` (+ `_minoritas.csv`).
+Avg prediction time ≈ 0,11 dtk/ulasan (CPU). Runner: `scripts/run_phase6_omorfo.py`.
+
 ## Status Implementasi
 
-Kerangka engine **selesai & terverifikasi lokal** (torch 2.12 CPU, transformers 5.10). Tersisa satu item gate yang **terblokir data**: analisis dataset OmorfoShop nyata menunggu hasil **web scraping** penuh (±1.200 ulasan; deferred-paralel di Fase 2). Jalur kodenya sudah siap — begitu CSV hasil scraping tersedia, jalankan `analyze_omorfo_reviews(<csv>)`.
+Engine **selesai & terverifikasi** (torch CPU). Seluruh deliverable Fase 6 terpenuhi,
+termasuk analisis dataset OmorfoShop nyata (3.739 ulasan). **Gate Fase 6 LULUS.**
 
 ## Gate ke Fase Berikutnya
 
-Lanjut ke Fase 7 hanya jika prediksi sentimen konsisten, confidence score tersedia, dan distribusi sentimen OmorfoShop sudah dihasilkan. **Saat ini:** prediksi & confidence ✅; distribusi OmorfoShop ⏳ (menunggu hasil web scraping OmorfoShop penuh).
+Lanjut ke Fase 7 hanya jika prediksi sentimen konsisten, confidence score tersedia, dan
+distribusi sentimen OmorfoShop sudah dihasilkan. **Status: ✅ LULUS** — prediksi &
+confidence ✅; distribusi OmorfoShop nyata ✅ (88,5% positif → input rule engine Fase 7).
