@@ -38,18 +38,25 @@ Prasyarat
     pip install playwright
     python -m playwright install chromium
 
-Pemakaian
----------
-    # Dasar (headless) — keluaran default ke data/implementation/
-    python src/scraping/scrape_omorfo_reviews.py "<URL_PRODUK_SHOPEE>"
+PENTING — Shopee memblokir sesi anonim/headless
+------------------------------------------------
+Anti-bot Shopee menampilkan login-wall ("Halaman Tidak Tersedia — belum masuk")
+untuk browser headless tanpa sesi. Karena itu scraping WAJIB pakai profil browser
+persisten yang sudah login:
 
-    # Tampilkan browser, batasi 10 halaman ulasan, kategori manual
+    # 1) Run pertama: login manual sekali (jendela terbuka 60 detik).
     python src/scraping/scrape_omorfo_reviews.py "<URL>" \
-        --headful --max-pages 10 --category "Deodoran"
+        --user-data-dir .shopee_session --headful --login-wait 60 --category "Deodoran"
 
-    # Timpa selektor bila layout Shopee berubah
+    # 2) Run berikutnya: sesi sudah tersimpan, langsung scraping.
     python src/scraping/scrape_omorfo_reviews.py "<URL>" \
-        --selectors-json src/scraping/selectors_shopee.json
+        --user-data-dir .shopee_session --max-pages 20 --category "Deodoran"
+
+    # Timpa selektor bila layout Shopee berubah.
+    python src/scraping/scrape_omorfo_reviews.py "<URL>" \
+        --user-data-dir .shopee_session --selectors-json src/scraping/selectors_shopee.json
+
+Catatan: tambahkan `.shopee_session/` ke .gitignore — berisi cookie sesi pribadi.
 """
 
 from __future__ import annotations
@@ -164,6 +171,8 @@ def scrape_reviews(
     headful: bool = False,
     selectors: dict[str, str] | None = None,
     timeout_ms: int = 30_000,
+    user_data_dir: str | Path | None = None,
+    login_wait: int = 0,
 ) -> pd.DataFrame:
     """Render halaman produk Shopee & kumpulkan ulasan -> DataFrame implementasi.
 
@@ -173,9 +182,14 @@ def scrape_reviews(
     product_category : isian kolom `product_category` (manual; tidak ada di DOM).
     max_pages : batas jumlah halaman ulasan yang ditelusuri (rem pengaman).
     delay : jeda detik antar-halaman (sopan ke server / hindari rate-limit).
-    headful : True = tampilkan jendela browser (berguna untuk debugging selektor).
+    headful : True = tampilkan jendela browser (wajib untuk login pertama kali).
     selectors : override DEFAULT_SELECTORS (lihat load_selectors).
     timeout_ms : timeout navigasi & tunggu elemen.
+    user_data_dir : folder profil browser persisten. WAJIB untuk Shopee — anti-bot
+        memblokir sesi anonim/headless dengan login-wall. Login sekali (headful),
+        cookie tersimpan di folder ini, lalu dipakai ulang otomatis run berikutnya.
+    login_wait : detik jeda setelah membuka halaman agar Anda bisa login manual
+        (mis. 60). 0 = tidak menunggu (sesi sudah login dari run sebelumnya).
     """
     # Import lokal supaya proyek tetap bisa di-import tanpa Playwright terpasang.
     from playwright.sync_api import TimeoutError as PWTimeout
@@ -185,22 +199,41 @@ def scrape_reviews(
     collected: list[dict] = []
     seen_ids: set[str] = set()
     product_name = ""
+    user_agent = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    )
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=not headful)
-        # User-agent realistis; locale Indonesia agar tanggal/format konsisten.
-        context = browser.new_context(
-            locale="id-ID",
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-            ),
-        )
-        page = context.new_page()
+        # Sesi persisten (login Shopee bertahan antar-run) vs sesi sekali pakai.
+        if user_data_dir:
+            context = pw.chromium.launch_persistent_context(
+                str(user_data_dir),
+                headless=not headful,
+                locale="id-ID",
+                user_agent=user_agent,
+            )
+            browser = None
+            page = context.pages[0] if context.pages else context.new_page()
+        else:
+            browser = pw.chromium.launch(headless=not headful)
+            context = browser.new_context(locale="id-ID", user_agent=user_agent)
+            page = context.new_page()
         page.set_default_timeout(timeout_ms)
 
         print(f"[scrape] membuka {url}")
         page.goto(url, wait_until="domcontentloaded")
+
+        # Jeda login manual: beri waktu user masuk akun di jendela browser.
+        if login_wait > 0:
+            print(f"[scrape] menunggu {login_wait}s untuk login manual di jendela browser...")
+            time.sleep(login_wait)
+
+        # Deteksi login-wall (anti-bot Shopee).
+        body_head = (page.inner_text("body")[:300] if page.query_selector("body") else "")
+        if "belum masuk" in body_head.lower() or "halaman tidak tersedia" in body_head.lower():
+            print("[warn] terdeteksi login-wall Shopee. Jalankan dengan "
+                  "--user-data-dir <folder> --headful --login-wait 60 lalu login manual.")
 
         # Ambil nama produk (sekali saja).
         try:
@@ -244,7 +277,8 @@ def scrape_reviews(
             time.sleep(delay)
 
         context.close()
-        browser.close()
+        if browser is not None:
+            browser.close()
 
     df = pd.DataFrame(collected)
     if df.empty:
@@ -274,6 +308,17 @@ def main() -> None:
     parser.add_argument("--delay", type=float, default=2.0, help="Jeda detik antar-halaman")
     parser.add_argument("--headful", action="store_true", help="Tampilkan jendela browser")
     parser.add_argument(
+        "--user-data-dir",
+        default=None,
+        help="Folder profil browser persisten (WAJIB utk Shopee; simpan sesi login)",
+    )
+    parser.add_argument(
+        "--login-wait",
+        type=int,
+        default=0,
+        help="Detik jeda untuk login manual setelah halaman terbuka (mis. 60)",
+    )
+    parser.add_argument(
         "--selectors-json",
         default=None,
         help="File JSON untuk menimpa selektor DOM (lihat DEFAULT_SELECTORS)",
@@ -288,6 +333,8 @@ def main() -> None:
         delay=args.delay,
         headful=args.headful,
         selectors=selectors,
+        user_data_dir=args.user_data_dir,
+        login_wait=args.login_wait,
     )
 
     output_path = Path(args.output)

@@ -43,3 +43,7 @@ data/processed/_bt_neutral_cache.csv
 dist/
 build/
 *.egg-info/
+
+
+# Sesi login browser scraper (cookie pribadi)
+.shopee_session/
