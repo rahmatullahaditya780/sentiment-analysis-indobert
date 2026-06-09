@@ -12,6 +12,7 @@
     --pos:#16A34A; --pos-soft:#E7F6EC;
     --neu:#D97706; --neu-soft:#FBEFDD;
     --neg:#DC2626; --neg-soft:#FBE7E7;
+    --blue:#3b82f6; --blue-soft:#E6EFFD;
     --radius:12px; --shadow:0 1px 3px rgba(0,0,0,.06);
   }
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
@@ -26,15 +27,18 @@
   .navbar{height:60px;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:relative;z-index:2;}
   .brand{display:flex;align-items:center;gap:11px;font-weight:600;font-size:15px;}
   .logo{width:26px;height:26px;border-radius:6px;background:var(--accent);}
-  .user{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:13px;font-weight:500;}
+  .user{display:flex;align-items:center;gap:14px;color:var(--sub);font-size:13px;font-weight:500;}
   .avatar{width:32px;height:32px;border-radius:50%;background:#ffd1d1;}
+  .modebadge{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--neu-soft);color:var(--neu);}
+  .modebadge i{width:7px;height:7px;border-radius:50%;background:var(--neu);display:block;}
   .body{display:flex;min-height:620px;}
-  .sidebar{width:212px;background:var(--surface);box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:4px;}
+  .sidebar{width:226px;background:var(--surface);box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:3px;}
   .nav-item{display:flex;align-items:center;gap:11px;height:38px;padding:0 13px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--sub);}
-  .nav-item .dot{width:8px;height:8px;border-radius:50%;background:var(--border);}
+  .nav-item .dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex:none;}
   .nav-item:hover{background:#f6f7f9;}
   .nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
   .nav-item.active .dot{background:var(--accent);}
+  .navsep{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#9aa0a6;text-transform:uppercase;padding:14px 13px 6px;}
   .main{flex:1;padding:26px 30px;overflow:auto;}
   h1{font-size:20px;font-weight:700;margin-bottom:6px;}
   .sub{font-size:13.5px;color:var(--sub);margin-bottom:20px;}
@@ -45,7 +49,7 @@
   .pos{color:var(--pos);}.neu{color:var(--neu);}.neg{color:var(--neg);}.acc{color:var(--accent);}
   .row2{display:grid;grid-template-columns:360px 1fr 340px;gap:16px;}
   .ttl{font-size:15px;font-weight:600;margin-bottom:14px;}
-  .donut{width:160px;height:160px;border-radius:50%;background:conic-gradient(var(--pos) 0 54%,var(--neu) 54% 82%,var(--neg) 82% 100%);position:relative;margin:6px auto;}
+  .donut{width:160px;height:160px;border-radius:50%;background:conic-gradient(var(--pos) 0 47%,var(--neu) 47% 76%,var(--neg) 76% 100%);position:relative;margin:6px auto;}
   .donut::after{content:"";position:absolute;inset:34px;background:var(--surface);border-radius:50%;}
   .legend{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
   .pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:999px;border:1px solid;}
@@ -56,13 +60,15 @@
   .barcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;}
   .bar{width:100%;max-width:42px;background:var(--accent);border-radius:6px 6px 0 0;}
   .barlbl{font-size:12px;color:var(--sub);}
-  .wc{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;align-content:center;height:170px;justify-content:center;}
+  .wc{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;align-content:center;min-height:150px;justify-content:center;}
   .wc span{font-weight:700;line-height:1;}
   .field label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:6px;}
-  .input{height:40px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;padding:0 14px;font-size:14px;background:#fff;}
+  .input{height:40px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;padding:0 14px;font-size:14px;background:#fff;color:var(--text);}
+  .input.ph{color:#9aa0a6;}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;}
   .btn.primary{background:var(--accent);color:#fff;}
   .btn.ghost{background:#fff;border-color:var(--border);color:var(--text);}
+  .btn.dim{background:#f1f2f4;color:#9aa0a6;cursor:not-allowed;}
   .progress{height:10px;background:#eef0f2;border-radius:999px;overflow:hidden;}
   .progress i{display:block;height:100%;background:var(--accent);border-radius:999px;}
   .preitem{display:flex;gap:12px;margin-top:12px;}
@@ -70,7 +76,7 @@
   .preitem b{font-size:13.5px;} .preitem p{font-size:12.5px;color:var(--sub);}
   .kv{display:flex;justify-content:space-between;font-size:13px;margin-top:10px;}
   .kv .l{color:var(--sub);font-weight:500;} .kv .r{font-weight:600;}
-  .filters{display:flex;gap:10px;margin-bottom:16px;}
+  .filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
   .fpill{font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:#fff;color:var(--sub);cursor:pointer;}
   .fpill.on{background:var(--accent-soft);color:var(--accent);border-color:#f3c9c9;}
   table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
@@ -80,8 +86,10 @@
   .stars{color:var(--neu);letter-spacing:1px;}
   .banner{background:var(--pos-soft);border:1px solid #bfe6cd;border-radius:var(--radius);padding:18px 22px;margin-bottom:18px;}
   .banner h3{color:var(--pos);font-size:17px;} .banner p{font-size:13px;color:#3f6b50;margin-top:5px;}
+  .banner.blue{background:var(--blue-soft);border-color:#bcd4f7;} .banner.blue h3{color:var(--blue);} .banner.blue p{color:#3258a0;}
   .threshrow{display:flex;align-items:center;gap:14px;margin-top:12px;font-size:13px;color:var(--sub);}
-  .tlabel{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;color:#fff;}
+  .threshrow.cur{font-weight:600;color:var(--text);}
+  .tlabel{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;color:#fff;min-width:86px;text-align:center;}
   .recgrid{grid-template-columns:repeat(3,1fr);margin-top:16px;}
   .reccard .ic{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);margin-bottom:12px;}
   .reccard b{font-size:14.5px;} .reccard p{font-size:13px;color:var(--sub);margin-top:7px;line-height:1.5;}
@@ -97,12 +105,28 @@
   .arrow{color:#c4c8ce;font-size:18px;padding-top:8px;}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
   .gchip{font-size:12.5px;font-weight:500;color:var(--sub);background:#f4f5f7;border:1px solid var(--border);padding:5px 11px;border-radius:999px;}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+  .tab{padding:11px 16px;font-size:13.5px;font-weight:600;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:9px;margin-bottom:-1px;}
+  .tab.on{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab.disabled{color:#bcc1c7;cursor:not-allowed;}
+  .tabpanel{display:none;} .tabpanel.on{display:block;}
+  .tier{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:#eef0f2;color:#6b7280;}
+  .badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .badge.local{background:var(--neu-soft);color:var(--neu);}
+  .badge.cloud{background:var(--pos-soft);color:var(--pos);}
+  .uploader{border:2px dashed #d4d7db;border-radius:10px;padding:34px 20px;text-align:center;color:var(--sub);font-size:13px;background:#fafbfc;}
+  .uploader b{display:block;color:var(--text);font-size:14px;margin-bottom:4px;}
+  .note{font-size:12px;color:var(--sub);background:#f6f7f9;border:1px solid var(--border);border-radius:8px;padding:11px 13px;line-height:1.5;margin-top:14px;}
+  .note.warn{background:var(--neu-soft);border-color:#ecd3ad;color:#8a5a16;}
+  .slider{height:6px;background:#eef0f2;border-radius:999px;position:relative;margin:14px 0;}
+  .slider i{position:absolute;height:100%;left:0;background:var(--accent);border-radius:999px;}
+  .slider .knob{position:absolute;top:50%;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--accent);transform:translate(-50%,-50%);}
   .hero{padding:70px 20px 40px;text-align:center;}
   .hero .hlogo{width:74px;height:74px;border-radius:20px;background:var(--accent);color:#fff;font-size:34px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;}
   .hero h1{font-size:44px;margin-bottom:14px;}
   .hero .tag{font-size:18px;color:var(--sub);font-weight:500;margin-bottom:16px;}
-  .hero .desc{font-size:15px;color:var(--sub);max-width:620px;margin:0 auto 22px;line-height:1.6;}
-  .hero .hchips{display:flex;gap:12px;justify-content:center;margin-bottom:26px;}
+  .hero .desc{font-size:15px;color:var(--sub);max-width:640px;margin:0 auto 22px;line-height:1.6;}
+  .hero .hchips{display:flex;gap:12px;justify-content:center;margin-bottom:26px;flex-wrap:wrap;}
   .foot{text-align:center;font-size:12.5px;color:var(--sub);padding:26px 0 36px;}
   .flowbar{max-width:1180px;margin:0 auto 16px;display:flex;flex-wrap:wrap;gap:6px;}
   .flowbar button{font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid #c4c8ce;background:#fff;color:#44474c;cursor:pointer;}
@@ -112,22 +136,22 @@
 </head>
 <body>
 
-<div class="hint">Prototype interaktif Sentara — klik menu sidebar atau tombol untuk berpindah layar. Alur: Akses link &rarr; Dashboard &rarr; Input &amp; Proses &rarr; Detail Ulasan &rarr; Rekomendasi &rarr; Ekspor &rarr; Tentang.</div>
+<div class="hint">Prototype interaktif Sentara — klik menu sidebar atau tombol untuk berpindah layar. Alur: Akses link &rarr; Dashboard &rarr; Input Berlapis (CSV / Ekstensi / URL) &rarr; Detail Ulasan &rarr; Visualisasi &rarr; Rekomendasi &rarr; Pengaturan &rarr; Ekspor &rarr; Tentang.</div>
 <div class="flowbar" id="flowbar"></div>
 <div class="wrap">
 
 <div class="screen active" id="s0">
   <div class="browser">
     <div class="dots"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>
-    <div class="addr">https://sentara.streamlit.app</div>
+    <div class="addr">http://localhost:8501  ·  sentara (mode lokal)</div>
     <span class="run">&#9679; Running</span>
   </div>
   <div class="hero">
     <div class="hlogo">S</div>
     <h1>Sentara</h1>
     <div class="tag">Analisis Sentimen Ulasan Produk E-Commerce Berbasis IndoBERT</div>
-    <div class="desc">Masukkan ulasan produk toko Anda, lalu sistem mengklasifikasikan sentimen secara otomatis menjadi Positif, Negatif, atau Netral menggunakan model IndoBERT — dan memberikan rekomendasi strategi pemasaran berbasis data.</div>
-    <div class="hchips"><span class="pill p">3 Kelas Sentimen</span><span class="pill t">Model IndoBERT</span><span class="pill" style="color:var(--accent);background:var(--accent-soft);border:1px solid #f3c9c9">Rekomendasi Otomatis</span></div>
+    <div class="desc">Kumpulkan ulasan produk Shopee — via upload CSV, impor ekstensi browser, atau tempel URL produk — lalu sistem mengklasifikasikan sentimen secara otomatis menjadi Positif, Negatif, atau Netral menggunakan model IndoBERT, dan memberikan rekomendasi strategi pemasaran berbasis data.</div>
+    <div class="hchips"><span class="pill p">3 Kelas Sentimen</span><span class="pill t">Model IndoBERT</span><span class="pill" style="color:var(--accent);background:var(--accent-soft);border:1px solid #f3c9c9">Rekomendasi Otomatis</span><span class="pill" style="color:var(--blue);background:var(--blue-soft);border:1px solid #bcd4f7">Input Berlapis</span></div>
     <button class="btn primary" style="height:50px;padding:0 30px;font-size:16px" onclick="go(1)">Mulai Analisis  &rarr;</button>
     <div style="margin-top:18px"><span class="pill p">Status model: Siap digunakan</span></div>
   </div>
@@ -140,143 +164,251 @@
 <div class="screen" id="s4"></div>
 <div class="screen" id="s5"></div>
 <div class="screen" id="s6"></div>
+<div class="screen" id="s7"></div>
+<div class="screen" id="s8"></div>
 
 </div>
 
 <script>
-const NAV=[["Dashboard",1],["Input & Proses Analisis",2],["Detail Ulasan",3],["Rekomendasi Strategi",4],["Ekspor Laporan",5],["Tentang & Bantuan",6]];
+const NAV=[
+  ["Dashboard",1,0],
+  ["Input & Pengambilan Data",2,0],
+  ["Detail Ulasan",3,1],
+  ["Visualisasi & Word Cloud",4,1],
+  ["Rekomendasi Strategi",5,1],
+  ["Pengaturan",6,2],
+  ["Ekspor Laporan",7,2],
+  ["Tentang & Bantuan",8,2]];
+const GROUPS=["","Hasil Analisis","Lainnya"];
 function shell(active,inner){
-  let items=NAV.map(n=>`<div class="nav-item ${n[1]===active?'active':''}" onclick="go(${n[1]})"><span class="dot"></span>${n[0]}</div>`).join("");
+  let items="";let lastg=-1;
+  NAV.forEach(n=>{
+    if(n[2]!==lastg){lastg=n[2];if(GROUPS[lastg])items+=`<div class="navsep">${GROUPS[lastg]}</div>`;}
+    items+=`<div class="nav-item ${n[1]===active?'active':''}" onclick="go(${n[1]})"><span class="dot"></span>${n[0]}</div>`;
+  });
   return `<div class="navbar"><div class="brand"><span class="logo"></span>Sentara — Analisis Ulasan E-Commerce</div>
-    <div class="user">Aditya Rahmatullah<span class="avatar"></span></div></div>
+    <div class="user"><span class="modebadge"><i></i>Mode: Lokal · semua jalur aktif</span>Aditya Rahmatullah<span class="avatar"></span></div></div>
     <div class="body"><div class="sidebar">${items}</div><div class="main">${inner}</div></div>`;
 }
+
+/* ===== S1 — DASHBOARD (Module 2: ringkasan) ===== */
 document.getElementById('s1').innerHTML=shell(1,`
   <h1>Ringkasan Analisis Sentimen — OmorfoShop Official Store</h1>
-  <div class="sub">Berdasarkan ±1.000 ulasan produk via Shopee Open Platform API · Diperbarui hari ini</div>
+  <div class="sub">1.187 ulasan produk dikumpulkan via <b>web scraping halaman publik (Playwright)</b> · Diperbarui hari ini</div>
   <div class="grid stats">
-    <div class="card stat"><div class="l">Total Ulasan Dianalisis</div><div class="v">1.024</div></div>
-    <div class="card stat"><div class="l">Sentimen Positif</div><div class="v pos">54%</div></div>
-    <div class="card stat"><div class="l">Sentimen Negatif</div><div class="v neg">18%</div></div>
-    <div class="card stat"><div class="l">Sentimen Netral</div><div class="v neu">28%</div></div>
+    <div class="card stat"><div class="l">Total Ulasan Dianalisis</div><div class="v">1.187</div></div>
+    <div class="card stat"><div class="l">Sentimen Positif</div><div class="v pos">47%</div></div>
+    <div class="card stat"><div class="l">Sentimen Netral</div><div class="v neu">29%</div></div>
+    <div class="card stat"><div class="l">Sentimen Negatif</div><div class="v neg">24%</div></div>
     <div class="card stat"><div class="l">Macro F1-Score Model</div><div class="v acc">87,3%</div></div>
   </div>
   <div class="row2">
     <div class="card"><div class="ttl">Distribusi Sentimen</div><div class="donut"></div>
-      <div class="legend"><span class="pill p">Positif · 54%</span><span class="pill t">Netral · 28%</span><span class="pill n">Negatif · 18%</span></div></div>
+      <div class="legend"><span class="pill p">Positif · 47% (558)</span><span class="pill t">Netral · 29% (344)</span><span class="pill n">Negatif · 24% (285)</span></div></div>
     <div class="card"><div class="ttl">Tren Sentimen 7 Hari Terakhir</div>
       <div class="bars">
         ${[["Sen",80],["Sel",60],["Rab",100],["Kam",47],["Jum",107],["Sab",73],["Min",93]].map(b=>`<div class="barcol"><div class="bar" style="height:${b[1]}%"></div><div class="barlbl">${b[0]}</div></div>`).join("")}
-      </div></div>
+      </div>
+      <div class="note" style="margin-top:14px">Tren ditampilkan otomatis karena dataset memiliki kolom <b>date_review</b> (FR-8.7).</div></div>
     <div class="card"><div class="ttl">Word Cloud — Kata Dominan</div>
-      <div class="wc">
+      <div class="wc" style="min-height:170px">
         <span style="font-size:30px;color:var(--pos)">bagus</span><span style="font-size:21px;color:var(--neg)">lambat</span>
         <span style="font-size:25px;color:var(--pos)">original</span><span style="font-size:18px;color:var(--neu)">kemasan</span>
         <span style="font-size:16px;color:var(--neg)">mengecewakan</span><span style="font-size:23px;color:var(--pos)">recommended</span>
         <span style="font-size:16px;color:var(--neu)">lumayan</span><span style="font-size:19px;color:var(--pos)">cepat</span>
-      </div></div>
-  </div>
-  <div style="margin-top:18px;display:flex;gap:12px"><button class="btn primary" onclick="go(3)">Lihat Detail Ulasan &rarr;</button><button class="btn ghost" onclick="go(4)">Lihat Rekomendasi</button></div>
-`);
-document.getElementById('s2').innerHTML=shell(2,`
-  <h1>Input & Proses Analisis Sentimen</h1>
-  <div class="sub">Ambil ulasan dari Shopee Open Platform API lalu jalankan model IndoBERT untuk klasifikasi sentimen</div>
-  <div style="display:grid;grid-template-columns:1fr 460px;gap:20px">
-    <div style="display:flex;flex-direction:column;gap:18px">
-      <div class="card"><div class="ttl">Langkah 1 — Hubungkan Toko Shopee (OAuth2)</div>
-        <div style="display:flex;gap:16px">
-          <div class="field" style="flex:1"><label>Nama Toko</label><div class="input">OmorfoShop Official Store</div></div>
-          <div class="field" style="width:140px"><label>Jumlah Ulasan</label><div class="input">1.000</div></div>
-        </div>
-        <div style="display:flex;gap:12px;margin-top:16px"><button class="btn primary">Hubungkan & Ambil Ulasan</button><button class="btn ghost">Lihat Riwayat</button></div>
       </div>
-      <div class="card"><div class="ttl">Langkah 2 — Preprocessing Teks</div>
-        <div class="preitem"><span class="d"></span><div><b>Case folding</b><p>Mengubah seluruh teks menjadi huruf kecil</p></div></div>
-        <div class="preitem"><span class="d"></span><div><b>Text cleaning (regex)</b><p>Menghapus URL, emoji, tanda baca, dan karakter non-alfanumerik</p></div></div>
-        <div class="preitem"><span class="d"></span><div><b>Tanpa stemming & stopword removal</b><p>IndoBERT memproses subword embeddings secara native</p></div></div>
+      <div style="text-align:center;margin-top:8px"><button class="btn ghost" style="height:34px;font-size:12.5px" onclick="go(4)">Word cloud per kelas &rarr;</button></div></div>
+  </div>
+  <div style="margin-top:18px;display:flex;gap:12px"><button class="btn primary" onclick="go(2)">Ambil / Unggah Ulasan Baru</button><button class="btn ghost" onclick="go(3)">Lihat Detail Ulasan</button><button class="btn ghost" onclick="go(5)">Lihat Rekomendasi</button></div>
+`);
+
+/* ===== S2 — INPUT BERLAPIS (Module 1 + Module 6) ===== */
+document.getElementById('s2').innerHTML=shell(2,`
+  <h1>Input & Pengambilan Data Ulasan</h1>
+  <div class="sub">Modul input <b>berlapis (tiered)</b> — pilih jalur sesuai lingkungan, lalu jalankan model IndoBERT untuk klasifikasi sentimen</div>
+  <div class="banner blue" style="display:flex;align-items:center;gap:14px"><div><h3>Lingkungan terdeteksi: Lokal / Desktop</h3><p>Semua jalur input aktif, termasuk URL Auto-Fetch via browser ber-login. Di mode cloud, jalur URL otomatis dinonaktifkan (FR-8.14) dan pengguna diarahkan ke CSV / Ekstensi.</p></div></div>
+  <div style="display:grid;grid-template-columns:1fr 440px;gap:20px">
+    <div class="card">
+      <div class="tabs">
+        <div class="tab on" onclick="itab(0)"><span class="tier">Tier 1</span> CSV Upload <span class="badge cloud">Cloud &amp; Lokal</span></div>
+        <div class="tab" onclick="itab(1)"><span class="tier">Tier 2</span> Import Ekstensi <span class="badge cloud">Cloud &amp; Lokal</span></div>
+        <div class="tab" onclick="itab(2)"><span class="tier">Tier 3</span> URL Auto-Fetch <span class="badge local">Lokal saja</span></div>
+      </div>
+
+      <div class="tabpanel on" id="ip0">
+        <div class="ttl">Upload File CSV Ulasan</div>
+        <div class="uploader"><b>Tarik &amp; letakkan file CSV di sini</b>atau klik untuk memilih · maks. 200 MB · kolom wajib: <i>review_text</i></div>
+        <div class="note">Jalur paling tahan-banting & universal — selalu berfungsi di cloud maupun lokal. Cocok untuk analisis batch dari data yang sudah Anda miliki.</div>
+        <div style="margin-top:16px"><button class="btn primary" onclick="go(3)">Analisis Sekarang</button></div>
+      </div>
+
+      <div class="tabpanel" id="ip1">
+        <div class="ttl">Import CSV Hasil Ekstensi Browser</div>
+        <div class="uploader"><b>Unggah CSV hasil ekstensi</b>Sistem otomatis memetakan kolom ekstensi &rarr; skema implementasi (<i>convert_extension_csv.py</i>)</div>
+        <div class="note">Anda membuka halaman produk sendiri di browser, lalu ekspor ulasan lewat ekstensi. Tanpa proteksi anti-bot karena halaman dibuka manusia. Berfungsi di cloud & lokal.</div>
+        <div style="margin-top:16px"><button class="btn primary" onclick="go(3)">Konversi &amp; Analisis</button></div>
+      </div>
+
+      <div class="tabpanel" id="ip2">
+        <div class="ttl">URL Auto-Fetch via Browser Ber-login <span class="badge local" style="vertical-align:middle">Lokal saja</span></div>
+        <div class="field" style="margin-top:6px"><label>URL Produk Shopee</label><div class="input">https://shopee.co.id/omorfoshop/product/...</div></div>
+        <div style="display:flex;gap:16px;margin-top:14px">
+          <div class="field" style="flex:1"><label>Filter Rating</label><div class="input">5★ → 1★ (semua, untuk diversitas kelas)</div></div>
+          <div class="field" style="width:150px"><label>Maks. Ulasan</label><div class="input">1.200</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:16px"><button class="btn primary">Validasi URL &amp; Mulai Fetch</button><span style="font-size:12.5px;color:var(--sub)">Validasi format URL Shopee dulu (FR-8.10)</span></div>
+        <div style="margin-top:18px"><div class="kv" style="margin-top:0"><span class="l">Mengambil ulasan (rate-limited)...</span><span class="r">450 / 1.200</span></div>
+          <div class="progress" style="margin-top:8px"><i style="width:37%"></i></div></div>
+        <div class="note warn">Jalur ini butuh display & browser ber-login (Playwright headful, sesi login sekali). Otomatis dinonaktifkan di Streamlit Cloud — gunakan CSV / Ekstensi sebagai fallback. Jeda antar-aksi diterapkan agar tidak diblokir Shopee (FR-8.13).</div>
       </div>
     </div>
+
     <div style="display:flex;flex-direction:column;gap:18px">
-      <div class="card"><div class="ttl">Langkah 3 — Jalankan Model IndoBERT</div>
-        <p style="font-size:12.5px;color:var(--sub);margin-bottom:14px">Model: indolem/indobert-base-uncased · Fine-tuned 3 kelas (Positif/Negatif/Netral)</p>
-        <div class="kv" style="margin-bottom:8px"><span class="l">Memproses ulasan...</span><span class="r">742 / 1.024</span></div>
-        <div class="progress"><i style="width:72%"></i></div>
-        <div style="display:flex;gap:12px;margin-top:16px"><button class="btn primary" onclick="go(3)">Mulai Klasifikasi</button><button class="btn ghost">Hentikan</button></div>
+      <div class="card"><div class="ttl">Preprocessing Teks (otomatis)</div>
+        <div class="preitem"><span class="d"></span><div><b>Case folding</b><p>Mengubah seluruh teks menjadi huruf kecil</p></div></div>
+        <div class="preitem"><span class="d"></span><div><b>Text cleaning (regex)</b><p>Menghapus URL, emoji, tanda baca, dan karakter non-alfanumerik</p></div></div>
+        <div class="preitem"><span class="d"></span><div><b>Tanpa stemming &amp; stopword removal</b><p>IndoBERT memproses subword embeddings (WordPiece) secara native</p></div></div>
+        <div class="preitem"><span class="d"></span><div><b>Tokenization + padding/truncation</b><p>IndoBERT tokenizer, max_length = 128 token</p></div></div>
       </div>
-      <div class="card"><div class="ttl">Status Evaluasi Model (Data Validasi)</div>
-        <div class="kv"><span class="l">Macro F1-Score</span><span class="r pos">87,3% (target ≥ 85%)</span></div>
+      <div class="card"><div class="ttl">Model IndoBERT</div>
+        <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">indolem/indobert-base-uncased · fine-tuned 3 kelas · dimuat via session_state</p>
+        <div class="kv"><span class="l">Macro F1-Score (validasi)</span><span class="r pos">87,3% (target ≥ 85%)</span></div>
         <div class="kv"><span class="l">Akurasi</span><span class="r">88,1%</span></div>
         <div class="kv"><span class="l">Precision / Recall</span><span class="r">86,9% / 87,5%</span></div>
       </div>
     </div>
   </div>
 `);
+
+/* ===== S3 — DETAIL ULASAN (Module 2: hasil per ulasan) ===== */
 const rows=[
-  ["“Barangnya bagus banget, sesuai gambar dan pengiriman cepat!”","Positif","p","0,96","★★★★★","05 Jun 2026"],
-  ["“Kualitas lumayan, tapi kemasan agak kurang rapi.”","Netral","t","0,71","★★★☆☆","04 Jun 2026"],
-  ["“Produk tidak sesuai deskripsi dan responsnya lambat.”","Negatif","n","0,89","★★☆☆☆","03 Jun 2026"],
-  ["“Recommended seller, original dan harga bersaing.”","Positif","p","0,93","★★★★★","03 Jun 2026"],
-  ["“Pengiriman lama, tapi barangnya oke.”","Netral","t","0,65","★★★★☆","02 Jun 2026"],
-  ["“Mengecewakan, barang rusak saat sampai.”","Negatif","n","0,91","★☆☆☆☆","01 Jun 2026"]];
+  ["“Barangnya bagus banget, sesuai gambar dan pengiriman cepat!”","Positif","p","0,96","★★★★★","Pelembap","05 Jun 2026"],
+  ["“Kualitas lumayan, tapi kemasan agak kurang rapi.”","Netral","t","0,71","★★★☆☆","Serum Tubuh","04 Jun 2026"],
+  ["“Produk tidak sesuai deskripsi dan responsnya lambat.”","Negatif","n","0,89","★★☆☆☆","Sabun","03 Jun 2026"],
+  ["“Recommended seller, original dan harga bersaing.”","Positif","p","0,93","★★★★★","Parfum","03 Jun 2026"],
+  ["“Pengiriman lama, tapi barangnya oke.”","Netral","t","0,65","★★★★☆","Body Lotion","02 Jun 2026"],
+  ["“Mengecewakan, barang rusak saat sampai.”","Negatif","n","0,91","★☆☆☆☆","Pelembap","01 Jun 2026"]];
 document.getElementById('s3').innerHTML=shell(3,`
   <h1>Detail Ulasan & Hasil Klasifikasi</h1>
-  <div class="sub">Setiap ulasan diberi label sentimen beserta skor keyakinan model</div>
-  <div class="filters"><span class="fpill on">Semua (1.024)</span><span class="fpill">Positif (553)</span><span class="fpill">Netral (287)</span><span class="fpill">Negatif (184)</span></div>
-  <table><thead><tr><th style="width:48%">Cuplikan Ulasan</th><th>Sentimen</th><th>Skor</th><th>Rating</th><th>Tanggal</th></tr></thead>
-  <tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td><span class="pill ${r[2]}">${r[1]}</span></td><td>${r[3]}</td><td class="stars">${r[4]}</td><td style="color:var(--sub)">${r[5]}</td></tr>`).join("")}</tbody></table>
-  <div style="margin-top:18px"><button class="btn primary" onclick="go(4)">Lanjut ke Rekomendasi &rarr;</button></div>
+  <div class="sub">Setiap ulasan diberi label sentimen beserta skor keyakinan (confidence) model</div>
+  <div class="filters"><span class="fpill on">Semua (1.187)</span><span class="fpill">Positif (558)</span><span class="fpill">Netral (344)</span><span class="fpill">Negatif (285)</span></div>
+  <table><thead><tr><th style="width:42%">Cuplikan Ulasan</th><th>Sentimen</th><th>Skor</th><th>Rating</th><th>Kategori</th><th>Tanggal</th></tr></thead>
+  <tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td><span class="pill ${r[2]}">${r[1]}</span></td><td>${r[3]}</td><td class="stars">${r[4]}</td><td style="color:var(--sub)">${r[5]}</td><td style="color:var(--sub)">${r[6]}</td></tr>`).join("")}</tbody></table>
+  <div style="margin-top:18px;display:flex;gap:12px"><button class="btn primary" onclick="go(4)">Lihat Visualisasi &rarr;</button><button class="btn ghost" onclick="go(5)">Lanjut ke Rekomendasi</button></div>
 `);
+
+/* ===== S4 — VISUALISASI (Module 4: word cloud per kelas + distribusi kategori) ===== */
+const wcPos=[["bagus",30],["original",26],["recommended",24],["cepat",20],["sesuai",18],["puas",16],["mantap",15]];
+const wcNeg=[["lambat",28],["mengecewakan",24],["rusak",22],["lama",19],["kurang",17],["bocor",15],["palsu",14]];
+const wcNeu=[["kemasan",26],["lumayan",22],["biasa",19],["standar",17],["cukup",16],["oke",15]];
+function wcHtml(arr,color){return arr.map(w=>`<span style="font-size:${w[1]}px;color:${color}">${w[0]}</span>`).join("");}
 document.getElementById('s4').innerHTML=shell(4,`
+  <h1>Visualisasi & Word Cloud per Kelas</h1>
+  <div class="sub">Kata dominan dipisah per kategori sentimen, plus distribusi sentimen per kategori produk</div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="card"><div class="ttl pos">Word Cloud — Positif</div><div class="wc">${wcHtml(wcPos,'var(--pos)')}</div></div>
+    <div class="card"><div class="ttl neg">Word Cloud — Negatif</div><div class="wc">${wcHtml(wcNeg,'var(--neg)')}</div></div>
+    <div class="card"><div class="ttl neu">Word Cloud — Netral</div><div class="wc">${wcHtml(wcNeu,'var(--neu)')}</div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><div class="ttl">Distribusi Sentimen per Kategori Produk</div>
+    <div class="bars" style="height:200px;align-items:flex-end">
+      ${[["Pelembap",62,24,14],["Serum Tubuh",48,30,22],["Sabun",40,28,32],["Body Lotion",51,27,22],["Parfum",44,33,23]].map(c=>`
+        <div class="barcol" style="justify-content:flex-end">
+          <div style="width:100%;max-width:46px;display:flex;flex-direction:column;border-radius:6px 6px 0 0;overflow:hidden;height:${c[1]+c[2]+c[3]}%">
+            <div style="background:var(--pos);flex:${c[1]}"></div><div style="background:var(--neu);flex:${c[2]}"></div><div style="background:var(--neg);flex:${c[3]}"></div>
+          </div><div class="barlbl">${c[0]}</div>
+        </div>`).join("")}
+    </div>
+    <div class="legend" style="flex-direction:row;gap:14px;margin-top:16px"><span class="pill p">Positif</span><span class="pill t">Netral</span><span class="pill n">Negatif</span></div>
+  </div>
+  <div style="margin-top:18px"><button class="btn primary" onclick="go(5)">Lanjut ke Rekomendasi &rarr;</button></div>
+`);
+
+/* ===== S5 — REKOMENDASI (Module 3: 5 kondisi) ===== */
+document.getElementById('s5').innerHTML=shell(5,`
   <h1>Rekomendasi Strategi Pemasaran (Rule-Based)</h1>
-  <div class="sub">Status ditentukan dari rasio sentimen positif & negatif terhadap threshold yang ditetapkan</div>
-  <div class="banner"><h3>Status Reputasi: GOOD</h3><p>Positif 54% (≥ 50%) dan Negatif 18% (20–30%) → mendekati kategori "Excellent"</p></div>
-  <div class="card"><div class="ttl">Acuan Klasifikasi Rule-Based Threshold</div>
+  <div class="sub">Kondisi ditentukan dari rasio sentimen positif & negatif terhadap threshold compound</div>
+  <div class="banner blue"><h3>Status Reputasi: GOOD</h3><p>Positif 47% (rentang 40–49%) dan Negatif 24% (rentang 20–30%) → kategori "Good Performance". Produk diterima baik, masih ada ruang perbaikan.</p></div>
+  <div class="card"><div class="ttl">Acuan Klasifikasi Rule-Based Threshold (5 Kondisi)</div>
     <div class="threshrow"><span class="tlabel" style="background:var(--pos)">Excellent</span> Positif ≥ 50% DAN Negatif ≤ 20%</div>
-    <div class="threshrow"><span class="tlabel" style="background:#3b82f6">Good</span> Positif 40–49% DAN Negatif 20–30%</div>
+    <div class="threshrow cur"><span class="tlabel" style="background:var(--blue)">Good ◄</span> Positif 40–49% DAN Negatif 20–30% <span style="color:var(--blue);font-weight:600">· kondisi saat ini</span></div>
     <div class="threshrow"><span class="tlabel" style="background:var(--neu)">Moderate</span> Positif 30–39% DAN Negatif 30–40%</div>
     <div class="threshrow"><span class="tlabel" style="background:var(--neg)">Poor</span> Positif &lt; 30% DAN Negatif &gt; 40%</div>
-    <div class="threshrow"><span class="tlabel" style="background:#6b7280">Mixed</span> Netral &gt; 35%</div>
+    <div class="threshrow"><span class="tlabel" style="background:#6b7280">Mixed</span> Netral &gt; 35% ATAU tren berubah signifikan</div>
   </div>
   <div class="grid recgrid">
-    <div class="card reccard"><div class="ic"></div><b>Pertahankan Kualitas Produk</b><p>Mayoritas ulasan positif menyebut "original" dan "sesuai deskripsi" — jadikan ini nilai jual utama dalam materi promosi.</p></div>
-    <div class="card reccard"><div class="ic"></div><b>Perbaiki Kecepatan Pengiriman</b><p>18% ulasan negatif menyoroti keterlambatan — evaluasi mitra logistik dan beri estimasi yang realistis.</p></div>
-    <div class="card reccard"><div class="ic"></div><b>Tingkatkan Kualitas Kemasan</b><p>Ulasan netral banyak menyinggung kemasan kurang rapi — pertimbangkan standar pengemasan baru sebagai quick-win.</p></div>
+    <div class="card reccard"><div class="ic"></div><b>Perbaiki Titik Kelemahan Spesifik</b><p>Identifikasi aspek dari ulasan negatif (24%) — keterlambatan & barang rusak — lalu evaluasi mitra logistik dan beri estimasi pengiriman realistis.</p></div>
+    <div class="card reccard"><div class="ic"></div><b>Tingkatkan Komunikasi Keunggulan</b><p>Ulasan positif menonjolkan "original" & "sesuai deskripsi" — jadikan ini nilai jual utama dalam materi promosi dan deskripsi produk.</p></div>
+    <div class="card reccard"><div class="ic"></div><b>Standarisasi Kualitas Kemasan</b><p>Ulasan netral banyak menyinggung kemasan kurang rapi — terapkan standar pengemasan baru sebagai quick-win menuju kategori Excellent.</p></div>
   </div>
-  <div style="margin-top:18px"><button class="btn primary" onclick="go(5)">Ekspor Hasil & Laporan &rarr;</button></div>
+  <div style="margin-top:18px;display:flex;gap:12px"><button class="btn primary" onclick="go(7)">Ekspor Hasil & Laporan &rarr;</button><button class="btn ghost" onclick="go(6)">Sesuaikan Threshold</button></div>
 `);
-const opts=[["Unduh Data (CSV)","Ulasan + label sentimen + skor keyakinan (.csv)","Unduh"],["Laporan Lengkap (PDF)","Ringkasan, grafik, dan rekomendasi strategi (.pdf)","Unduh"],["Grafik Visual (PNG)","Distribusi, tren sentimen, dan word cloud (.png)","Unduh"],["Salin Ringkasan","Ringkasan teks siap untuk laporan skripsi","Salin"]];
-document.getElementById('s5').innerHTML=shell(5,`
+
+/* ===== S6 — PENGATURAN (Module 5) ===== */
+document.getElementById('s6').innerHTML=shell(6,`
+  <h1>Pengaturan & Konfigurasi</h1>
+  <div class="sub">Saring data dan sesuaikan ambang model untuk analisis yang lebih terfokus (Module 5)</div>
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="card"><div class="ttl">Filter Kategori Produk</div>
+      <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">Pilih kategori untuk memfokuskan analisis sentimen.</p>
+      <div class="chips">${["Semua","Pelembap","Serum Tubuh","Sabun","Body Lotion","Parfum"].map((c,i)=>`<span class="gchip" style="${i===0?'background:var(--accent-soft);color:var(--accent);border-color:#f3c9c9;font-weight:600':''}">${c}</span>`).join("")}</div>
+    </div>
+    <div class="card"><div class="ttl">Filter Rentang Waktu</div>
+      <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">Lihat distribusi sentimen pada periode tertentu (kolom date_review).</p>
+      <div style="display:flex;gap:14px"><div class="field" style="flex:1"><label>Dari</label><div class="input">01 Mei 2026</div></div><div class="field" style="flex:1"><label>Sampai</label><div class="input">09 Jun 2026</div></div></div>
+    </div>
+    <div class="card"><div class="ttl">Threshold Adjustment — Confidence Minimum</div>
+      <p style="font-size:12.5px;color:var(--sub)">Hanya tampilkan prediksi dengan skor keyakinan di atas ambang. Saat ini: <b>0,60</b></p>
+      <div class="slider"><i style="width:60%"></i><span class="knob" style="left:60%"></span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--sub)"><span>0,00</span><span>0,50</span><span>1,00</span></div>
+    </div>
+    <div class="card"><div class="ttl">Penyesuaian Threshold Rule-Based</div>
+      <p style="font-size:12.5px;color:var(--sub);margin-bottom:6px">Ambang persentase untuk kategori Excellent/Good/Moderate/Poor/Mixed dapat disesuaikan praktisi.</p>
+      <div class="kv"><span class="l">Excellent — Positif ≥</span><span class="r">50%</span></div>
+      <div class="kv"><span class="l">Mixed — Netral &gt;</span><span class="r">35%</span></div>
+      <div class="kv"><span class="l">Maks. ulasan per produk (scraping)</span><span class="r">1.200</span></div>
+    </div>
+  </div>
+  <div style="margin-top:18px;display:flex;gap:12px"><button class="btn primary" onclick="go(1)">Terapkan & Perbarui Dashboard</button><button class="btn ghost">Reset ke Default</button></div>
+`);
+
+/* ===== S7 — EKSPOR ===== */
+const opts=[["Unduh Data (CSV)","Ulasan + label sentimen + skor keyakinan (.csv)","Unduh"],["Laporan Lengkap (PDF)","Ringkasan, grafik, dan rekomendasi strategi (.pdf)","Unduh"],["Grafik Visual (PNG)","Distribusi, tren, dan word cloud per kelas (.png)","Unduh"],["Salin Ringkasan","Ringkasan teks siap untuk laporan skripsi","Salin"]];
+document.getElementById('s7').innerHTML=shell(7,`
   <h1>Ekspor & Unduh Hasil Analisis</h1>
   <div class="sub">Unduh data ulasan berlabel, ringkasan, dan rekomendasi dalam berbagai format</div>
-  <div class="banner"><p style="color:var(--pos);font-weight:600;font-size:14px">&#10003; Laporan analisis berhasil disiapkan — 1.024 ulasan terklasifikasi dengan Macro F1-Score 87,3%.</p></div>
+  <div class="banner"><p style="color:var(--pos);font-weight:600;font-size:14px">&#10003; Laporan analisis berhasil disiapkan — 1.187 ulasan terklasifikasi dengan Macro F1-Score 87,3%.</p></div>
   <div class="grid optgrid">
     ${opts.map((o,i)=>`<div class="card opt"><div class="ic"></div><b>${o[0]}</b><p>${o[1]}</p><button class="btn ${i<3?'primary':'ghost'}" style="width:100%">${o[2]}</button></div>`).join("")}
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div class="card"><div class="ttl">Sertakan dalam Ekspor</div>
-      ${["Distribusi sentimen (donut)","Word cloud kata dominan","Tren sentimen 7 hari terakhir","Tabel detail ulasan + skor","Rekomendasi strategi pemasaran"].map(t=>`<div class="chk"><i>&#10003;</i>${t}</div>`).join("")}
+      ${["Distribusi sentimen (donut & bar)","Word cloud per kelas (positif/negatif/netral)","Tren sentimen 7 hari terakhir","Tabel detail ulasan + skor keyakinan","Rekomendasi strategi pemasaran"].map(t=>`<div class="chk"><i>&#10003;</i>${t}</div>`).join("")}
     </div>
     <div class="card"><div class="ttl">Ringkasan yang Diekspor</div>
-      <div class="kv"><span class="l">Total ulasan dianalisis</span><span class="r">1.024</span></div>
-      <div class="kv"><span class="l">Positif / Netral / Negatif</span><span class="r">54% / 28% / 18%</span></div>
+      <div class="kv"><span class="l">Total ulasan dianalisis</span><span class="r">1.187</span></div>
+      <div class="kv"><span class="l">Sumber data</span><span class="r">Web scraping (Playwright)</span></div>
+      <div class="kv"><span class="l">Positif / Netral / Negatif</span><span class="r">47% / 29% / 24%</span></div>
       <div class="kv"><span class="l">Macro F1-Score model</span><span class="r">87,3%</span></div>
-      <div class="kv"><span class="l">Status reputasi toko</span><span class="r pos">GOOD</span></div>
+      <div class="kv"><span class="l">Status reputasi toko</span><span class="r" style="color:var(--blue)">GOOD</span></div>
       <div class="kv"><span class="l">Jumlah rekomendasi</span><span class="r">3 strategi</span></div>
     </div>
   </div>
-  <div style="margin-top:18px;display:flex;gap:12px"><button class="btn primary" onclick="go(1)">Selesai & Kembali ke Dashboard</button><button class="btn ghost" onclick="go(6)">Tentang & Bantuan</button></div>
+  <div style="margin-top:18px;display:flex;gap:12px"><button class="btn primary" onclick="go(1)">Selesai & Kembali ke Dashboard</button><button class="btn ghost" onclick="go(8)">Tentang & Bantuan</button></div>
 `);
-const steps=[["Hubungkan Toko","OAuth2 Shopee Open Platform"],["Ambil Ulasan","±1.000 ulasan produk toko"],["Jalankan IndoBERT","Klasifikasi 3 kelas sentimen"],["Lihat Hasil","Dashboard, detail & word cloud"],["Ekspor & Strategi","Unduh laporan + rekomendasi"]];
-document.getElementById('s6').innerHTML=shell(6,`
+
+/* ===== S8 — TENTANG ===== */
+const steps=[["Pilih Jalur Input","CSV / Ekstensi / URL (berlapis)"],["Kumpulkan Ulasan","Scraping Playwright / upload CSV"],["Jalankan IndoBERT","Klasifikasi 3 kelas sentimen"],["Lihat Hasil","Dashboard, detail & word cloud"],["Strategi & Ekspor","Rekomendasi + unduh laporan"]];
+document.getElementById('s8').innerHTML=shell(8,`
   <h1>Tentang Aplikasi & Cara Pakai</h1>
   <div class="sub">Sentara — sistem analisis sentimen ulasan e-commerce berbasis IndoBERT</div>
   <div class="card"><div class="ttl">Tentang Sentara</div>
-    <p style="font-size:14px;color:var(--sub);line-height:1.6">Sentara adalah sistem analisis sentimen ulasan produk e-commerce berbasis IndoBERT (indolem/indobert-base-uncased) yang di-fine-tune untuk klasifikasi tiga kelas: Positif, Negatif, dan Netral. Model dilatih dari gabungan tiga dataset publik — SmSA (IndoNLU), PRDECT-ID, dan Review Product Shopee (Kaggle) — total 20.608 ulasan, lalu diuji pada ±1.000 ulasan OmorfoShop Official Store via Shopee Open Platform API. Tujuannya membantu pemilik toko memahami persepsi pelanggan dan menyusun strategi pemasaran berbasis data.</p></div>
+    <p style="font-size:14px;color:var(--sub);line-height:1.6">Sentara adalah sistem analisis sentimen ulasan produk e-commerce berbasis IndoBERT (indolem/indobert-base-uncased) yang di-fine-tune untuk klasifikasi tiga kelas: Positif, Negatif, dan Netral. Model dilatih dari gabungan tiga dataset publik — SmSA (IndoNLU), PRDECT-ID, dan Review Product Shopee (Kaggle) — total 20.608 ulasan, lalu diterapkan pada ±1.200 ulasan OmorfoShop Official Store yang dikumpulkan via <b>web scraping halaman publik (Playwright)</b>. Input dashboard bersifat <b>berlapis</b>: upload CSV, impor ekstensi browser, atau auto-fetch URL produk (mode lokal). Tujuannya membantu pemilik toko memahami persepsi pelanggan dan menyusun strategi pemasaran berbasis data.</p></div>
   <div class="card" style="margin-top:16px"><div class="ttl">Cara Pakai dalam 5 Langkah</div>
     <div class="steps">${steps.map((s,i)=>`<div class="step"><div class="c">${i+1}</div><b>${s[0]}</b><p>${s[1]}</p></div>${i<4?'<div class="arrow">&rarr;</div>':''}`).join("")}</div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
     <div class="card"><div class="ttl">Teknologi yang Digunakan</div>
-      <div class="chips">${["Python","HuggingFace Transformers","IndoBERT","Streamlit","Scikit-learn","Pandas","Plotly","WordCloud","Shopee Open API"].map(t=>`<span class="gchip">${t}</span>`).join("")}</div></div>
+      <div class="chips">${["Python","HuggingFace Transformers","IndoBERT","Streamlit","Scikit-learn","Pandas","Plotly","WordCloud","Playwright (Chromium)"].map(t=>`<span class="gchip">${t}</span>`).join("")}</div></div>
     <div class="card"><div class="ttl">Informasi Skripsi</div>
       <div class="kv"><span class="l">Nama</span><span class="r">Aditya Rahmatullah</span></div>
       <div class="kv"><span class="l">NIM</span><span class="r">60900122038</span></div>
@@ -284,14 +416,21 @@ document.getElementById('s6').innerHTML=shell(6,`
       <div class="kv"><span class="l">Evaluasi / Capaian</span><span class="r pos">Macro F1 87,3% (≥85%)</span></div>
     </div>
   </div>
+  <div class="note" style="margin-top:16px">Catatan deployment: versi <b>cloud</b> (Streamlit/HF Spaces) hanya mengaktifkan Tier 1 (CSV) & Tier 2 (Ekstensi) karena batas RAM ~1 GB dan Chromium headless. Tier 3 URL Auto-Fetch hanya tersedia di versi <b>lokal/desktop</b> (FR-8.14).</div>
 `);
-const labels=["00 · Akses Link","01 · Dashboard","02 · Input & Proses","03 · Detail Ulasan","04 · Rekomendasi","05 · Ekspor","06 · Tentang"];
+
+/* ===== navigasi ===== */
+const labels=["00 · Akses Link","01 · Dashboard","02 · Input Berlapis","03 · Detail Ulasan","04 · Visualisasi","05 · Rekomendasi","06 · Pengaturan","07 · Ekspor","08 · Tentang"];
 const fb=document.getElementById('flowbar');
 labels.forEach((l,i)=>{const b=document.createElement('button');b.textContent=l;b.onclick=()=>go(i);fb.appendChild(b);});
 function go(i){
   document.querySelectorAll('.screen').forEach((s,idx)=>s.classList.toggle('active',idx===i));
   document.querySelectorAll('#flowbar button').forEach((b,idx)=>b.classList.toggle('on',idx===i));
   window.scrollTo(0,0);
+}
+function itab(n){
+  document.querySelectorAll('#s2 .tab').forEach((t,idx)=>t.classList.toggle('on',idx===n));
+  document.querySelectorAll('#s2 .tabpanel').forEach((p,idx)=>p.classList.toggle('on',idx===n));
 }
 go(0);
 </script>
