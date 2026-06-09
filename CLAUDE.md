@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **web scraping halaman produk publik (Playwright)** — sesuai proposal. Modul `src/shopee_api/` (Open Platform API) diturunkan menjadi opsi *future work* khusus persona seller-toko-sendiri (lihat `planning/trd-revisi-pengambilan-data-implementasi.md`).
 
-Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 2 (Data Collection) dan Fase 3 (Data Preprocessing) sudah lulus gate; saat ini siap memulai Fase 4 (Model Training & Fine-Tuning). Pengambilan data implementasi OmorfoShop via scraping dikerjakan paralel — bukan dependensi Fase 3–5 (data implementasi baru dipakai mulai Fase 6).
+Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 1–5 sudah lulus gate (IndoBERT fine-tuned: F1 macro test **0.9031**, CV **0.9016 ± 0.010**; model **baseline 3-epoch** final — augmentasi back-translation & re-train 2-epoch diuji tapi terbukti lebih buruk). Fase 6 (Inference Engine) kerangkanya **siap & terverifikasi lokal**, tersisa satu item gate yang terblokir data: analisis distribusi sentimen OmorfoShop nyata (menunggu hasil web scraping penuh ±1.200 ulasan). **Fokus saat ini: menyelesaikan web scraping OmorfoShop** untuk membuka gate Fase 6. Pengambilan data implementasi dikerjakan paralel — bukan dependensi Fase 3–5 (data implementasi baru dipakai mulai Fase 6).
 
 ## Arsitektur Tingkat Tinggi
 
@@ -16,9 +16,9 @@ Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fas
 Fase 1:  Project Initialization & Environment Setup  ✅ SELESAI
 Fase 2:  Data Collection & Data Management           ✅ SELESAI (OmorfoShop deferred-paralel)
 Fase 3:  Data Preprocessing                          ✅ SELESAI
-Fase 4:  Model Training & Fine-Tuning                🔄 SIAP MULAI
-Fase 5:  Model Evaluation                            ⏳ Belum mulai
-Fase 6:  Sentiment Inference Engine                  ⏳ Belum mulai
+Fase 4:  Model Training & Fine-Tuning                ✅ SELESAI (F1 macro 0.8971; CV 0.9016 ± 0.010)
+Fase 5:  Model Evaluation                            ✅ SELESAI (F1 macro test 0.9031 ≥ 0.85)
+Fase 6:  Sentiment Inference Engine                  🔄 KERANGKA SIAP (distribusi OmorfoShop ⏳ menunggu scraping)
 Fase 7:  Rule-Based Marketing Recommendation         ⏳ Belum mulai
 Fase 8:  Dashboard Development (Streamlit)           ⏳ Belum mulai
 Fase 9:  Testing & Validation                        ⏳ Belum mulai
@@ -214,15 +214,15 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 
 | Modul | Status |
 |---|---|
-| `src/scraping/` | Dibangun (scraper Playwright, sesi login persisten) — metode utama; perlu tambah iterasi filter rating + orkestrasi multi-produk |
+| `src/scraping/` | Selesai (scraper satu-produk + orkestrator multi-produk + iterasi filter rating + selektor eksternal) — metode utama; tinggal run aktual dgn sesi login |
 | `src/shopee_api/` | Dibangun (OAuth2/client/normalizer) — **opsional/future** (persona seller-toko-sendiri), bukan metode utama |
 | `src/preprocessing/` | Selesai (cleaner regex, tokenizer_wrapper IndoBERT, PreprocessingPipeline) — Fase 3 lulus gate |
-| `src/modeling/` | Skeleton kosong — dikerjakan Fase 4 |
-| `src/evaluation/` | Skeleton kosong — dikerjakan Fase 5 |
+| `src/modeling/` | Selesai (trainer, hyperparameter_search, cross_validation, augmentation, inference) — Fase 4 lulus gate; Fase 6 inference terverifikasi lokal |
+| `src/evaluation/` | Selesai (metrics, evaluator, visualizer, cross_val_report) — Fase 5 lulus gate (F1 macro 0.9031) |
 | `src/recommendation/` | Skeleton kosong — dikerjakan Fase 7 |
 | `src/dashboard/` | Skeleton kosong — dikerjakan Fase 8 |
 | `data/raw/{smsa,prdect_id,kaggle}/` | Ada (3 sumber training mentah) |
 | `data/processed/unified_corpus.csv` + `train/validation/test.csv` | Ada (20.608 baris, split 80/10/10 stratified seed=42) — input Fase 3 |
 | `data/processed/clean_{train,validation,test}.csv` | Ada (16.477/2.059/2.064 baris, hasil cleaning Fase 3) — input Fase 4 training |
-| `data/implementation/omorfo_reviews_TEMPLATE.csv` | Template skema. Data aktual via scraping/ekstensi (`omorfo_reviews_extension.csv` = 20 ulasan awal) |
+| `data/implementation/omorfo_reviews_TEMPLATE.csv` | Template skema. Data aktual via scraping/ekstensi (`omorfo_reviews_extension.csv` = 20 ulasan awal; target penuh `omorfo_reviews.csv` ±1.200 via `scrape_omorfo_batch.py` — PENDING run) |
 | `app.py` | Placeholder — dikerjakan Fase 8 |

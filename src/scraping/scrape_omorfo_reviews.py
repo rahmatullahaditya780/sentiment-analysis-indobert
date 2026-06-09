@@ -105,6 +105,10 @@ DEFAULT_SELECTORS: dict[str, str] = {
     "review_time": "div.shopee-product-rating__time",
     # Tombol "halaman berikutnya" pada paginasi ulasan.
     "next_page": "button.shopee-icon-button--right:not([disabled])",
+    # Pill filter rating ("Semua", "5 Bintang", … "1 Bintang") di atas daftar ulasan.
+    # Selektor ini mencocokkan SEMUA pill; pemilihan rating spesifik dilakukan dgn
+    # mencocokkan teks pill (mis. "5 Bintang"). Lihat _click_rating_filter().
+    "rating_filter_button": "div.product-rating-overview__filters div.product-rating-overview__filter",
 }
 
 # Pola tanggal Shopee, mis. "2024-02-23 04:20" atau "2024-02-23".
@@ -162,6 +166,85 @@ def _extract_reviews_on_page(page, selectors: dict[str, str]) -> list[dict]:
     return rows
 
 
+def _click_rating_filter(page, selectors: dict[str, str], rating: int) -> bool:
+    """Klik pill filter bintang (mis. "5 Bintang") pada blok ulasan.
+
+    Mencocokkan teks pill yang mengandung "{rating} Bintang". Kembalikan True bila
+    pill ditemukan & diklik, False bila tidak ada (selektor berubah / fitur absen)
+    sehingga pemanggil bisa degrade graceful ke tab "Semua".
+    """
+    label = f"{rating} Bintang"
+    pills = page.query_selector_all(selectors["rating_filter_button"])
+    for pill in pills:
+        try:
+            text = pill.inner_text().strip()
+        except Exception:  # noqa: BLE001 — elemen bisa lepas dari DOM
+            continue
+        if label in text:
+            pill.scroll_into_view_if_needed()
+            pill.click()
+            return True
+    return False
+
+
+def _harvest_pages(
+    page,
+    selectors: dict[str, str],
+    *,
+    collected: list[dict],
+    seen_ids: set[str],
+    product_name: str,
+    max_pages: int,
+    delay: float,
+    timeout_ms: int,
+    label: str = "",
+) -> int:
+    """Telusuri paginasi ulasan pada tampilan saat ini & kumpulkan ulasan baru.
+
+    Menulis langsung ke `collected`/`seen_ids` (dedup global lintas filter/produk).
+    Kembalikan jumlah ulasan baru yang ditambahkan pada pemanggilan ini.
+    """
+    from playwright.sync_api import TimeoutError as PWTimeout
+
+    tag = f"[{label}] " if label else ""
+    added = 0
+
+    # Gulir ke bawah agar blok ulasan ter-render (lazy load) untuk tampilan ini.
+    for _ in range(6):
+        page.mouse.wheel(0, 2000)
+        time.sleep(0.6)
+
+    for page_idx in range(1, max_pages + 1):
+        try:
+            page.wait_for_selector(selectors["review_item"], timeout=timeout_ms)
+        except PWTimeout:
+            print(f"[scrape] {tag}tidak ada kartu ulasan di halaman {page_idx} — berhenti")
+            break
+
+        new_count = 0
+        for row in _extract_reviews_on_page(page, selectors):
+            rid = _make_review_id(row["review_text"], row["date_review"])
+            if rid in seen_ids:
+                continue
+            seen_ids.add(rid)
+            collected.append({"review_id": rid, "product_name": product_name, **row})
+            new_count += 1
+            added += 1
+
+        print(f"[scrape] {tag}halaman {page_idx}: +{new_count} ulasan baru "
+              f"(total {len(collected)})")
+
+        next_btn = page.query_selector(selectors["next_page"])
+        if not next_btn:
+            print(f"[scrape] {tag}tombol 'berikutnya' tidak aktif — selesai")
+            break
+        next_btn.scroll_into_view_if_needed()
+        next_btn.click()
+        time.sleep(delay)
+
+    return added
+
+
 def scrape_reviews(
     url: str,
     *,
@@ -173,6 +256,7 @@ def scrape_reviews(
     timeout_ms: int = 30_000,
     user_data_dir: str | Path | None = None,
     login_wait: int = 0,
+    rating_filters: list[int] | None = None,
 ) -> pd.DataFrame:
     """Render halaman produk Shopee & kumpulkan ulasan -> DataFrame implementasi.
 
@@ -190,6 +274,11 @@ def scrape_reviews(
         cookie tersimpan di folder ini, lalu dipakai ulang otomatis run berikutnya.
     login_wait : detik jeda setelah membuka halaman agar Anda bisa login manual
         (mis. 60). 0 = tidak menunggu (sesi sudah login dari run sebelumnya).
+    rating_filters : daftar rating bintang yang ditelusuri satu per satu (mis.
+        [5, 4, 3, 2, 1]). Untuk tiap rating, pill filter "{n} Bintang" diklik lalu
+        paginasi dipanen — menjaga DIVERSITAS kelas (positif/negatif/netral) karena
+        produk populer didominasi ulasan 5 bintang. None = tab "Semua" (perilaku lama).
+        Bila pill filter tak ditemukan, otomatis fallback ke tab "Semua".
     """
     # Import lokal supaya proyek tetap bisa di-import tanpa Playwright terpasang.
     from playwright.sync_api import TimeoutError as PWTimeout
@@ -242,39 +331,29 @@ def scrape_reviews(
         except PWTimeout:
             print("[warn] nama produk tidak ditemukan — selektor mungkin berubah")
 
-        # Gulir ke bawah agar blok ulasan ter-render (lazy load).
-        for _ in range(6):
-            page.mouse.wheel(0, 2000)
-            time.sleep(0.6)
+        harvest_kwargs = dict(
+            collected=collected,
+            seen_ids=seen_ids,
+            product_name=product_name,
+            max_pages=max_pages,
+            delay=delay,
+            timeout_ms=timeout_ms,
+        )
 
-        for page_idx in range(1, max_pages + 1):
-            try:
-                page.wait_for_selector(selectors["review_item"], timeout=timeout_ms)
-            except PWTimeout:
-                print(f"[warn] tidak ada kartu ulasan di halaman {page_idx} — berhenti")
-                break
-
-            page_rows = _extract_reviews_on_page(page, selectors)
-            new_count = 0
-            for row in page_rows:
-                rid = _make_review_id(row["review_text"], row["date_review"])
-                if rid in seen_ids:
-                    continue
-                seen_ids.add(rid)
-                collected.append({"review_id": rid, "product_name": product_name, **row})
-                new_count += 1
-
-            print(f"[scrape] halaman {page_idx}: +{new_count} ulasan baru "
-                  f"(total {len(collected)})")
-
-            # Pindah ke halaman ulasan berikutnya.
-            next_btn = page.query_selector(selectors["next_page"])
-            if not next_btn:
-                print("[scrape] tombol 'berikutnya' tidak aktif — selesai")
-                break
-            next_btn.scroll_into_view_if_needed()
-            next_btn.click()
-            time.sleep(delay)
+        if rating_filters:
+            # Telusuri tiap filter bintang agar diversitas kelas terjaga.
+            for rating in rating_filters:
+                if _click_rating_filter(page, selectors, rating):
+                    time.sleep(delay)  # tunggu daftar ter-refresh setelah filter diklik
+                    _harvest_pages(page, selectors, label=f"{rating}★", **harvest_kwargs)
+                else:
+                    print(f"[warn] pill filter '{rating} Bintang' tak ditemukan — "
+                          "selektor 'rating_filter_button' mungkin berubah; lewati")
+            if not collected:
+                print("[warn] 0 ulasan dari semua filter — fallback ke tab 'Semua'")
+                _harvest_pages(page, selectors, **harvest_kwargs)
+        else:
+            _harvest_pages(page, selectors, **harvest_kwargs)
 
         context.close()
         if browser is not None:
@@ -323,7 +402,19 @@ def main() -> None:
         default=None,
         help="File JSON untuk menimpa selektor DOM (lihat DEFAULT_SELECTORS)",
     )
+    parser.add_argument(
+        "--rating-filters",
+        default=None,
+        help="Daftar bintang yang ditelusuri satu per satu, mis. '5,4,3,2,1' "
+        "(jaga diversitas kelas). Kosong = tab 'Semua'.",
+    )
     args = parser.parse_args()
+
+    rating_filters = (
+        [int(x) for x in args.rating_filters.split(",") if x.strip()]
+        if args.rating_filters
+        else None
+    )
 
     selectors = load_selectors(args.selectors_json)
     df = scrape_reviews(
@@ -335,6 +426,7 @@ def main() -> None:
         selectors=selectors,
         user_data_dir=args.user_data_dir,
         login_wait=args.login_wait,
+        rating_filters=rating_filters,
     )
 
     output_path = Path(args.output)

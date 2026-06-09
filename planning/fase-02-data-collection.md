@@ -105,6 +105,39 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 8. **Pengambilan Ulasan OmorfoShop via Web Scraping** — Playwright sesi login persisten; render DOM halaman produk publik, iterasi filter rating (5→1 bintang) untuk diversitas, pagination, dedup (maks ±1.200 ulasan).
 9. **Export Dataset Implementasi** — Simpan dataset OmorfoShop sebagai CSV terpisah di `data/implementation/`.
 
+## Cara Menjalankan Scraping Penuh (OmorfoShop)
+
+> **Wajib human-in-the-loop:** anti-bot Shopee memblokir sesi headless tanpa login.
+> Login manual **sekali** di jendela browser, lalu otomasi berjalan di dalam sesi sah.
+
+**Langkah 1 — Login manual sekali (sesi persisten):**
+```bash
+python src/scraping/scrape_omorfo_reviews.py "<URL produk OmorfoShop>" \
+    --user-data-dir .shopee_session --headful --login-wait 60 --category "deodorant"
+```
+Login di jendela yang terbuka dalam 60 detik. Cookie tersimpan di `.shopee_session/`
+(sudah di-`.gitignore`) dan dipakai ulang otomatis di run berikutnya.
+
+**Langkah 2 — Verifikasi selektor (KRITIS, selektor Shopee rapuh):**
+Jika run di atas mengembalikan **0 ulasan** atau nama produk kosong, struktur DOM Shopee
+sudah berubah. Buka DevTools di jendela headful, temukan class yang benar, lalu perbarui
+`src/scraping/selectors_shopee.json` (tanpa menyentuh kode). Jalankan ulang dengan
+`--selectors-json src/scraping/selectors_shopee.json` sampai ulasan terambil.
+
+**Langkah 3 — Batch multi-produk + iterasi filter rating:**
+Siapkan `products.json` (`[{"url": "...", "category": "deodorant"}, ...]`), lalu:
+```bash
+python src/scraping/scrape_omorfo_batch.py --urls-file products.json \
+    --user-data-dir .shopee_session \
+    --selectors-json src/scraping/selectors_shopee.json \
+    --rating-filters 5,4,3,2,1
+```
+`--rating-filters 5,4,3,2,1` menelusuri tiap bintang satu per satu agar **diversitas
+kelas** (positif/negatif/netral) terjaga — penting karena produk populer didominasi
+ulasan 5 bintang. Output gabungan+dedup → `data/implementation/omorfo_reviews.csv`
+(target ±1.200 ulasan). Periksa distribusi rating di akhir log; pastikan ada perwakilan
+1–4 bintang, bukan 100% positif.
+
 ## Deliverables Checkpoint 2
 
 > Keputusan 2026-06-07: dataset training = **gabung 3 sumber** (SmSA + PRDECT-ID + Kaggle Shopee).
@@ -118,7 +151,7 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 - [x] Stratified split 80/10/10 selesai → `train.csv` (16.485), `validation.csv` (2.059), `test.csv` (2.064).
 - [x] Strategi class imbalance **terdokumentasi** (`outputs/reports/phase2_split_stats.json`; spread 51.9%, `needs_handling=true`, perlu `class_weight`). Implementasi di Fase 4.
 - [x] `data/raw/source_manifest.yaml` diperbarui dengan metadata semua sumber.
-- [DEFERRED] Dataset OmorfoShop via **web scraping** (±1.200 ulasan) — **IN PROGRESS** (awal: `data/implementation/omorfo_reviews_extension.csv`, 20 ulasan via ekstensi). **Bukan dependensi Fase 3** (data implementasi, dipakai mulai Fase 6). Dikejar paralel. Perlu: tambah iterasi filter rating + orkestrasi multi-produk untuk capai ±1.200 dengan rating beragam.
+- [DEFERRED] Dataset OmorfoShop via **web scraping** (±1.200 ulasan) — **TOOLING SIAP, menunggu eksekusi** (awal: `data/implementation/omorfo_reviews_extension.csv`, 20 ulasan via ekstensi). **Bukan dependensi Fase 3** (data implementasi, dipakai mulai Fase 6). Iterasi filter rating (5→1) + orkestrasi multi-produk **sudah diimplementasi** (lihat "Cara Menjalankan Scraping Penuh"); tinggal run aktual dengan sesi login + verifikasi selektor.
 - [DEFERRED] Dataset OmorfoShop tersimpan di `data/implementation/omorfo_reviews.csv` (skema kanonik) — menyusul setelah koleksi penuh.
 - [~] Modul `src/scraping/scrape_omorfo_reviews.py` dibangun (Playwright, sesi login persisten, dedup, selektor eksternal). Modul `src/shopee_api/` tetap utuh sebagai **opsi future** (persona seller-toko-sendiri), bukan metode utama.
 
@@ -132,7 +165,9 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 
 ## Implementasi Kode
 
-- `src/scraping/scrape_omorfo_reviews.py` — Scraper Playwright OmorfoShop (sesi login persisten, dedup, selektor eksternal) — **metode utama**
+- `src/scraping/scrape_omorfo_reviews.py` — Scraper Playwright satu-produk (sesi login persisten, iterasi filter rating, dedup) — **metode utama**
+- `src/scraping/scrape_omorfo_batch.py` — Orkestrator multi-produk (gabung + dedup global → `omorfo_reviews.csv`)
+- `src/scraping/selectors_shopee.json` — Selektor DOM eksternal (titik tunggal koreksi saat layout Shopee berubah)
 - `src/utils/convert_extension_csv.py` — Konverter CSV ekstensi browser → skema implementasi
 - `src/shopee_api/` — Open Platform client (OAuth2, HMAC-SHA256, pagination) — **opsional/future** (persona toko sendiri)
 - `src/utils/` — Utilitas harmonisasi label, deduplication, stratified split

@@ -1,0 +1,10 @@
+{
+  "_comment": "Selektor DOM Shopee untuk scraper OmorfoShop. Class Shopee ter-obfuscate & SERING BERUBAH — bila scraper mengembalikan 0 ulasan / nama produk kosong, perbarui nilai di sini sambil melihat DOM via --headful (DevTools). Tidak perlu menyentuh kode. Kunci harus sama dengan DEFAULT_SELECTORS di scrape_omorfo_reviews.py.",
+  "product_name": "div.WBVL_7",
+  "review_item": "div.shopee-product-rating",
+  "review_text": "div.YNedDV",
+  "rating_active_star": "div.repeat-purchase-con svg.icon-rating-solid--active--full",
+  "review_time": "div.shopee-product-rating__time",
+  "next_page": "button.shopee-icon-button--right:not([disabled])",
+  "rating_filter_button": "div.product-rating-overview__filters div.product-rating-overview__filter"
+}
