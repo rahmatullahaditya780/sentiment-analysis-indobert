@@ -7,30 +7,28 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 | ID | Requirement |
 |---|---|
 | FR-8.1 | Dashboard harus menampilkan hasil klasifikasi sentimen beserta confidence score. |
-| FR-8.2 | Dashboard harus menyediakan Item Selector (dropdown produk dari Open Platform API `get_item_list`) sebagai metode input utama. |
+| FR-8.2 | Dashboard harus menyediakan **input berlapis** sebagai metode utama: (a) Upload CSV, (b) Import CSV hasil ekstensi browser, (c) Input **URL produk Shopee** untuk pengambilan otomatis via **browser ber-login (mode lokal/desktop)**. |
 | FR-8.3 | Dashboard harus mendukung upload file CSV untuk analisis batch. |
 | FR-8.4 | Dashboard harus menampilkan visualisasi distribusi sentimen (pie chart dan bar chart). |
 | FR-8.5 | Dashboard harus menampilkan rekomendasi strategi pemasaran berbasis rule-based mapping (5 kondisi). |
 | FR-8.6 | Dashboard harus menampilkan word cloud untuk kata dominan per kategori sentimen. |
 | FR-8.7 | Dashboard harus menampilkan trend sentimen dari waktu ke waktu jika data memiliki kolom `date_review`. |
 | FR-8.8 | Dashboard harus menyediakan Settings & Configuration (filter kategori produk, rentang waktu, confidence threshold). |
-| FR-8.9 | Dashboard harus menampilkan indikator status pengambilan data API yang informatif (berjalan/berhasil/gagal + fallback ke CSV). |
-| FR-8.10 | Dashboard harus memvalidasi keberadaan dan masa berlaku access token, melakukan refresh otomatis (token berlaku 4 jam), dan menampilkan pesan informatif jika autentikasi gagal. |
-| FR-8.11 | Dashboard harus menampilkan progress bar dan jumlah ulasan yang berhasil dikumpulkan selama pagination API. |
-| FR-8.12 | Dashboard harus membatasi jumlah ulasan yang diambil maksimal 1.000 ulasan terbaru per produk. |
-| FR-8.13 | Dashboard harus menghormati rate limit Shopee Open Platform API dan menangani error dengan retry + jeda antar request. |
+| FR-8.9 | Dashboard harus menampilkan indikator status **scraping/pengambilan** yang informatif (berjalan / berhasil + jumlah ulasan / gagal + pesan error + panduan fallback ke jalur lain). |
+| FR-8.10 | Dashboard harus **memvalidasi format URL produk Shopee** sebelum memulai scraping dan menampilkan pesan error informatif jika URL tidak valid. |
+| FR-8.11 | Dashboard harus menampilkan progress bar dan jumlah ulasan yang berhasil dikumpulkan selama scraping berlangsung. |
+| FR-8.12 | Dashboard harus membatasi jumlah ulasan yang diambil maksimal ±1.200 ulasan per produk. |
+| FR-8.13 | Dashboard harus menerapkan jeda antar-aksi (rate limiting) saat scraping untuk menghindari pemblokiran Shopee. |
+| FR-8.14 | Dashboard harus **mendeteksi lingkungan** (cloud vs lokal) dan menonaktifkan/menyembunyikan jalur URL Auto-Fetch saat berjalan di cloud (tanpa browser/display), mengarahkan pengguna ke CSV/ekstensi. |
 
 ## Dashboard Modules
 
-### Module 1 — Input Interface
-| Komponen | Deskripsi |
-|---|---|
-| Product Selector | Dropdown berisi daftar produk toko OmorfoShop dari `get_item_list` (Open Platform API) |
-| Fetch Button | Tombol "Ambil Ulasan" untuk memicu `get_rating` setelah produk dipilih |
-| Progress Bar & Counter | Indikator progres real-time (contoh: 450/1000 ulasan) |
-| Preview Table | Tampilkan 5 baris pertama ulasan sebelum analisis untuk verifikasi |
-| CSV Upload | Upload file CSV berisi multiple ulasan untuk analisis batch |
-| Analyze Button | Tombol untuk memicu proses analisis sentimen |
+### Module 1 — Input Interface (berlapis, 3 tab)
+| Tab | Komponen | Deskripsi |
+|---|---|---|
+| **CSV Upload** | File uploader + Analyze | Upload CSV ulasan untuk analisis batch (jalan di cloud & lokal) |
+| **Extension Import** | File uploader + konverter | Upload CSV hasil ekstensi browser → dipetakan ke skema implementasi (jalan di cloud & lokal) |
+| **URL Auto-Fetch** *(badge: Lokal saja)* | URL input, Fetch button, Progress bar & counter, Preview 5 baris | Scraping otomatis via browser ber-login (Playwright); nonaktif saat di cloud (FR-8.14) |
 
 ### Module 2 — Sentiment Analysis Results
 | Komponen | Deskripsi |
@@ -63,15 +61,17 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 | Filter Rentang Waktu | Pilih rentang tanggal untuk distribusi sentimen pada periode tertentu |
 | Threshold Adjustment | Sesuaikan batas confidence threshold model |
 
-### Module 6 — Shopee Open Platform Connector
+### Module 6 — Shopee Review Collector (Berlapis)
 | Komponen | Deskripsi & Spesifikasi |
 |---|---|
-| OAuth2 Authenticator | Autentikasi OAuth2 ke Open Platform, auto-refresh token (berlaku 4 jam), simpan di `st.session_state` |
-| API Client | `get_item_list` (daftar produk) + `get_rating` (ulasan) via REST v2.0 |
-| Pagination Handler | Loop otomatis `get_rating` (offset + page_size maks 50 per request, maks 20 iterasi, hingga 1.000 ulasan atau `has_next_page=false`) |
-| Rate & Quota Manager | Jeda antar request + retry (exponential backoff) jika menerima error/limit API |
-| Data Normalizer | Konversi JSON `get_rating` (`comment`, `rating_star`, `ctime`) ke DataFrame (`review_text`, `rating`, `date_review`) |
-| Error Handler | Tangkap error API (token expired, signature error, rate limit, timeout) — tampilkan pesan informatif + panduan fallback ke CSV |
+| Tiered Router | Memilih jalur (CSV / Ekstensi / URL Auto-Fetch) sesuai pilihan pengguna & lingkungan (cloud vs lokal) |
+| Playwright Engine | Render DOM, sesi login persisten, iterasi filter rating (5→1 bintang), pagination, dedup — **lokal saja** |
+| Extension Converter | Konversi CSV ekstensi browser → skema implementasi (reuse `src/utils/convert_extension_csv.py`) |
+| Selector Config | Selektor DOM eksternal (`selectors_shopee.json`) agar tahan perubahan layout Shopee |
+| Data Normalizer | Output seragam `[review_id, review_text, rating, product_name, product_category, date_review]` |
+| Error/Fallback Handler | Deteksi login-wall / 0-ulasan / timeout → pesan informatif + arahkan ke jalur lain (CSV/ekstensi) |
+
+> **Catatan deployment (hasil riset Streamlit Cloud free):** RAM 1 GB/app, Chromium hanya headless, IP datacenter kena anti-bot, filesystem ephemeral → **jalur URL Auto-Fetch hanya aktif di app lokal/desktop**. Versi cloud mengandalkan CSV + ekstensi. Detail di `planning/trd-revisi-pengambilan-data-implementasi.md` §C.
 
 ## UI Requirements
 
@@ -86,25 +86,25 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 ## Deliverables Checkpoint 8
 
 - [ ] Dashboard dapat dijalankan lokal dengan `streamlit run app.py`.
-- [ ] Module 1 — Input Interface berjalan (Product Selector + CSV Upload).
+- [ ] Module 1 — Input Interface berlapis berjalan (CSV Upload + Extension Import + URL Auto-Fetch).
 - [ ] Module 2 — Sentiment Analysis Results berjalan (pie, bar, trend chart).
 - [ ] Module 3 — Marketing Recommendation Panel berjalan (5 kondisi pemasaran).
 - [ ] Module 4 — Visualization berjalan (word cloud per kelas sentimen).
 - [ ] Module 5 — Settings & Configuration berjalan (filter & threshold).
-- [ ] Module 6 — Open Platform Connector berjalan (OAuth2, `get_item_list`, `get_rating`, pagination).
-- [ ] Auto token refresh, rate/quota handling, dan error handling terimplementasi.
-- [ ] Pengambilan ulasan via `get_rating` berhasil untuk produk terpilih (maks. 1.000 ulasan).
+- [ ] Module 6 — Shopee Review Collector berlapis berjalan (router CSV/Ekstensi/URL Auto-Fetch).
+- [ ] Playwright Engine: scraping via browser ber-login berhasil di mode lokal (iterasi filter rating + pagination + dedup, maks ±1.200 ulasan).
+- [ ] Deteksi lingkungan (FR-8.14): jalur URL Auto-Fetch nonaktif otomatis di cloud, fallback ke CSV/ekstensi.
+- [ ] Rate limiting + error/fallback handling (login-wall/0-ulasan/timeout) terimplementasi.
 - [ ] Model loading menggunakan `st.session_state` (performa optimal).
-- [ ] Fallback ke input CSV berjalan jika API tidak tersedia.
 
 ## Implementasi Kode
 
-- `src/dashboard/input_module.py` — Module 1 (product selector, CSV upload)
+- `src/dashboard/input_module.py` — Module 1 (input berlapis: CSV upload, extension import, URL auto-fetch)
 - `src/dashboard/results_module.py` — Module 2 (sentiment results & charts)
 - `src/dashboard/recommendation_module.py` — Module 3 (marketing panel)
 - `src/dashboard/visualization_module.py` — Module 4 (word cloud, distribution)
 - `src/dashboard/settings_module.py` — Module 5 (filter & threshold)
-- `src/dashboard/shopee_connector.py` — Module 6 (Open Platform API)
+- `src/dashboard/shopee_connector.py` — Module 6 (tiered router: Playwright engine + extension converter; reuse `src/scraping/scrape_omorfo_reviews.py` & `src/utils/convert_extension_csv.py`)
 - `app.py` — Entry point Streamlit (integrasikan semua modul)
 
 ## Gate ke Fase Berikutnya

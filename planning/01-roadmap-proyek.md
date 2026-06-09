@@ -33,7 +33,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 - [x] Environment Python aktif dan terdokumentasi.
 - [x] requirements.txt terisi dependensi yang diperlukan.
 - [x] Dataset publik berhasil diunduh & diverifikasi — SmSA ✔, PRDECT-ID ✔, Kaggle Shopee ✔.
-- [DEFERRED] Dataset OmorfoShop via Shopee Open Platform API — PENDING kredensial (fallback CSV siap). Data implementasi, bukan dependensi Fase 3–5.
+- [DEFERRED] Dataset OmorfoShop via **web scraping halaman publik** (Playwright) — IN PROGRESS (awal: `omorfo_reviews_extension.csv`, 20 ulasan). Data implementasi, bukan dependensi Fase 3–5. Lihat `planning/trd-revisi-pengambilan-data-implementasi.md`.
 - [x] Unified dataset tersedia dengan split 80/10/10 (20.608 baris; stratified, seed=42).
 - [x] Data flow antar fase terdokumentasi (Fase 2→3: `clean_*.csv` sebagai input Fase 4).
 - [x] Output tiap fase tersimpan sebagai artefak di `outputs/` (`phase2_split_stats.json`, `phase3_preprocessing_stats.json`, `phase4_final_metrics.json`, `cross_validation_report.json`, `hyperparameter_log.csv`).

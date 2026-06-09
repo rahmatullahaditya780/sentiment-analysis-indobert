@@ -1,13 +1,13 @@
 # Fase 2 — Data Collection & Data Management (Checkpoint 2)
 
 ## Tujuan
-Mengumpulkan dan mengelola seluruh dataset yang digunakan dalam penelitian: dataset publik (training & evaluasi) dan dataset implementasi (OmorfoShop via Shopee Open Platform API).
+Mengumpulkan dan mengelola seluruh dataset yang digunakan dalam penelitian: dataset publik (training & evaluasi) dan dataset implementasi (OmorfoShop via **web scraping halaman publik**, sesuai proposal).
 
 ## Functional Requirements
 | ID | Requirement |
 |---|---|
 | FR-2.1 | Sistem harus dapat membaca dataset dari SmSA (TSV), PRDECT-ID (CSV), dan Review Product Shopee (Kaggle CSV). |
-| FR-2.2 | Sistem harus dapat mengambil ulasan OmorfoShop Official Store melalui Shopee Open Platform API (REST v2.0) menggunakan autentikasi OAuth2 dan endpoint `get_rating`. |
+| FR-2.2 | Sistem harus dapat mengambil ulasan produk **publik** OmorfoShop Official Store melalui **web scraping render-DOM menggunakan Python (Playwright)** dengan sesi browser ber-login untuk melewati proteksi anti-bot Shopee. |
 | FR-2.3 | Sistem harus dapat menggabungkan dataset SmSA dan E-Commerce Review menjadi unified dataset. |
 | FR-2.4 | Sistem harus dapat melakukan validasi struktur dan harmonisasi label sentimen. |
 | FR-2.5 | Sistem harus dapat mendeteksi dan menghapus data duplikat. |
@@ -31,7 +31,7 @@ Mengumpulkan dan mengelola seluruh dataset yang digunakan dalam penelitian: data
 | Sumber | OmorfoShop Official Store — Shopee |
 | Jumlah | ±1.200 ulasan produk |
 | Periode Pengumpulan | Juni 2025 – Juni 2026 |
-| Metode | Shopee Open Platform API (OAuth2, endpoint `get_rating`) |
+| Metode | Web scraping halaman publik (Playwright, sesi ber-login) + opsi ekstensi browser → CSV |
 | Tujuan | Implementasi model & penyusunan rekomendasi pemasaran (**BUKAN** untuk training) |
 | Privasi | Identitas pelanggan tidak disimpan (data minimization) |
 
@@ -59,7 +59,7 @@ Mengumpulkan dan mengelola seluruh dataset yang digunakan dalam penelitian: data
 ### Dataset Implementasi OmorfoShop
 | Atribut | Tipe | Keterangan |
 |---|---|---|
-| review_id | String | ID unik ulasan (dari Shopee) |
+| review_id | String | ID unik ulasan (SHA1 deterministik dari teks+tanggal saat scraping DOM) |
 | review_text | String | Teks ulasan pelanggan |
 | rating | Integer | Rating bintang 1–5 |
 | product_name | String | Nama produk yang diulas |
@@ -102,14 +102,14 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 5. **Merge Dataset** — Gabungkan SmSA, PRDECT-ID, dan Kaggle Shopee menjadi satu file CSV unified.
 6. **Stratified Split** — Bagi dataset 80/10/10 menggunakan `stratified_train_test_split`.
 7. **Cek Class Imbalance** — Hitung distribusi, terapkan strategi jika selisih > 15%.
-8. **Pengambilan Ulasan OmorfoShop via Open Platform API** — Autentikasi OAuth2, `get_item_list` → `get_rating` (pagination, maks 1.200 ulasan).
+8. **Pengambilan Ulasan OmorfoShop via Web Scraping** — Playwright sesi login persisten; render DOM halaman produk publik, iterasi filter rating (5→1 bintang) untuk diversitas, pagination, dedup (maks ±1.200 ulasan).
 9. **Export Dataset Implementasi** — Simpan dataset OmorfoShop sebagai CSV terpisah di `data/implementation/`.
 
 ## Deliverables Checkpoint 2
 
 > Keputusan 2026-06-07: dataset training = **gabung 3 sumber** (SmSA + PRDECT-ID + Kaggle Shopee).
 > Dataset Kaggle rizqinugroho (tidak tersedia lagi) **diganti** dengan Review Product Shopee (mdhimaspamungkas) → sudah terintegrasi.
-> Shopee Open Platform API kredensial **sedang proses daftar** → modul dibangun, tes live menyusul, sementara fallback CSV.
+> Keputusan 2026-06-09: metode data implementasi **dikembalikan ke web scraping** (sesuai Proposal Revisi Final), membatalkan peralihan TRD v2 ke Open Platform API. Alasan: persona "toko publik apa pun" → API Shop-scoped tak bisa untuk toko pihak ketiga. Modul `src/shopee_api/` diturunkan jadi opsional/future. Lihat `planning/trd-revisi-pengambilan-data-implementasi.md`.
 
 - [x] Dataset publik berhasil diunduh dan diverifikasi — SmSA ✔, PRDECT-ID ✔ (snapshot), Kaggle Shopee ✔ (Review Product Shopee, 2.646 baris terpakai).
 - [x] Label sentimen harmonisasi selesai (`src/utils/label_harmonizer.py`; SmSA 0/1/2, PRDECT string, Kaggle rating 1–5).
@@ -118,9 +118,9 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 - [x] Stratified split 80/10/10 selesai → `train.csv` (16.485), `validation.csv` (2.059), `test.csv` (2.064).
 - [x] Strategi class imbalance **terdokumentasi** (`outputs/reports/phase2_split_stats.json`; spread 51.9%, `needs_handling=true`, perlu `class_weight`). Implementasi di Fase 4.
 - [x] `data/raw/source_manifest.yaml` diperbarui dengan metadata semua sumber.
-- [DEFERRED] Dataset OmorfoShop via Open Platform API (±1.200 ulasan) — **PENDING kredensial** (fallback CSV: `data/implementation/omorfo_reviews_TEMPLATE.csv`). **Bukan dependensi Fase 3** (data implementasi, dipakai mulai Fase 6). Dikejar paralel.
-- [DEFERRED] Dataset OmorfoShop tersimpan di `data/implementation/` format CSV — menyusul setelah kredensial keluar.
-- [~] Modul `src/shopee_api/` dibangun: OAuth2 (`auth.py`), `get_item_list`/`get_rating`+pagination (`client.py`), normalizer (`normalizer.py`). **Tes live menyusul saat kredensial keluar.**
+- [DEFERRED] Dataset OmorfoShop via **web scraping** (±1.200 ulasan) — **IN PROGRESS** (awal: `data/implementation/omorfo_reviews_extension.csv`, 20 ulasan via ekstensi). **Bukan dependensi Fase 3** (data implementasi, dipakai mulai Fase 6). Dikejar paralel. Perlu: tambah iterasi filter rating + orkestrasi multi-produk untuk capai ±1.200 dengan rating beragam.
+- [DEFERRED] Dataset OmorfoShop tersimpan di `data/implementation/omorfo_reviews.csv` (skema kanonik) — menyusul setelah koleksi penuh.
+- [~] Modul `src/scraping/scrape_omorfo_reviews.py` dibangun (Playwright, sesi login persisten, dedup, selektor eksternal). Modul `src/shopee_api/` tetap utuh sebagai **opsi future** (persona seller-toko-sendiri), bukan metode utama.
 
 ### Catatan eksekusi Fase 2 (2026-06-07)
 - Korpus lama (`phase2_sentiment_corpus*.csv`) **ditinggalkan & dihapus**: builder hilang (file 0 byte) dan label SmSA terbalik (review positif ter-label `negative`). Dihapus dari git + disk 2026-06-07.
@@ -128,11 +128,13 @@ Wajib diimplementasi jika selisih distribusi kelas > 15%.
 - **Risiko (dibawa ke Fase 3/4):** kelas `neutral` hanya ~7.2% (1.489 dari 20.608; mayoritas dari SmSA, PRDECT-ID tak punya neutral, Kaggle Shopee hanya +143). Spread > 15% → **wajib `class_weight`** saat training + F1 macro sebagai metrik utama; pertimbangkan augmentasi back-translation untuk kelas neutral.
 
 ### Status gate Fase 2
-**LULUS untuk lanjut ke Fase 3.** Seluruh deliverable korpus training (input Fase 3) selesai. Item `OmorfoShop via Shopee API` di-*defer* sebagai pekerjaan paralel karena (a) terblokir kredensial eksternal dan (b) bukan dependensi preprocessing — data implementasi baru dipakai di Fase 6.
+**LULUS untuk lanjut ke Fase 3.** Seluruh deliverable korpus training (input Fase 3) selesai. Item `OmorfoShop via web scraping` di-*defer* sebagai pekerjaan paralel karena bukan dependensi preprocessing — data implementasi baru dipakai di Fase 6.
 
 ## Implementasi Kode
 
-- `src/shopee_api/` — Shopee Open Platform client (OAuth2, HMAC-SHA256, pagination)
+- `src/scraping/scrape_omorfo_reviews.py` — Scraper Playwright OmorfoShop (sesi login persisten, dedup, selektor eksternal) — **metode utama**
+- `src/utils/convert_extension_csv.py` — Konverter CSV ekstensi browser → skema implementasi
+- `src/shopee_api/` — Open Platform client (OAuth2, HMAC-SHA256, pagination) — **opsional/future** (persona toko sendiri)
 - `src/utils/` — Utilitas harmonisasi label, deduplication, stratified split
 - Output: `data/processed/train.csv`, `data/processed/validation.csv`, `data/processed/test.csv`, `data/implementation/omorfo_reviews.csv`
 

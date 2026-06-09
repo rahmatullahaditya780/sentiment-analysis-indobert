@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Sentara** (slug teknis: `sistem analisis sentimen berbasis IndoBERT`) adalah sistem analisis sentimen untuk ulasan produk e-commerce OmorfoShop. Ini adalah proyek skripsi yang mengimplementasikan pipeline lengkap untuk mengumpulkan, memproses, melatih, dan menganalisis sentimen dari ulasan produk berbahasa Indonesia.
 
-Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **Shopee Open Platform API (REST v2.0, OAuth2)** — bukan web scraping.
+Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **web scraping halaman produk publik (Playwright)** — sesuai proposal. Modul `src/shopee_api/` (Open Platform API) diturunkan menjadi opsi *future work* khusus persona seller-toko-sendiri (lihat `planning/trd-revisi-pengambilan-data-implementasi.md`).
 
-Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 2 (Data Collection) dan Fase 3 (Data Preprocessing) sudah lulus gate; saat ini siap memulai Fase 4 (Model Training & Fine-Tuning). Pengambilan data implementasi OmorfoShop via Shopee API di-*defer* (menunggu kredensial) dan dikerjakan paralel — bukan dependensi Fase 3–5.
+Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 2 (Data Collection) dan Fase 3 (Data Preprocessing) sudah lulus gate; saat ini siap memulai Fase 4 (Model Training & Fine-Tuning). Pengambilan data implementasi OmorfoShop via scraping dikerjakan paralel — bukan dependensi Fase 3–5 (data implementasi baru dipakai mulai Fase 6).
 
 ## Arsitektur Tingkat Tinggi
 
@@ -37,13 +37,13 @@ project_root/
 │   │   ├── kaggle/      # data.csv (Review Product Shopee)
 │   │   └── source_manifest.yaml
 │   ├── processed/       # Dataset setelah preprocessing & split (CSV)
-│   └── implementation/  # Dataset OmorfoShop hasil Shopee Open Platform API
+│   └── implementation/  # Dataset OmorfoShop hasil web scraping (CSV)
 │
 ├── notebooks/           # Jupyter/Colab notebooks untuk eksperimen
 │
 ├── src/
-│   ├── scraping/        # Scraping statis OmorfoShop (legacy/backup saja)
-│   ├── shopee_api/      # Shopee Open Platform client (OAuth2, get_item_list, get_rating)
+│   ├── scraping/        # Scraper Playwright OmorfoShop (modul AKTIF — metode utama)
+│   ├── shopee_api/      # Open Platform client (OPSIONAL/future: persona toko sendiri)
 │   ├── preprocessing/   # Pipeline preprocessing teks (case fold → clean → tokenize)
 │   ├── modeling/        # Fine-tuning IndoBERT & focused random search
 │   ├── evaluation/      # Metrik evaluasi & 5-fold cross-validation
@@ -76,7 +76,7 @@ project_root/
 | SmSA | github.com/IndoNLP/indonlu | 12.679 | Training & Evaluasi |
 | PRDECT-ID (snapshot) | data.mendeley.com/datasets/574v66hf2v | 5.283 | Training & Evaluasi |
 | Review Product Shopee | Kaggle (mdhimaspamungkas) | 2.646 | Training & Evaluasi |
-| OmorfoShop (via Open Platform API) | Shopee API `get_rating` | ±1.200 (PENDING) | Implementasi saja |
+| OmorfoShop (via web scraping) | Halaman publik Shopee (Playwright) | ±1.200 (PENDING) | Implementasi saja |
 
 **Unified dataset** (SmSA + PRDECT-ID + Kaggle Shopee): **20.608 ulasan**, split **80/10/10** stratified (seed=42) → train **16.485** / validation **2.059** / test **2.064**. Distribusi kelas: positif 59,1% / negatif 33,7% / neutral 7,2% (spread > 15% → wajib `class_weight` di Fase 4).
 
@@ -85,7 +85,7 @@ project_root/
 ```
 USER INPUT
   ├─ [CSV Batch Upload]
-  └─ [Pilih Produk] → Open Platform API (get_item_list + get_rating)
+  └─ [Input URL Produk] → Web Scraping (Playwright, browser ber-login, lokal)
          ↓
   PREPROCESSING MODULE
   Case Folding → Text Cleaning (regex) → Tokenization (IndoBERT, max_length=128)
@@ -198,14 +198,14 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 | Dashboard | Streamlit ≥1.35 |
 | Data Processing | Pandas ≥2.2, NumPy ≥1.26 |
 | Visualization | Plotly ≥5.22, Matplotlib ≥3.9, WordCloud |
-| API Client | `requests` + HMAC-SHA256 (Shopee Open Platform) |
+| Web Scraping | Playwright (Chromium) — render DOM, sesi login persisten |
 | Eksperimen | Jupyter Notebook / Google Colab |
 | Deployment | Streamlit Cloud / HuggingFace Spaces |
 
 ## Catatan Penting
 
 - **TIDAK** menggunakan Sastrawi (stemming) atau NLTK stopwords — merusak representasi konteks IndoBERT.
-- Shopee data **hanya via Open Platform API resmi** (OAuth2) — bukan web scraping — patuh ToS Shopee.
+- Data implementasi via **web scraping halaman publik** (Playwright, sesi ber-login) — sesuai proposal; hanya ulasan publik, tanpa identitas pelanggan, jeda rate-limit. Input dashboard **berlapis**: CSV upload / import ekstensi / URL auto-fetch (lokal saja). Lihat `planning/trd-revisi-pengambilan-data-implementasi.md`.
 - GPU lokal (AMD Radeon Vega 7) tidak didukung PyTorch CUDA → gunakan **Google Colab** untuk training Fase 4.
 - Model IndoBERT (~500MB) → siapkan **HuggingFace Spaces** sebagai alternatif jika Streamlit Cloud melebihi batas memori ~1GB.
 - F1 macro-average adalah metrik evaluasi **utama** (target ≥ 85%).
@@ -214,7 +214,8 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 
 | Modul | Status |
 |---|---|
-| `src/shopee_api/` | Dibangun (OAuth2/auth, client get_item_list/get_rating, normalizer) — tes live menunggu kredensial |
+| `src/scraping/` | Dibangun (scraper Playwright, sesi login persisten) — metode utama; perlu tambah iterasi filter rating + orkestrasi multi-produk |
+| `src/shopee_api/` | Dibangun (OAuth2/client/normalizer) — **opsional/future** (persona seller-toko-sendiri), bukan metode utama |
 | `src/preprocessing/` | Selesai (cleaner regex, tokenizer_wrapper IndoBERT, PreprocessingPipeline) — Fase 3 lulus gate |
 | `src/modeling/` | Skeleton kosong — dikerjakan Fase 4 |
 | `src/evaluation/` | Skeleton kosong — dikerjakan Fase 5 |
@@ -223,5 +224,5 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 | `data/raw/{smsa,prdect_id,kaggle}/` | Ada (3 sumber training mentah) |
 | `data/processed/unified_corpus.csv` + `train/validation/test.csv` | Ada (20.608 baris, split 80/10/10 stratified seed=42) — input Fase 3 |
 | `data/processed/clean_{train,validation,test}.csv` | Ada (16.477/2.059/2.064 baris, hasil cleaning Fase 3) — input Fase 4 training |
-| `data/implementation/omorfo_reviews_TEMPLATE.csv` | Template fallback — data live menunggu kredensial Shopee API |
+| `data/implementation/omorfo_reviews_TEMPLATE.csv` | Template skema. Data aktual via scraping/ekstensi (`omorfo_reviews_extension.csv` = 20 ulasan awal) |
 | `app.py` | Placeholder — dikerjakan Fase 8 |
