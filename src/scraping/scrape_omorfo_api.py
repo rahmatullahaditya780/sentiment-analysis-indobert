@@ -111,7 +111,14 @@ def _launch_context(pw, user_data_dir: str | Path | None, headful: bool):
         headless=not headful,
         locale="id-ID",
         user_agent=ua,
-        args=["--disable-blink-features=AutomationControlled"],
+        # chromium_sandbox=True -> JANGAN pakai --no-sandbox (sidik jari otomasi
+        # yang dideteksi DataDome + banner "unsupported flag"). Chrome di Windows
+        # desktop berjalan normal dengan sandbox aktif.
+        chromium_sandbox=True,
+        args=[
+            "--disable-blink-features=AutomationControlled",
+            "--disable-features=IsolateOrigins,site-per-process",
+        ],
         ignore_default_args=["--enable-automation"],
     )
     target_dir = str(user_data_dir) if user_data_dir else ".shopee_session_tmp"
@@ -123,8 +130,13 @@ def _launch_context(pw, user_data_dir: str | Path | None, headful: bool):
     except Exception as exc:  # noqa: BLE001 — Chrome tak ada → fallback Chromium
         print(f"[api] channel=chrome gagal ({exc}); fallback Chromium")
         ctx = pw.chromium.launch_persistent_context(target_dir, **launch_kwargs)
+    # Penyamaran sinyal otomasi yang lazim dicek anti-bot (navigator.webdriver,
+    # plugins, languages). Bukan jaminan lolos DataDome, tetapi mengurangi tell.
     ctx.add_init_script(
         "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
+        "Object.defineProperty(navigator,'languages',{get:()=>['id-ID','id','en-US']});"
+        "Object.defineProperty(navigator,'plugins',{get:()=>[1,2,3,4,5]});"
+        "window.chrome={runtime:{}};"
     )
     page = ctx.pages[0] if ctx.pages else ctx.new_page()
     page.set_default_timeout(30000)
