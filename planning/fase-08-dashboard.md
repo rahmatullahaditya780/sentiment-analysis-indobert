@@ -145,6 +145,29 @@ ke keputusan final: **tanpa jalur Import Ekstensi** (2 tier), label metode =
 > Ekspor **PDF & PNG** dijadwalkan ke **Fase 10** (Deployment & Dokumentasi),
 > bukan bagian FR-8.x.
 
+## Peningkatan Pasca-Gate (Fase 8.5, 2026-06-10)
+
+Tiga paket peningkatan di atas spek awal (semua modul FR-8.x sudah lengkap
+sebelumnya); 154 unit test hijau, boot HTTP 200:
+
+- **WP0 Fondasi:** palet sentimen tunggal (`ui_common.SENTIMENT_HEX` re-export
+  `results_module.SENTIMENT_COLORS`, nilai = prototipe); `model_info.py` baca
+  F1/CV dari `outputs/reports/*.json` (hapus angka hardcoded);
+  `condition_criteria()` digenerate dari `THRESHOLDS` Fase 7 (hapus duplikat
+  teks ambang); word cloud & frekuensi di-cache `st.cache_data` (kunci tuple
+  string, `max_entries=16`).
+- **WP1 Polish UX:** pencarian kata + paginasi 25/50/100 di Detail Ulasan;
+  empty state beralasan (`column_state` absen/kosong/ok) untuk chart
+  kategori/tren/word cloud; badge filter global di `resolve_view`; expander
+  Troubleshooting di Tentang; tooltip jeda & maks ulasan (FR-8.12).
+- **WP2 Module 7 — Insight Analitik (`insights_module.py`):** deteksi
+  ketidaksesuaian rating↔sentimen (bintang ≥4 + teks negatif / bintang ≤2 +
+  teks positif — bukti nilai tambah IndoBERT di atas rating numerik, tampil di
+  Dashboard + toggle di Detail); kata kunci teratas per kelas + drill-down
+  ulasan per kata (Visualisasi); perbandingan kondisi pemasaran per produk via
+  rule engine Fase 7 (Visualisasi + Rekomendasi); bukti ulasan representatif
+  ber-confidence tertinggi (Rekomendasi).
+
 ## Gate ke Fase Berikutnya
 
 Lanjut ke Fase 9 hanya jika semua 6 modul dashboard berjalan stabil dan data tampil sesuai ekspektasi. Status: kode + 100 unit test lulus (termasuk 16 test render halaman multipage); tersisa **verifikasi manual fetch nyata Shopee**.
