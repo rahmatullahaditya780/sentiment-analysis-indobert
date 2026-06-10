@@ -34,6 +34,27 @@ def test_network():
     assert classify_fetch_error("net::ERR_CONNECTION_REFUSED")["category"] == "network"
 
 
+def test_anti_bot_dari_pesan_json_parse():
+    err = classify_fetch_error(
+        "0 ulasan terkumpul. Penyebab teknis: JSON parse gagal (kemungkinan "
+        "anti-bot). Kemungkinan besar sesi browser belum login Shopee atau "
+        "terkena verifikasi anti-bot (DataDome)."
+    )
+    assert err["category"] == "anti_bot"
+    assert "login" in err["guidance"].lower()
+
+
+def test_pesan_0_ulasan_tidak_salah_klasifikasi_jadi_invalid_id():
+    # Regresi: pesan worker lama memuat 'id produk salah' -> keliru invalid_id.
+    # Pesan baru tanpa frasa itu harus jatuh ke anti_bot (bukan invalid_id).
+    err = classify_fetch_error(
+        "0 ulasan terkumpul. Kemungkinan besar sesi browser belum login Shopee "
+        "atau terkena verifikasi anti-bot (DataDome)."
+    )
+    assert err["category"] != "invalid_id"
+    assert err["category"] == "anti_bot"
+
+
 def test_unknown_membawa_pesan_asli():
     err = classify_fetch_error("Sesuatu yang aneh terjadi")
     assert err["category"] == "unknown"

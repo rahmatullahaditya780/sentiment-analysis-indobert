@@ -95,12 +95,14 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if df is None or df.empty:
+        reason = df.attrs.get("fetch_error") if df is not None else None
+        detail = f" Penyebab teknis: {reason}." if reason else ""
         _emit(
             {
                 "type": "error",
                 "msg": (
-                    "0 ulasan terkumpul — kemungkinan login-wall / sesi belum "
-                    "login / id produk salah."
+                    f"0 ulasan terkumpul.{detail} Kemungkinan besar sesi browser "
+                    "belum login Shopee atau terkena verifikasi anti-bot (DataDome)."
                 ),
             }
         )

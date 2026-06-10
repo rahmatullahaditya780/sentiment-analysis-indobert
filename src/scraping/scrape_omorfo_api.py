@@ -146,6 +146,7 @@ def _paginate(
     seen: set[str],
     max_empty_pages: int = 4,
     progress_cb=None,
+    diag: dict | None = None,
 ) -> tuple[list[dict], str | None]:
     """Paginasi satu `type` via in-browser fetch. Tulis ke `seen` (dedup global).
 
@@ -156,6 +157,8 @@ def _paginate(
     `progress_cb` (opsional): callable(done:int, total:int|None) dipanggil setelah
     tiap halaman — dipakai dashboard Fase 8 untuk progress bar. Default None
     (kompatibel mundur dengan pemakaian CLI Fase 6).
+    `diag` (opsional): bila diberikan, alasan kegagalan fetch (mis. error anti-bot)
+    ditulis ke `diag['error']` untuk diteruskan ke UI.
     """
     rows: list[dict] = []
     resolved_name: str | None = None
@@ -166,6 +169,12 @@ def _paginate(
         data = page.evaluate(_JS_FETCH, [itemid, shopid, offset, limit, rating_type])
         if not isinstance(data, dict) or data.get("error"):
             print(f"[api] {tag} gagal di offset {offset}: {data}")
+            if diag is not None:
+                diag["error"] = (
+                    data.get("error")
+                    if isinstance(data, dict)
+                    else "respons tak terduga dari endpoint"
+                )
             break
         payload = data.get("data") or {}
         ratings = payload.get("ratings") or []
@@ -245,6 +254,7 @@ def fetch_ratings(
     from playwright.sync_api import sync_playwright
 
     seen: set[str] = set()
+    diag: dict = {}
     with sync_playwright() as pw:
         ctx, page = _launch_context(pw, user_data_dir, headful)
         rows, name = _paginate(
@@ -257,11 +267,15 @@ def fetch_ratings(
             delay=delay,
             seen=seen,
             progress_cb=progress_cb,
+            diag=diag,
         )
         ctx.close()
     if not rows:
         print("[api] 0 ulasan — periksa sesi login / id produk")
-    return _rows_to_df(rows, product_name or (name or ""), product_category)
+    df = _rows_to_df(rows, product_name or (name or ""), product_category)
+    if df.empty and diag.get("error"):
+        df.attrs["fetch_error"] = diag["error"]
+    return df
 
 
 def run_hybrid(

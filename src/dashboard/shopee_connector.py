@@ -183,13 +183,25 @@ def classify_fetch_error(message: str | None) -> dict:
     text = (message or "").lower()
     fallback = "Sebagai alternatif, gunakan tab **CSV Upload**."
 
-    if "tidak lengkap" in text or "pola" in text or "id produk" in text:
+    # invalid_id: hanya pesan spesifik resolusi id (BUKAN frasa 'id produk salah'
+    # pada pesan 0-ulasan, yang akarnya anti-bot/login — lihat klausa di bawah).
+    if "tidak lengkap" in text or "menemukan pola" in text:
         return {
             "category": "invalid_id",
             "title": "URL / ID produk tidak valid.",
             "guidance": (
                 "Salin ulang URL dari halaman produk Shopee "
                 f"(mengandung `i.<shopid>.<itemid>`). {fallback}"
+            ),
+        }
+    if any(k in text for k in ("anti-bot", "datadome", "verifikasi", "json parse")):
+        return {
+            "category": "anti_bot",
+            "title": "Terkena verifikasi anti-bot / sesi belum login.",
+            "guidance": (
+                "Login ke Shopee **sekali** di sesi browser `.shopee_session` "
+                "(buka Chrome dengan user-data-dir tsb, login, tutup), lalu ulangi "
+                f"fetch. Naikkan jeda antar-permintaan bila perlu. {fallback}"
             ),
         }
     if "login" in text or "0 ulasan" in text or "login-wall" in text:
@@ -299,6 +311,12 @@ def render_url_section(st):
         "Lingkungan **lokal/desktop** terdeteksi — jalur URL Auto-Fetch tersedia."
     )
     st.caption(f"Deteksi lingkungan: {env_info['reason']}")
+    st.warning(
+        "**Prasyarat:** sesi browser `.shopee_session` harus **sudah login** ke "
+        "Shopee. Tanpa login, Shopee mengarahkan ke verifikasi anti-bot (DataDome) "
+        "dan fetch gagal (0 ulasan). Login cukup sekali (sesi disimpan persisten).",
+        icon="🔑",
+    )
 
     url = st.text_input(
         "URL produk Shopee",
