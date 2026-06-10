@@ -2,7 +2,12 @@
 Fase 8 — Module 6: Shopee Review Collector (tiered router).
 
 Jalur **URL Auto-Fetch** (lokal/desktop saja): validasi URL, deteksi lingkungan,
-dan pengambilan ulasan via subprocess `fetch_worker` dengan progress streaming.
+dan pengambilan ulasan. Metode aktif = **mode CDP (Opsi B)**: Chrome ASLI
+pengguna diluncurkan dengan remote-debugging (`launch_chrome_cdp`), pengguna
+login/selesaikan captcha & cari produk, lalu `cdp_fetch_worker` menempel
+(`connect_over_cdp`) untuk fetch — sidik jari otomasi minimal vs DataDome.
+`fetch_worker`/`build_worker_command` (launch Playwright) tetap ada sebagai
+alternatif tetapi tidak lagi jalur UI utama.
 
 - `validate_shopee_url`  : validasi & ekstraksi (shopid, itemid) dari URL produk
   Shopee (FR-8.10). Mirror regex `i.<shopid>.<itemid>` di
@@ -44,6 +49,132 @@ HARD_CAP = 1200  # FR-8.12
 # SPC_EC/SPC_ST = token login; SPC_U = user id ("-1" bila anonim).
 _LOGIN_COOKIE_TOKENS = ("SPC_EC", "SPC_ST", "SPC_ST_")
 LOGIN_TIMEOUT_DEFAULT = 240  # detik menunggu pengguna login
+
+# ── Mode CDP (Opsi B): tempel ke Chrome ASLI pengguna ─────────────────────────
+CDP_PORT = 9222
+DEFAULT_CDP_PROFILE = ".shopee_cdp_profile"
+_CHROME_CANDIDATES = (
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+)
+
+
+def find_chrome() -> str | None:
+    """Cari path Chrome ASLI (bukan Chromium Playwright). None bila tak ada."""
+    import shutil
+
+    for name in ("chrome", "chrome.exe", "google-chrome", "google-chrome-stable"):
+        found = shutil.which(name)
+        if found:
+            return found
+    for candidate in _CHROME_CANDIDATES:
+        path = Path(os.path.expandvars(candidate))
+        if path.exists():
+            return str(path)
+    return None
+
+
+def is_cdp_running(port: int = CDP_PORT) -> bool:
+    """True bila ada Chrome dengan remote-debugging aktif di `port`."""
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(
+            f"http://localhost:{port}/json/version", timeout=2
+        ) as resp:
+            return resp.status == 200
+    except Exception:  # noqa: BLE001 — port tertutup / belum jalan
+        return False
+
+
+def launch_chrome_cdp(
+    *,
+    port: int = CDP_PORT,
+    user_data_dir: str = DEFAULT_CDP_PROFILE,
+    start_url: str = "https://shopee.co.id",
+    wait: float = 12.0,
+) -> dict:
+    """Luncurkan Chrome ASLI dengan remote-debugging-port (mode CDP).
+
+    Chrome dibuka sebagai proses lepas (detached) tanpa flag otomasi → sidik jari
+    bersih. Mengembalikan {status: 'running'|'launched'|'error', message}.
+    """
+    if is_cdp_running(port):
+        return {"status": "running", "message": "Chrome (mode CDP) sudah berjalan."}
+
+    chrome = find_chrome()
+    if not chrome:
+        return {
+            "status": "error",
+            "message": "Google Chrome tidak ditemukan. Pasang Chrome lebih dulu.",
+        }
+
+    profile = Path(user_data_dir).resolve()
+    profile.mkdir(parents=True, exist_ok=True)
+    args = [
+        chrome,
+        f"--remote-debugging-port={port}",
+        f"--user-data-dir={profile}",
+        start_url,
+    ]
+    creationflags = 0
+    if sys.platform == "win32":
+        # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP → lepas dari proses Streamlit.
+        creationflags = 0x00000008 | 0x00000200
+    try:
+        subprocess.Popen(
+            args,
+            creationflags=creationflags,
+            start_new_session=(sys.platform != "win32"),
+        )
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "message": f"Gagal meluncurkan Chrome: {exc}"}
+
+    deadline = time.time() + wait
+    while time.time() < deadline:
+        if is_cdp_running(port):
+            return {"status": "launched", "message": "Chrome terbuka (mode CDP)."}
+        time.sleep(0.5)
+    return {
+        "status": "error",
+        "message": "Chrome diluncurkan tetapi port debug belum merespons.",
+    }
+
+
+def build_cdp_fetch_command(
+    *,
+    url: str,
+    output: str,
+    port: int = CDP_PORT,
+    category: str = "",
+    max_reviews: int = HARD_CAP,
+    delay: float = 1.5,
+    python_exe: str | None = None,
+) -> list[str]:
+    """Susun argumen CLI `cdp_fetch_worker` (clamp cap, FR-8.12). Teruji."""
+    cap = max(1, min(int(max_reviews), HARD_CAP))
+    return [
+        python_exe or sys.executable,
+        "-m",
+        "src.dashboard.cdp_fetch_worker",
+        "--url",
+        url,
+        "--port",
+        str(int(port)),
+        "--category",
+        category,
+        "--max-reviews",
+        str(cap),
+        "--delay",
+        str(delay),
+        "--output",
+        output,
+    ]
+
 
 # Env var yang, bila ada, menandai lingkungan Streamlit Cloud.
 _CLOUD_ENV_MARKERS = ("STREAMLIT_RUNTIME_CLOUD", "STREAMLIT_CLOUD", "STREAMLIT_SHARING")
@@ -417,11 +548,12 @@ def stop_browse_session(proc) -> None:
 
 
 def render_url_section(st):
-    """Render tab URL Auto-Fetch: badge lingkungan, validasi URL, fetch + progress.
+    """Render tab URL Auto-Fetch (mode CDP): buka Chrome asli → tempel URL → fetch.
 
-    Mengembalikan DataFrame mentah hasil fetch (skema implementasi) bila berhasil,
-    atau None. Hasil juga disimpan di `st.session_state['url_fetched_df']` agar
-    bertahan lintas rerun (mis. saat tombol Analisis ditekan).
+    Mode CDP (Opsi B): Chrome ASLI pengguna diluncurkan dengan remote-debugging;
+    pengguna login & cari produk (boleh selesaikan captcha manual), lalu menempel
+    URL. Fetch menempel ke Chrome itu (sidik jari otomasi minimal). Mengembalikan
+    DataFrame hasil fetch bila ada, atau None.
     """
     env_info = detect_environment()
 
@@ -435,32 +567,33 @@ def render_url_section(st):
         st.caption(f"Deteksi lingkungan: {env_info['reason']}")
         return None
 
-    st.success(
-        "Lingkungan **lokal/desktop** terdeteksi — jalur URL Auto-Fetch tersedia."
-    )
     st.caption(f"Deteksi lingkungan: {env_info['reason']}")
-
-    proc = st.session_state.get("browse_proc")
-    session_alive = proc is not None and proc.poll() is None
-    if not session_alive:
-        st.session_state.pop("browse_proc", None)
-        _render_browse_gate(st)
-        return st.session_state.get("url_fetched_df")
-
-    # Sesi browse aktif: pengguna menjelajah di browser, lalu menempel URL.
-    col_status, col_close = st.columns([3, 1])
-    col_status.success(
-        "🔓 **Sesi browser aktif** — cari produk di jendela browser yang terbuka, "
-        "lalu **salin URL** halaman produknya ke kolom di bawah.",
+    st.info(
+        "**Mode CDP** — memakai **Chrome asli** Anda agar lolos anti-bot. "
+        "Browser dibuka tanpa flag otomasi; Anda login & selesaikan captcha (bila "
+        "ada) langsung di Chrome tersebut.",
         icon="🧭",
     )
-    if col_close.button("Tutup browser"):
-        stop_browse_session(proc)
-        st.session_state.pop("browse_proc", None)
-        st.rerun()
+
+    if not is_cdp_running(CDP_PORT):
+        st.warning("Chrome (mode CDP) belum berjalan.")
+        if st.button("1️⃣ Buka Chrome untuk Shopee", type="primary"):
+            with st.spinner("Membuka Chrome…"):
+                res = launch_chrome_cdp()
+            if res["status"] in ("launched", "running"):
+                st.rerun()
+            else:
+                st.error(res["message"])
+        return st.session_state.get("url_fetched_df")
+
+    st.success(
+        "✅ Chrome (mode CDP) **aktif** — login & cari produk di jendela Chrome itu "
+        "(selesaikan captcha bila muncul), lalu **salin URL produknya** ke bawah.",
+        icon="🟢",
+    )
 
     url = st.text_input(
-        "URL produk Shopee (salin dari browser)",
+        "URL produk Shopee (salin dari Chrome)",
         placeholder="https://shopee.co.id/...-i.188380895.25462161057",
         key="shopee_url",
     )
@@ -482,98 +615,28 @@ def render_url_section(st):
         (st.success if check["valid"] else st.error)(check["message"])
 
     if st.button(
-        "🔗 Ambil Ulasan", disabled=not (check and check["valid"]), type="primary"
+        "2️⃣ Ambil Ulasan", disabled=not (check and check["valid"]), type="primary"
     ):
-        # Tutup browser browse dulu agar lock profil dilepas, baru fetch.
-        st.caption("Menutup browser jelajah & memulai pengambilan…")
-        stop_browse_session(proc)
-        st.session_state.pop("browse_proc", None)
-        _run_fetch_ui(
-            st,
-            shopid=check["shopid"],
-            itemid=check["itemid"],
+        out_path = str(
+            Path(tempfile.gettempdir()) / f"sentara_fetch_{int(time.time())}.csv"
+        )
+        cmd = build_cdp_fetch_command(
+            url=url.strip(),
+            output=out_path,
             category=category,
             max_reviews=int(max_reviews),
             delay=float(delay),
         )
+        _run_fetch_ui(st, cmd=cmd, cap=int(max_reviews))
 
     return st.session_state.get("url_fetched_df")
 
 
-def _render_browse_gate(st) -> None:
-    """Langkah 1: login Shopee & buka browser jelajah (tetap terbuka).
-
-    Browser dibiarkan terbuka setelah login agar pengguna mencari produk di sana,
-    lalu menyalin URL-nya. Tanpa login, Shopee mengarahkan ke anti-bot (DataDome).
-    """
-    st.info(
-        "**Langkah 1 — Login & buka browser jelajah.** Klik tombol; jendela "
-        "browser terbuka. Login ke Shopee, lalu **browser tetap terbuka** untuk "
-        "Anda mencari produk. Setelah ketemu, salin URL produk ke Langkah 2.",
-        icon="🔑",
-    )
-    fresh = st.checkbox(
-        "🧹 Mulai sesi bersih (hapus login lama)",
-        value=False,
-        help=(
-            "Centang bila sebelumnya gagal/terjebak verifikasi anti-bot. Profil "
-            "sesi lama dihapus agar login mulai dari nol tanpa cookie basi."
-        ),
-    )
-    if st.button("🔐 Login & Buka Browser Jelajah", type="primary"):
-        _start_browse_ui(st, fresh=fresh)
-
-
-def _start_browse_ui(st, *, fresh: bool = False) -> None:
-    """Mulai sesi browse (subprocess headful keep-open) & tunggu siap."""
-    cmd = build_login_command(fresh=fresh, keep_open=True)
-    status = st.empty()
-    status.info("Membuka browser… selesaikan login Shopee di jendela yang terbuka.")
-
-    def on_event(event: dict) -> None:
-        etype = event.get("type")
-        if etype == "login_reset":
-            status.info("Profil sesi lama dihapus — memulai login bersih…")
-        elif etype == "login_open":
-            status.info(
-                "Jendela browser terbuka — **silakan login ke Shopee**. "
-                "Halaman ini menunggu hingga sesi terdeteksi…"
-            )
-        elif etype == "login_ok":
-            status.info("Login terdeteksi — menyiapkan sesi jelajah…")
-
-    with st.spinner("Menunggu login di jendela browser…"):
-        result = start_browse_session(cmd, on_event=on_event)
-
-    if result["status"] == "ok":
-        st.session_state["browse_proc"] = result["proc"]
-        st.rerun()
-    else:
-        status.error(f"Gagal membuka sesi: {result['message']}")
-        st.info(
-            "Coba lagi (boleh centang 'sesi bersih'), atau gunakan tab "
-            "**CSV Upload** sebagai alternatif.",
-            icon="↩️",
-        )
-
-
-def _run_fetch_ui(st, *, shopid, itemid, category, max_reviews, delay) -> None:
-    """Jalankan fetch via subprocess sambil memperbarui progress bar (FR-8.11)."""
-    out_path = str(
-        Path(tempfile.gettempdir()) / f"sentara_fetch_{int(time.time())}.csv"
-    )
-    cmd = build_worker_command(
-        shopid=shopid,
-        itemid=itemid,
-        output=out_path,
-        category=category,
-        max_reviews=max_reviews,
-        delay=delay,
-    )
-
+def _run_fetch_ui(st, *, cmd: list[str], cap: int) -> None:
+    """Jalankan worker fetch (CDP) via subprocess + progress bar (FR-8.11)."""
     progress = st.progress(0.0)
     status = st.empty()
-    cap = max(1, min(max_reviews, HARD_CAP))
+    cap = max(1, min(int(cap), HARD_CAP))
 
     def on_event(event: dict) -> None:
         etype = event.get("type")
