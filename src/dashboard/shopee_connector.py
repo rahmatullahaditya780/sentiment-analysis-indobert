@@ -44,6 +44,8 @@ _URL_ID_RE = re.compile(r"i\.(\d+)\.(\d+)")
 # Default sesi browser ber-login (persisten) untuk worker fetch & login.
 DEFAULT_USER_DATA_DIR = ".shopee_session"
 HARD_CAP = 1200  # FR-8.12
+# Maks baris input URL produk pada satu pengambilan (selaras 5 produk terlaris).
+MAX_FETCH_ROWS = 5
 
 # Cookie yang menandakan sesi Shopee sudah login (heuristik, dapat dikalibrasi).
 # SPC_EC/SPC_ST = token login; SPC_U = user id ("-1" bila anonim).
@@ -425,6 +427,36 @@ def run_fetch_subprocess(cmd: list[str], *, on_event=None) -> dict:
     return result
 
 
+def split_quota(total: int, n_urls: int) -> list[int]:
+    """Bagi rata kuota total ulasan ke `n_urls` produk (FR-8.12 tetap terjaga).
+
+    Total di-clamp ke [1, HARD_CAP]; sisa pembagian dibagikan ke urutan awal
+    (mis. 1000 utk 3 URL -> [334, 333, 333]). Murni & teruji.
+    """
+    if n_urls <= 0:
+        return []
+    total = max(1, min(int(total), HARD_CAP))
+    base, sisa = divmod(total, n_urls)
+    return [max(1, base + (1 if i < sisa else 0)) for i in range(n_urls)]
+
+
+def combine_fetch_results(frames: list) -> pd.DataFrame:
+    """Gabungkan hasil fetch multi-produk + dedup antar produk. Murni & teruji.
+
+    Dedup memakai `review_id` bila kolomnya ada (id komentar Shopee unik),
+    selain itu dedup baris penuh. Frame None/kosong diabaikan.
+    """
+    frames = [f for f in frames if f is not None and not f.empty]
+    if not frames:
+        return pd.DataFrame()
+    combined = pd.concat(frames, ignore_index=True)
+    if "review_id" in combined.columns:
+        combined = combined.drop_duplicates(subset=["review_id"])
+    else:
+        combined = combined.drop_duplicates()
+    return combined.reset_index(drop=True)
+
+
 def is_login_cookie(cookies) -> bool:
     """True bila daftar cookie menandakan sesi Shopee sudah login (heuristik).
 
@@ -593,22 +625,48 @@ def render_url_section(st):
         icon="🟢",
     )
 
-    url = st.text_input(
-        "URL produk Shopee (salin dari Chrome)",
-        placeholder="https://shopee.co.id/...-i.188380895.25462161057",
-        key="shopee_url",
-    )
-    category = st.text_input("Kategori produk (opsional)", key="shopee_category")
+    # ── Daftar produk (multi-URL): baris bisa ditambah sesuai kebutuhan ───────
+    n_rows = int(st.session_state.get("shopee_fetch_n_rows", 1))
+    col_tambah, col_hapus, _ = st.columns([1, 1, 2])
+    if col_tambah.button("➕ Tambah produk", disabled=n_rows >= MAX_FETCH_ROWS):
+        st.session_state["shopee_fetch_n_rows"] = n_rows + 1
+        st.rerun()
+    if col_hapus.button("➖ Hapus baris terakhir", disabled=n_rows <= 1):
+        st.session_state["shopee_fetch_n_rows"] = n_rows - 1
+        st.rerun()
+
+    entries: list[tuple[str, str]] = []  # (url, kategori) baris valid
+    any_invalid = False
+    for i in range(n_rows):
+        c_url, c_cat = st.columns([3, 2])
+        url_i = c_url.text_input(
+            f"URL produk #{i + 1} (salin dari Chrome)",
+            placeholder="https://shopee.co.id/...-i.188380895.25462161057",
+            key=f"shopee_url_{i}",
+        )
+        cat_i = c_cat.text_input(
+            f"Kategori #{i + 1} (opsional)", key=f"shopee_category_{i}"
+        )
+        if url_i and url_i.strip():
+            check = validate_shopee_url(url_i)
+            if check["valid"]:
+                entries.append((url_i.strip(), cat_i))
+            else:
+                any_invalid = True
+                st.error(f"URL #{i + 1}: {check['message']}")
+
     col_a, col_b = st.columns(2)
     max_reviews = col_a.number_input(
-        "Maks ulasan",
+        "Maks total ulasan",
         min_value=50,
         max_value=HARD_CAP,
         value=HARD_CAP,
         step=50,
         help=(
-            f"Batas atas {HARD_CAP:,} ulasan per produk (FR-8.12) — menjaga "
-            "performa analisis & menghormati batas wajar akses Shopee."
+            f"Anggaran total maks {HARD_CAP:,} ulasan (FR-8.12) — bila lebih "
+            "dari satu URL diisi, kuota dibagi rata antar produk (mis. 2 URL "
+            f"-> {HARD_CAP // 2:,} per produk). Menjaga performa analisis & "
+            "menghormati batas wajar akses Shopee."
         ),
     )
     delay = col_b.number_input(
@@ -624,30 +682,63 @@ def render_url_section(st):
         ),
     )
 
-    check = validate_shopee_url(url) if url else None
-    if check is not None:
-        (st.success if check["valid"] else st.error)(check["message"])
+    if entries:
+        quotas = split_quota(int(max_reviews), len(entries))
+        if len(entries) == 1:
+            st.caption(f"✅ 1 URL valid — kuota {quotas[0]:,} ulasan.")
+        else:
+            rincian = " + ".join(f"{q:,}" for q in quotas)
+            st.caption(
+                f"✅ {len(entries)} URL valid — kuota dibagi rata: {rincian} "
+                f"= {sum(quotas):,} ulasan."
+            )
 
-    if st.button(
-        "2️⃣ Ambil Ulasan", disabled=not (check and check["valid"]), type="primary"
-    ):
-        out_path = str(
-            Path(tempfile.gettempdir()) / f"sentara_fetch_{int(time.time())}.csv"
-        )
-        cmd = build_cdp_fetch_command(
-            url=url.strip(),
-            output=out_path,
-            category=category,
-            max_reviews=int(max_reviews),
-            delay=float(delay),
-        )
-        _run_fetch_ui(st, cmd=cmd, cap=int(max_reviews))
+    ready = bool(entries) and not any_invalid
+    if st.button("2️⃣ Ambil Ulasan", disabled=not ready, type="primary"):
+        quotas = split_quota(int(max_reviews), len(entries))
+        ts = int(time.time())
+        frames: list[pd.DataFrame] = []
+        gagal: list[str] = []
+        for i, ((url_i, cat_i), quota) in enumerate(zip(entries, quotas), start=1):
+            if len(entries) > 1:
+                st.markdown(f"**Produk {i}/{len(entries)}** — kuota {quota:,} ulasan")
+            out_path = str(Path(tempfile.gettempdir()) / f"sentara_fetch_{ts}_{i}.csv")
+            cmd = build_cdp_fetch_command(
+                url=url_i,
+                output=out_path,
+                category=cat_i,
+                max_reviews=quota,
+                delay=float(delay),
+            )
+            df_i = _run_fetch_ui(st, cmd=cmd, cap=quota)
+            if df_i is not None:
+                frames.append(df_i)
+            else:
+                gagal.append(f"URL #{i}")
+
+        if frames:
+            combined = combine_fetch_results(frames)
+            st.session_state["url_fetched_df"] = combined
+            st.success(
+                f"Total **{len(combined):,} ulasan** terkumpul dari "
+                f"{len(frames)} produk."
+            )
+            st.dataframe(combined.head(), width="stretch")
+        if gagal:
+            pesan = "Gagal mengambil: " + ", ".join(gagal) + "."
+            if frames:
+                pesan += " Hasil produk lain tetap tersimpan."
+            st.warning(pesan)
 
     return st.session_state.get("url_fetched_df")
 
 
-def _run_fetch_ui(st, *, cmd: list[str], cap: int) -> None:
-    """Jalankan worker fetch (CDP) via subprocess + progress bar (FR-8.11)."""
+def _run_fetch_ui(st, *, cmd: list[str], cap: int) -> pd.DataFrame | None:
+    """Jalankan worker fetch (CDP) via subprocess + progress bar (FR-8.11).
+
+    Mengembalikan DataFrame hasil fetch (sukses) atau None (gagal) — pemanggil
+    yang menggabungkan multi-produk & menyimpan ke session_state.
+    """
     progress = st.progress(0.0)
     status = st.empty()
     cap = max(1, min(int(cap), HARD_CAP))
@@ -668,12 +759,12 @@ def _run_fetch_ui(st, *, cmd: list[str], cap: int) -> None:
     if result["status"] == "ok":
         progress.progress(1.0)
         df = pd.read_csv(result["path"])
-        st.session_state["url_fetched_df"] = df
         status.success(f"Berhasil mengambil **{result['count']:,} ulasan**.")
-        st.dataframe(df.head(), width="stretch")
-    else:
-        err = classify_fetch_error(result["message"])
-        status.error(f"**{err['title']}**")
-        st.info(err["guidance"], icon="↩️")
-        with st.expander("Detail teknis (untuk diagnosis)"):
-            st.code(result.get("message") or "(tidak ada pesan)", language="text")
+        return df
+
+    err = classify_fetch_error(result["message"])
+    status.error(f"**{err['title']}**")
+    st.info(err["guidance"], icon="↩️")
+    with st.expander("Detail teknis (untuk diagnosis)"):
+        st.code(result.get("message") or "(tidak ada pesan)", language="text")
+    return None

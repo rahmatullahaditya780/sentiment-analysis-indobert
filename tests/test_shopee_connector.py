@@ -71,3 +71,63 @@ def test_linux_headless_default_cloud():
 def test_linux_dengan_display_lokal():
     res = detect_environment(env={"DISPLAY": ":0"}, platform="linux")
     assert res["is_cloud"] is False
+
+
+# ── split_quota (multi-URL: kuota dibagi rata, FR-8.12 terjaga) ───────────────
+def test_split_quota_dua_url_sama_rata():
+    from src.dashboard.shopee_connector import split_quota
+
+    assert split_quota(1200, 2) == [600, 600]
+
+
+def test_split_quota_sisa_dibagikan_ke_awal():
+    from src.dashboard.shopee_connector import split_quota
+
+    assert split_quota(1000, 3) == [334, 333, 333]
+    assert sum(split_quota(1000, 3)) == 1000
+
+
+def test_split_quota_satu_url_penuh():
+    from src.dashboard.shopee_connector import split_quota
+
+    assert split_quota(1200, 1) == [1200]
+
+
+def test_split_quota_clamp_ke_hard_cap():
+    from src.dashboard.shopee_connector import HARD_CAP, split_quota
+
+    assert sum(split_quota(99999, 2)) == HARD_CAP
+
+
+def test_split_quota_n_nol_kosong():
+    from src.dashboard.shopee_connector import split_quota
+
+    assert split_quota(1200, 0) == []
+
+
+# ── combine_fetch_results (gabung multi-produk + dedup) ───────────────────────
+def test_combine_gabung_dan_dedup_review_id():
+    import pandas as pd
+
+    from src.dashboard.shopee_connector import combine_fetch_results
+
+    a = pd.DataFrame({"review_id": [1, 2], "review_text": ["x", "y"]})
+    b = pd.DataFrame({"review_id": [2, 3], "review_text": ["y", "z"]})
+    out = combine_fetch_results([a, b])
+    assert list(out["review_id"]) == [1, 2, 3]
+
+
+def test_combine_abaikan_none_dan_kosong():
+    import pandas as pd
+
+    from src.dashboard.shopee_connector import combine_fetch_results
+
+    a = pd.DataFrame({"review_text": ["x"]})
+    out = combine_fetch_results([None, pd.DataFrame(), a])
+    assert len(out) == 1
+
+
+def test_combine_semua_kosong():
+    from src.dashboard.shopee_connector import combine_fetch_results
+
+    assert combine_fetch_results([]).empty
