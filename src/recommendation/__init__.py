@@ -57,9 +57,7 @@ def recommend(
     result = MarketingConditionClassifier().classify(
         predictions, label_column=label_column, trend_shift=trend.trend_shift
     )
-    recommendation = map_to_recommendation(
-        result, meta={"trend": trend.as_dict()}
-    )
+    recommendation = map_to_recommendation(result, meta={"trend": trend.as_dict()})
 
     if save:
         save_recommendation(recommendation)

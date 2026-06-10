@@ -106,20 +106,20 @@ def compute_distribution(
             for label in counts:
                 entry = data.get(label, {})
                 counts[label] = int(entry.get("count", 0))
-            if all("proportion" in data.get(l, {}) for l in counts):
-                proportions = {l: float(data[l]["proportion"]) for l in counts}
+            if all("proportion" in data.get(lbl, {}) for lbl in counts):
+                proportions = {lbl: float(data[lbl]["proportion"]) for lbl in counts}
         else:  # flat: bisa count (int) atau proportion (float)
-            vals = {l: float(data.get(l, 0)) for l in counts}
+            vals = {lbl: float(data.get(lbl, 0)) for lbl in counts}
             # Heuristik: ada nilai pecahan -> proporsi (dinormalisasi defensif
             # agar 0.999 / 1.05 tetap valid); semua bilangan bulat -> count.
             has_fraction = any(abs(v - round(v)) > 1e-9 for v in vals.values())
             total_vals = sum(vals.values())
             if has_fraction:
                 proportions = {
-                    l: (vals[l] / total_vals if total_vals else 0.0) for l in vals
+                    lbl: (vals[lbl] / total_vals if total_vals else 0.0) for lbl in vals
                 }
             else:
-                counts = {l: int(round(v)) for l, v in vals.items()}
+                counts = {lbl: int(round(v)) for lbl, v in vals.items()}
     else:
         raise TypeError(
             "Input harus DataFrame atau dict distribusi; diterima: "
@@ -129,9 +129,9 @@ def compute_distribution(
     total = sum(counts.values())
     if proportions is None:
         proportions = (
-            {l: counts[l] / total for l in counts}
+            {lbl: counts[lbl] / total for lbl in counts}
             if total
-            else {l: 0.0 for l in counts}
+            else {lbl: 0.0 for lbl in counts}
         )
 
     return SentimentDistribution(
@@ -194,7 +194,9 @@ class MarketingConditionClassifier:
             )
         if self._match(MODERATE, pos, neg):
             return ConditionResult(
-                MODERATE, dist, f"Positif {pos:.1%} (30–39%) AND negatif {neg:.1%} (30–40%)"
+                MODERATE,
+                dist,
+                f"Positif {pos:.1%} (30–39%) AND negatif {neg:.1%} (30–40%)",
             )
         if self._match(POOR, pos, neg):
             return ConditionResult(

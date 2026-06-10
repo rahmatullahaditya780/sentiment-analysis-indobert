@@ -81,9 +81,7 @@ def analyze_trend(
     df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
     df = df.dropna(subset=[date_column])
     if df.empty:
-        return TrendResult(
-            available=False, note="Tidak ada timestamp valid pada data."
-        )
+        return TrendResult(available=False, note="Tidak ada timestamp valid pada data.")
 
     # Proporsi positif & negatif per periode.
     grouped = df.groupby(pd.Grouper(key=date_column, freq=freq))[label_column]
