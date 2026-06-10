@@ -81,7 +81,30 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 | Loading Time | < 5 detik (gunakan `st.session_state` untuk cache model) |
 | Model Loading | `st.session_state` agar model tidak di-load ulang setiap interaksi |
 | Real-time Update | Hasil analisis diperbarui setelah tombol ditekan |
-| Navigasi | `st.sidebar` untuk navigasi antar module |
+| Navigasi | **Multipage** `st.navigation` — sidebar bergrup (Menu / Hasil Analisis / Lainnya) |
+| Tema | `.streamlit/config.toml` (palet prototipe, primary `#FF4B4B`) |
+
+### Struktur Multipage (selaras `Design/Sentara_Prototype.html`)
+
+UI/UX mengikuti prototipe pada fidelity **sedang** (struktur + palet + komponen;
+bukan pixel-perfect — navbar/avatar & shadow persis dihindari karena butuh CSS
+injeksi rapuh). Navigasi 8 halaman:
+
+| Grup | Halaman | Isi |
+|---|---|---|
+| Menu | Dashboard | Stat cards + donut + tren + word cloud gabungan |
+| Menu | Input & Pengambilan Data | 2 tab input + kartu preprocessing & metrik model |
+| Hasil Analisis | Detail Ulasan | Segmented filter + tabel (ProgressColumn skor + bintang) |
+| Hasil Analisis | Visualisasi & Word Cloud | Word cloud per kelas + distribusi per kategori |
+| Hasil Analisis | Rekomendasi Strategi | Panel 5 kondisi + tabel acuan threshold |
+| Lainnya | Pengaturan | Filter kategori/tanggal/confidence (berlaku global) |
+| Lainnya | Ekspor Laporan | Unduh CSV berlabel (**PDF/PNG → Fase 10**) |
+| Lainnya | Tentang & Bantuan | Profil sistem, cara pakai, info skripsi |
+
+Filter di **Pengaturan** berlaku ke seluruh halaman hasil **tanpa inferensi
+ulang** (`ui_common.resolve_view` → `recompute_from_predictions`). Penyelarasan
+ke keputusan final: **tanpa jalur Import Ekstensi** (2 tier), label metode =
+"endpoint JSON internal", angka nyata (F1 0,9031; 3.739 ulasan).
 
 ## Deliverables Checkpoint 8
 
@@ -112,9 +135,16 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 - `src/dashboard/settings_module.py` — Module 5 (filter & threshold)
 - `src/dashboard/shopee_connector.py` — Module 6 (tiered router: `validate_shopee_url`, `detect_environment`, `auto_fetch_reviews`; reuse `src/scraping/scrape_omorfo_api.py` (JSON))
 - `src/dashboard/fetch_worker.py` — entrypoint subprocess JSON fetch (emit progress NDJSON → CSV); mengisolasi `sync_playwright` dari proses Streamlit
-- `src/dashboard/analysis_pipeline.py` — glue one-click (`predict_batch → analyze_trend → classify → map_to_recommendation`), dipakai kedua jalur input
-- `app.py` — Entry point Streamlit (integrasikan semua modul; cache `SentimentPredictor` di `st.session_state`)
+- `src/dashboard/analysis_pipeline.py` — glue one-click (`predict_batch → analyze_trend → classify → map_to_recommendation`), dipakai kedua jalur input; `recompute_from_predictions` (filter tanpa re-inferensi) + shortcut data pra-prediksi
+- `src/dashboard/ui_common.py` — state lintas-halaman (`get_predictor`, `analyze_with_progress`, `resolve_view`)
+- `src/dashboard/pages.py` — 8 fungsi halaman multipage (menyusun ulang komponen modul)
+- `app.py` — Entry point Streamlit (`st.navigation` 8 halaman; cache `SentimentPredictor` di `st.session_state`)
+- `.streamlit/config.toml` — tema (palet prototipe)
+
+> **Catatan Ekspor:** halaman Ekspor saat ini hanya **unduh CSV berlabel**.
+> Ekspor **PDF & PNG** dijadwalkan ke **Fase 10** (Deployment & Dokumentasi),
+> bukan bagian FR-8.x.
 
 ## Gate ke Fase Berikutnya
 
-Lanjut ke Fase 9 hanya jika semua 6 modul dashboard berjalan stabil dan data tampil sesuai ekspektasi.
+Lanjut ke Fase 9 hanya jika semua 6 modul dashboard berjalan stabil dan data tampil sesuai ekspektasi. Status: kode + 100 unit test lulus (termasuk 16 test render halaman multipage); tersisa **verifikasi manual fetch nyata Shopee**.
