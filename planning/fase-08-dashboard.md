@@ -28,7 +28,7 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 |---|---|---|
 | **CSV Upload** | File uploader + Analyze | Upload CSV ulasan untuk analisis batch (jalan di cloud & lokal) |
 | **Extension Import** | File uploader + konverter | Upload CSV hasil ekstensi browser → dipetakan ke skema implementasi (jalan di cloud & lokal) |
-| **URL Auto-Fetch** *(badge: Lokal saja)* | URL input, Fetch button, Progress bar & counter, Preview 5 baris | Scraping otomatis via browser ber-login (Playwright); nonaktif saat di cloud (FR-8.14) |
+| **URL Auto-Fetch** *(badge: Lokal saja)* | URL input, Fetch button, Progress bar & counter, Preview 5 baris | Pengambilan otomatis via **endpoint JSON internal** Shopee (`fetch('/api/v2/item/get_ratings')`) dalam sesi browser ber-login (`scrape_omorfo_api.py`, dijalankan via subprocess); nonaktif saat di cloud (FR-8.14) |
 
 ### Module 2 — Sentiment Analysis Results
 | Komponen | Deskripsi |
@@ -65,13 +65,15 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 | Komponen | Deskripsi & Spesifikasi |
 |---|---|
 | Tiered Router | Memilih jalur (CSV / Ekstensi / URL Auto-Fetch) sesuai pilihan pengguna & lingkungan (cloud vs lokal) |
-| Playwright Engine | Render DOM, sesi login persisten, iterasi filter rating (5→1 bintang), pagination, dedup — **lokal saja** |
+| JSON Fetch Engine | In-browser `fetch('/api/v2/item/get_ratings')` (same-origin, lolos anti-bot DataDome) dari sesi login persisten, paginasi `offset`, dedup `cmtid` — dijalankan via **subprocess** (`fetch_worker.py`) agar bebas konflik asyncio Streamlit; **lokal saja** (reuse `src/scraping/scrape_omorfo_api.py`) |
 | Extension Converter | Konversi CSV ekstensi browser → skema implementasi (reuse `src/utils/convert_extension_csv.py`) |
-| Selector Config | Selektor DOM eksternal (`selectors_shopee.json`) agar tahan perubahan layout Shopee |
+| Progress Streaming | Worker subprocess memancarkan progress **NDJSON** ke stdout → diteruskan ke `st.progress` + counter (FR-8.11); cap ≤1.200 (FR-8.12) & jeda rate-limit (FR-8.13) via argumen worker |
 | Data Normalizer | Output seragam `[review_id, review_text, rating, product_name, product_category, date_review]` |
 | Error/Fallback Handler | Deteksi login-wall / 0-ulasan / timeout → pesan informatif + arahkan ke jalur lain (CSV/ekstensi) |
 
 > **Catatan deployment (hasil riset Streamlit Cloud free):** RAM 1 GB/app, Chromium hanya headless, IP datacenter kena anti-bot, filesystem ephemeral → **jalur URL Auto-Fetch hanya aktif di app lokal/desktop**. Versi cloud mengandalkan CSV + ekstensi. Detail di `planning/trd-revisi-pengambilan-data-implementasi.md` §C.
+>
+> **Catatan metode (selaras CLAUDE.md & TRD revisi):** jalur URL Auto-Fetch memakai **endpoint JSON internal** Shopee dari dalam sesi browser ber-login (`scrape_omorfo_api.py`), **bukan** render-DOM (`scrape_omorfo_reviews.py`, diblokir anti-bot → fallback) maupun Shopee Open Platform API. Lihat catatan revisi 2026-06-10.
 
 ## UI Requirements
 
@@ -92,7 +94,7 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 - [ ] Module 4 — Visualization berjalan (word cloud per kelas sentimen).
 - [ ] Module 5 — Settings & Configuration berjalan (filter & threshold).
 - [ ] Module 6 — Shopee Review Collector berlapis berjalan (router CSV/Ekstensi/URL Auto-Fetch).
-- [ ] Playwright Engine: scraping via browser ber-login berhasil di mode lokal (iterasi filter rating + pagination + dedup, maks ±1.200 ulasan).
+- [ ] JSON Fetch Engine: pengambilan via endpoint JSON internal dalam sesi browser ber-login berhasil di mode lokal (paginasi `offset` + dedup, maks ±1.200 ulasan), dijalankan via subprocess dengan progress NDJSON.
 - [ ] Deteksi lingkungan (FR-8.14): jalur URL Auto-Fetch nonaktif otomatis di cloud, fallback ke CSV/ekstensi.
 - [ ] Rate limiting + error/fallback handling (login-wall/0-ulasan/timeout) terimplementasi.
 - [ ] Model loading menggunakan `st.session_state` (performa optimal).
@@ -104,8 +106,10 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 - `src/dashboard/recommendation_module.py` — Module 3 (marketing panel)
 - `src/dashboard/visualization_module.py` — Module 4 (word cloud, distribution)
 - `src/dashboard/settings_module.py` — Module 5 (filter & threshold)
-- `src/dashboard/shopee_connector.py` — Module 6 (tiered router: Playwright engine + extension converter; reuse `src/scraping/scrape_omorfo_reviews.py` & `src/utils/convert_extension_csv.py`)
-- `app.py` — Entry point Streamlit (integrasikan semua modul)
+- `src/dashboard/shopee_connector.py` — Module 6 (tiered router: `validate_shopee_url`, `detect_environment`, `auto_fetch_reviews`; reuse `src/scraping/scrape_omorfo_api.py` (JSON) & `src/utils/convert_extension_csv.py`)
+- `src/dashboard/fetch_worker.py` — entrypoint subprocess JSON fetch (emit progress NDJSON → CSV); mengisolasi `sync_playwright` dari proses Streamlit
+- `src/dashboard/analysis_pipeline.py` — glue one-click (`predict_batch → analyze_trend → classify → map_to_recommendation`), dipakai ketiga jalur input
+- `app.py` — Entry point Streamlit (integrasikan semua modul; cache `SentimentPredictor` di `st.session_state`)
 
 ## Gate ke Fase Berikutnya
 
