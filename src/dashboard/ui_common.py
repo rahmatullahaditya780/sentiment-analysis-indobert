@@ -101,6 +101,14 @@ def resolve_view() -> AnalysisResult | None:
         )
         return None
 
+    # Badge global: semua halaman hasil memanggil resolve_view, jadi pengguna
+    # selalu tahu bila angka yang tampil adalah subset hasil filter Pengaturan.
+    if len(filtered) < len(base.predictions):
+        st.caption(
+            f"🔎 Filter **Pengaturan** aktif — {len(filtered):,} dari "
+            f"{len(base.predictions):,} ulasan ditampilkan."
+        )
+
     return recompute_from_predictions(
         filtered,
         avg_prediction_time=base.avg_prediction_time,

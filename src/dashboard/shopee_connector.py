@@ -601,7 +601,15 @@ def render_url_section(st):
     category = st.text_input("Kategori produk (opsional)", key="shopee_category")
     col_a, col_b = st.columns(2)
     max_reviews = col_a.number_input(
-        "Maks ulasan", min_value=50, max_value=HARD_CAP, value=HARD_CAP, step=50
+        "Maks ulasan",
+        min_value=50,
+        max_value=HARD_CAP,
+        value=HARD_CAP,
+        step=50,
+        help=(
+            f"Batas atas {HARD_CAP:,} ulasan per produk (FR-8.12) — menjaga "
+            "performa analisis & menghormati batas wajar akses Shopee."
+        ),
     )
     delay = col_b.number_input(
         "Jeda antar-permintaan (detik)",
@@ -609,6 +617,11 @@ def render_url_section(st):
         max_value=10.0,
         value=1.5,
         step=0.5,
+        help=(
+            "Jeda sopan antar permintaan ke endpoint Shopee. Nilai lebih besar "
+            "= lebih aman dari rate-limit/blokir anti-bot, tetapi pengambilan "
+            "lebih lama."
+        ),
     )
 
     check = validate_shopee_url(url) if url else None

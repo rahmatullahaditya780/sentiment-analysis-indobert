@@ -17,6 +17,7 @@ from src.dashboard.visualization_module import (
     build_category_distribution,
     build_frequencies,
     build_wordcloud_from_frequencies,
+    column_state,
 )
 
 
@@ -38,6 +39,13 @@ def test_frequencies_abaikan_non_string():
 
 def test_frequencies_kosong_saat_semua_tersaring():
     assert build_frequencies(["yang di ke", "aku kamu"]) == {}
+
+
+def test_column_state_membedakan_absen_kosong_ok():
+    df = pd.DataFrame({"ada": [1, 2], "kosong": [pd.NA, pd.NA]})
+    assert column_state(df, "tidak_ada") == "absen"
+    assert column_state(df, "kosong") == "kosong"
+    assert column_state(df, "ada") == "ok"
 
 
 def test_wordcloud_none_saat_frekuensi_kosong():

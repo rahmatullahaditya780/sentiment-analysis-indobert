@@ -13,11 +13,14 @@ Hasilnya diteruskan ke `analysis_pipeline.recompute_from_predictions`.
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
 CATEGORY_COLUMN = "product_category"
 DATE_COLUMN = "date_review"
 CONFIDENCE_COLUMN = "confidence_score"
+TEXT_COLUMN = "review_text"
 
 
 def apply_filters(
@@ -52,6 +55,42 @@ def apply_filters(
         df = df[mask]
 
     return df.copy()
+
+
+def filter_by_keyword(
+    predictions: pd.DataFrame,
+    keyword: str,
+    *,
+    column: str = TEXT_COLUMN,
+) -> pd.DataFrame:
+    """Saring baris yang teksnya memuat `keyword` (substring, case-insensitive).
+
+    `re.escape` mengamankan karakter regex pada input pengguna. Keyword
+    kosong/whitespace atau kolom absen -> DataFrame dikembalikan apa adanya.
+    """
+    keyword = (keyword or "").strip()
+    if not keyword or column not in predictions.columns:
+        return predictions
+    mask = (
+        predictions[column]
+        .astype(str)
+        .str.contains(re.escape(keyword), case=False, na=False)
+    )
+    return predictions[mask]
+
+
+def paginate(
+    df: pd.DataFrame, *, page: int, page_size: int
+) -> tuple[pd.DataFrame, int]:
+    """Potong DataFrame ke halaman ke-`page` -> (subset, total_halaman).
+
+    `page` di-clamp ke [1, total_halaman]; DataFrame kosong menghasilkan
+    (kosong, 1) agar widget nomor halaman tetap valid.
+    """
+    n_pages = max(1, -(-len(df) // page_size))  # ceil division
+    page = max(1, min(page, n_pages))
+    start = (page - 1) * page_size
+    return df.iloc[start : start + page_size], n_pages
 
 
 def _available_categories(predictions: pd.DataFrame) -> list[str]:

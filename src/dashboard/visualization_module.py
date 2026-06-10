@@ -200,6 +200,19 @@ def build_wordcloud_image(
     )
 
 
+def column_state(df, column: str) -> str:
+    """Status kolom untuk pesan empty-state: "absen" | "kosong" | "ok".
+
+    Membedakan kolom yang tidak ada sama sekali dari kolom yang ada namun
+    seluruh nilainya NaN — pesan panduan ke pengguna berbeda untuk keduanya.
+    """
+    if column not in df.columns:
+        return "absen"
+    if df[column].dropna().empty:
+        return "kosong"
+    return "ok"
+
+
 def build_category_distribution(
     predictions,
     *,
@@ -246,7 +259,7 @@ def render(st, result) -> None:
     """Render Module 4: word cloud per kelas + distribusi per kategori."""
     # Import lokal: helper ter-cache butuh streamlit; modul ini tetap murni
     # di level import agar unit test fungsi builder tidak menyeret streamlit.
-    from src.dashboard.ui_common import cached_wordcloud
+    from src.dashboard.ui_common import cached_frequencies, cached_wordcloud
 
     st.subheader("Visualisasi Kata & Kategori")
 
@@ -257,17 +270,35 @@ def render(st, result) -> None:
         with col:
             st.caption(f"{SENTIMENT_LABELS_ID[label]}")
             texts = df.loc[df["predicted_label"] == label, "review_text"].tolist()
-            image = cached_wordcloud(tuple(texts), SENTIMENT_COLORS[label])
-            if image is not None:
-                st.image(image, width="stretch")
+            if not texts:
+                st.caption(
+                    f"_Tidak ada ulasan berlabel "
+                    f"{SENTIMENT_LABELS_ID[label].lower()} pada data ini._"
+                )
+            elif not cached_frequencies(tuple(texts)):
+                st.caption(
+                    f"_{len(texts):,} ulasan kelas ini hanya mengandung "
+                    "stopword/kata pendek (<3 huruf) — tidak ada kata tersisa "
+                    "untuk word cloud._"
+                )
             else:
-                st.caption("_Tidak cukup kata untuk ditampilkan._")
+                image = cached_wordcloud(tuple(texts), SENTIMENT_COLORS[label])
+                st.image(image, width="stretch")
 
+    cat_state = column_state(df, "product_category")
     cat_fig = build_category_distribution(df)
     if cat_fig is not None:
         st.plotly_chart(cat_fig, width="stretch")
-    else:
-        st.caption(
+    elif cat_state == "absen":
+        st.info(
             "Distribusi per kategori tidak ditampilkan — data tidak memiliki "
-            "kolom `product_category`."
+            "kolom `product_category`. Tambahkan kolom tersebut pada CSV "
+            "(lihat template `data/implementation/omorfo_reviews_TEMPLATE.csv`).",
+            icon="📊",
+        )
+    else:
+        st.info(
+            "Distribusi per kategori tidak ditampilkan — kolom "
+            "`product_category` ada namun seluruh nilainya kosong.",
+            icon="📊",
         )

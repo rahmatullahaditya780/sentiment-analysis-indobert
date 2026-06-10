@@ -75,9 +75,24 @@ def page_dashboard() -> None:
             st.plotly_chart(trend_fig, width="stretch")
         else:
             st.markdown("**Tren Sentimen**")
-            st.caption(
-                "Tidak tersedia — data tidak memiliki kolom `date_review` valid."
+            date_state = visualization_module.column_state(
+                view.predictions, "date_review"
             )
+            if date_state == "absen":
+                st.caption(
+                    "Tidak tersedia — data tidak memiliki kolom `date_review`. "
+                    "Tambahkan tanggal ulasan pada CSV untuk melihat tren."
+                )
+            elif date_state == "kosong":
+                st.caption(
+                    "Tidak tersedia — kolom `date_review` ada namun seluruh "
+                    "nilainya kosong/tidak valid."
+                )
+            else:
+                st.caption(
+                    "Tidak tersedia — data tanggal belum cukup membentuk "
+                    "minimal dua periode tren."
+                )
 
     with st.container(border=True):
         st.markdown("**Kata Dominan (semua ulasan)**")
@@ -87,7 +102,10 @@ def page_dashboard() -> None:
         if img is not None:
             st.image(img, width="stretch")
         else:
-            st.caption("_Tidak cukup kata untuk ditampilkan._")
+            st.caption(
+                "_Tidak ada kata tersisa setelah penyaringan stopword/kata "
+                "pendek — word cloud tidak dapat dibuat._"
+            )
     st.caption(
         "Buka **Visualisasi & Word Cloud** untuk word cloud per kelas, atau "
         "**Rekomendasi Strategi** untuk saran pemasaran."
@@ -143,7 +161,14 @@ def page_input() -> None:
                 st.error(str(exc))
             else:
                 st.session_state["result"] = result
-                st.session_state.pop("filters", None)  # reset filter untuk data baru
+                # Reset filter & state widget halaman hasil untuk data baru.
+                for stale_key in (
+                    "filters",
+                    "detail_search",
+                    "detail_page",
+                    "detail_mismatch",
+                ):
+                    st.session_state.pop(stale_key, None)
                 if result.inference_skipped:
                     st.success(
                         f"Data sudah berlabel — inferensi dilewati untuk "
@@ -188,28 +213,60 @@ def page_detail() -> None:
         return
 
     df = view.predictions
-    choice = st.segmented_control(
-        "Saring sentimen",
-        options=["Semua", "Positif", "Negatif", "Netral"],
-        default="Semua",
-    )
+    left, right = st.columns([3, 2])
+    with left:
+        choice = st.segmented_control(
+            "Saring sentimen",
+            options=["Semua", "Positif", "Negatif", "Netral"],
+            default="Semua",
+        )
+    with right:
+        keyword = st.text_input(
+            "Cari kata dalam ulasan",
+            key="detail_search",
+            placeholder="mis. pengiriman, kemasan…",
+        )
+
     label_map = {"Positif": "positive", "Negatif": "negative", "Netral": "neutral"}
     if choice and choice != "Semua":
         df = df[df["predicted_label"] == label_map[choice]]
+    df = settings_module.filter_by_keyword(df, keyword)
 
     if df.empty:
-        st.caption("Tidak ada ulasan pada kategori ini.")
+        st.caption("Tidak ada ulasan yang cocok dengan saringan/kata kunci ini.")
         return
 
-    st.dataframe(
-        _build_detail_table(df),
-        width="stretch",
-        hide_index=True,
-        column_config={
-            "Skor": st.column_config.ProgressColumn(
-                "Skor", min_value=0.0, max_value=1.0, format="%.2f"
-            ),
-        },
+    # Slot tabel diisi belakangan agar kontrol paginasi tampil di bawah tabel
+    # namun nilainya sudah terbaca sebelum tabel dirender.
+    table_slot = st.container()
+    c1, c2, _ = st.columns([1, 1, 2])
+    page_size = c1.selectbox(
+        "Baris per halaman", options=(25, 50, 100), key="detail_page_size"
+    )
+    n_pages = max(1, -(-len(df) // page_size))  # ceil
+    # Sanitasi state lama (mis. jumlah halaman menyusut setelah pencarian).
+    if st.session_state.get("detail_page", 1) > n_pages:
+        st.session_state["detail_page"] = n_pages
+    page = c2.number_input(
+        "Halaman", min_value=1, max_value=n_pages, step=1, key="detail_page"
+    )
+    page_df, n_pages = settings_module.paginate(df, page=page, page_size=page_size)
+
+    with table_slot:
+        st.dataframe(
+            _build_detail_table(page_df),
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "Skor": st.column_config.ProgressColumn(
+                    "Skor", min_value=0.0, max_value=1.0, format="%.2f"
+                ),
+            },
+        )
+    start = (min(page, n_pages) - 1) * page_size + 1
+    st.caption(
+        f"Menampilkan {start:,}–{start + len(page_df) - 1:,} dari {len(df):,} "
+        f"ulasan · halaman {min(page, n_pages)}/{n_pages}"
     )
 
 
@@ -380,4 +437,30 @@ def page_tentang() -> None:
             "- Program Studi: **Sistem Informasi**\n"
             f"- Capaian: **Macro F1 {fmt_id(m['f1_macro'])}** "
             f"(≥ {fmt_id(m['target_f1'], 2)})"
+        )
+
+    with st.expander("🛠️ Troubleshooting — masalah umum & solusinya"):
+        st.markdown(
+            "**Kolom `review_text` tidak ditemukan saat upload CSV**\n"
+            "Pastikan CSV memiliki kolom bernama persis `review_text`. Acuan "
+            "format: `data/implementation/omorfo_reviews_TEMPLATE.csv`.\n\n"
+            "**URL Auto-Fetch tidak bisa dipakai**\n"
+            "Jalur ini hanya aktif di mode lokal/desktop (FR-8.14). Pada "
+            "deployment cloud, gunakan CSV Upload.\n\n"
+            "**Pengambilan ulasan gagal / muncul captcha**\n"
+            "Selesaikan login & captcha di jendela Chrome yang terbuka, "
+            "pastikan halaman produk menampilkan ulasan, lalu klik "
+            "**Ambil Ulasan** lagi. Bila tetap gagal, perbesar jeda "
+            "antar-permintaan.\n\n"
+            "**Halaman hasil kosong padahal sudah analisis**\n"
+            "Kemungkinan filter di **Pengaturan** menyaring habis data — "
+            "longgarkan kategori/tanggal/ambang confidence.\n\n"
+            "**Analisis terasa lambat di laptop tanpa GPU**\n"
+            "Inferensi IndoBERT berjalan di CPU. Untuk data yang sudah pernah "
+            "dianalisis, unggah CSV berlabel (memiliki kolom `predicted_label` "
+            "dan `confidence_score`) — inferensi otomatis dilewati.\n\n"
+            "**Apa arti skor confidence?**\n"
+            "Probabilitas softmax kelas terpilih (0–1). Semakin tinggi, "
+            "semakin yakin model terhadap label tersebut; gunakan filter "
+            "ambang confidence di **Pengaturan** untuk analisis konservatif."
         )
