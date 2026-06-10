@@ -36,12 +36,30 @@ Mengubah hasil analisis sentimen menjadi rekomendasi strategi pemasaran yang tra
 
 ## Deliverables Checkpoint 7
 
-- [ ] Rule engine dengan 5 kategori kondisi pemasaran selesai.
-- [ ] Threshold compound conditions (positif AND negatif) terimplementasi.
-- [ ] Kategori Mixed/Unstable Performance terimplementasi (netral > 35% ATAU trend berubah).
-- [ ] Recommendation engine selesai.
-- [ ] Business insight dan marketing strategy tersedia untuk setiap kondisi.
-- [ ] Trend analysis berjalan jika data punya kolom `date_review`.
+- [x] Rule engine dengan 5 kategori kondisi pemasaran selesai.
+- [x] Threshold compound conditions (positif AND negatif) terimplementasi.
+- [x] Kategori Mixed/Unstable Performance terimplementasi (netral > 35% ATAU trend berubah).
+- [x] Recommendation engine selesai.
+- [x] Business insight dan marketing strategy tersedia untuk setiap kondisi.
+- [x] Trend analysis berjalan jika data punya kolom `date_review`.
+
+### Hasil pada data nyata OmorfoShop (3.739 ulasan, Fase 6)
+
+Dijalankan via `recommend(df_predictions, save=True)` atas
+`outputs/reports/omorfo_predictions.csv` → output
+`outputs/reports/marketing_recommendation.json`:
+
+- **Kondisi: Excellent Performance** (Positif 88,5% ≥ 50% AND Negatif 10,6% ≤ 20%) — konsisten dengan kesimpulan Fase 6.
+- **Trend shift: False** — Δ proporsi positif maks 9,9% < ambang 15% atas 37 periode bulanan layak (≥ 30 ulasan).
+- Strategi: pertahankan kualitas & branding, tingkatkan loyalitas, social proof, program referral.
+
+### Catatan kalibrasi trend analysis
+
+Trend analyzer kini memakai guard `MIN_PERIOD_SIZE = 30`: hanya periode bulanan
+dengan ≥ 30 ulasan yang ikut hitung deteksi shift. Tanpa guard ini, bulan-bulan
+awal riwayat toko bersampel kecil (n=1–2) menghasilkan swing proporsi palsu
+(Δ 35,7%) yang keliru memicu Mixed/Unstable. `TREND_SHIFT_THRESHOLD = 0.15` dan
+`MIN_PERIOD_SIZE = 30` dapat dikalibrasi ulang di `src/recommendation/config.py`.
 
 ## Implementasi Kode
 

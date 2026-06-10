@@ -59,6 +59,9 @@ NEUTRAL_MIXED_THRESHOLD = 0.35  # netral > 35% -> persepsi tidak konsisten
 # Ambang perubahan tren signifikan (selisih proporsi positif antar periode).
 # TODO Fase 7: kalibrasi pada data OmorfoShop ber-`date_review`.
 TREND_SHIFT_THRESHOLD = 0.15
+# Ukuran sampel minimum per periode agar layak masuk deteksi shift. Tanpa guard
+# ini, bulan bersampel kecil (n=1–2) menghasilkan swing proporsi palsu.
+MIN_PERIOD_SIZE = 30
 
 # ── Interpretasi singkat per kondisi (business insight inti) ──────────────────
 CONDITION_INTERPRETATION: dict[str, str] = {

@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from src.recommendation.config import (
+    MIN_PERIOD_SIZE,
     NEGATIVE,
     POSITIVE,
     TREND_SHIFT_THRESHOLD,
@@ -53,8 +54,9 @@ def analyze_trend(
     *,
     date_column: str = DEFAULT_DATE_COLUMN,
     label_column: str = DEFAULT_LABEL_COLUMN,
-    freq: str = "M",
+    freq: str = "ME",
     shift_threshold: float = TREND_SHIFT_THRESHOLD,
+    min_period_size: int = MIN_PERIOD_SIZE,
 ) -> TrendResult:
     """Analisis tren proporsi sentimen per periode (FR-7.5).
 
@@ -62,6 +64,12 @@ def analyze_trend(
     tidak ada atau tidak ada timestamp valid (data tetap dapat diklasifikasi
     tanpa tren). `trend_shift=True` jika |Δ proporsi positif| antar periode
     berurutan melebihi `shift_threshold`.
+
+    PENTING: hanya periode dengan ulasan >= `min_period_size` yang ikut hitung
+    deteksi shift. Tanpa guard ini, bulan bersampel kecil (mis. n=1–2 di awal
+    riwayat toko) menghasilkan swing proporsi ekstrem yang palsu memicu
+    Mixed/Unstable. Periode <`min_period_size` tetap ditampilkan (`eligible=False`)
+    untuk transparansi, tetapi diabaikan saat menghitung Δ.
     """
     if date_column not in data.columns or label_column not in data.columns:
         return TrendResult(
@@ -91,19 +99,25 @@ def analyze_trend(
                 "n_reviews": n,
                 "positive": round(int(vc.get(POSITIVE, 0)) / n, 4),
                 "negative": round(int(vc.get(NEGATIVE, 0)) / n, 4),
+                "eligible": n >= min_period_size,
             }
         )
 
-    if len(periods) < 2:
+    # Hanya periode yang cukup besar yang dipakai menghitung shift.
+    eligible = [p for p in periods if p["eligible"]]
+    if len(eligible) < 2:
         return TrendResult(
             available=True,
             periods=periods,
-            note="Periode < 2; tren belum dapat dinilai.",
+            note=(
+                f"Periode dengan >= {min_period_size} ulasan < 2; "
+                "tren belum dapat dinilai (sampel per bulan terlalu kecil)."
+            ),
         )
 
     deltas = [
-        abs(periods[i]["positive"] - periods[i - 1]["positive"])
-        for i in range(1, len(periods))
+        abs(eligible[i]["positive"] - eligible[i - 1]["positive"])
+        for i in range(1, len(eligible))
     ]
     max_delta = max(deltas)
     return TrendResult(
@@ -111,5 +125,8 @@ def analyze_trend(
         trend_shift=max_delta > shift_threshold,
         max_delta_positive=max_delta,
         periods=periods,
-        note=f"Δ positif maks {max_delta:.1%} vs ambang {shift_threshold:.0%}.",
+        note=(
+            f"Δ positif maks {max_delta:.1%} vs ambang {shift_threshold:.0%} "
+            f"(atas {len(eligible)} periode >= {min_period_size} ulasan)."
+        ),
     )

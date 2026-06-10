@@ -1,0 +1,540 @@
+{
+  "condition": "Excellent Performance",
+  "interpretation": "Produk/layanan dikomunikasikan dengan sangat baik; kepuasan pelanggan tinggi.",
+  "business_insight": "Dari 3739 ulasan: 88.5% positif, 10.6% negatif, 0.8% netral. Kondisi terklasifikasi sebagai 'Excellent Performance' (Positif 88.5% ≥ 50% AND negatif 10.6% ≤ 20%). Produk/layanan dikomunikasikan dengan sangat baik; kepuasan pelanggan tinggi.",
+  "strategies": [
+    "Pertahankan kualitas & branding.",
+    "Tingkatkan loyalitas pelanggan.",
+    "Manfaatkan ulasan positif sebagai social proof.",
+    "Pertimbangkan program referral."
+  ],
+  "reason": "Positif 88.5% ≥ 50% AND negatif 10.6% ≤ 20%",
+  "trend_shift": false,
+  "distribution": {
+    "n_reviews": 3739,
+    "proportion": {
+      "positive": 0.8853,
+      "negative": 0.1064,
+      "neutral": 0.0083
+    },
+    "counts": {
+      "positive": 3310,
+      "negative": 398,
+      "neutral": 31
+    }
+  },
+  "meta": {
+    "trend": {
+      "available": true,
+      "trend_shift": false,
+      "max_delta_positive": 0.0989,
+      "periods": [
+        {
+          "period": "2020-05-31",
+          "n_reviews": 2,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2020-06-30",
+          "n_reviews": 1,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2020-09-30",
+          "n_reviews": 1,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2020-10-31",
+          "n_reviews": 4,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2020-11-30",
+          "n_reviews": 6,
+          "positive": 0.8333,
+          "negative": 0.1667,
+          "eligible": false
+        },
+        {
+          "period": "2020-12-31",
+          "n_reviews": 5,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-01-31",
+          "n_reviews": 5,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-02-28",
+          "n_reviews": 2,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-03-31",
+          "n_reviews": 9,
+          "positive": 0.6667,
+          "negative": 0.3333,
+          "eligible": false
+        },
+        {
+          "period": "2021-04-30",
+          "n_reviews": 4,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-05-31",
+          "n_reviews": 10,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-06-30",
+          "n_reviews": 4,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-07-31",
+          "n_reviews": 9,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-08-31",
+          "n_reviews": 8,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2021-09-30",
+          "n_reviews": 8,
+          "positive": 0.875,
+          "negative": 0.125,
+          "eligible": false
+        },
+        {
+          "period": "2021-10-31",
+          "n_reviews": 19,
+          "positive": 0.8947,
+          "negative": 0.0526,
+          "eligible": false
+        },
+        {
+          "period": "2021-11-30",
+          "n_reviews": 25,
+          "positive": 0.96,
+          "negative": 0.04,
+          "eligible": false
+        },
+        {
+          "period": "2021-12-31",
+          "n_reviews": 35,
+          "positive": 0.8571,
+          "negative": 0.1429,
+          "eligible": true
+        },
+        {
+          "period": "2022-01-31",
+          "n_reviews": 18,
+          "positive": 0.9444,
+          "negative": 0.0556,
+          "eligible": false
+        },
+        {
+          "period": "2022-02-28",
+          "n_reviews": 14,
+          "positive": 0.6429,
+          "negative": 0.3571,
+          "eligible": false
+        },
+        {
+          "period": "2022-03-31",
+          "n_reviews": 15,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2022-04-30",
+          "n_reviews": 17,
+          "positive": 0.9412,
+          "negative": 0.0588,
+          "eligible": false
+        },
+        {
+          "period": "2022-05-31",
+          "n_reviews": 24,
+          "positive": 0.8333,
+          "negative": 0.1667,
+          "eligible": false
+        },
+        {
+          "period": "2022-06-30",
+          "n_reviews": 20,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2022-07-31",
+          "n_reviews": 9,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2022-08-31",
+          "n_reviews": 19,
+          "positive": 0.9474,
+          "negative": 0.0526,
+          "eligible": false
+        },
+        {
+          "period": "2022-09-30",
+          "n_reviews": 22,
+          "positive": 0.7727,
+          "negative": 0.2273,
+          "eligible": false
+        },
+        {
+          "period": "2022-10-31",
+          "n_reviews": 28,
+          "positive": 0.7143,
+          "negative": 0.2857,
+          "eligible": false
+        },
+        {
+          "period": "2022-11-30",
+          "n_reviews": 22,
+          "positive": 0.8636,
+          "negative": 0.1364,
+          "eligible": false
+        },
+        {
+          "period": "2022-12-31",
+          "n_reviews": 22,
+          "positive": 1.0,
+          "negative": 0.0,
+          "eligible": false
+        },
+        {
+          "period": "2023-01-31",
+          "n_reviews": 8,
+          "positive": 0.875,
+          "negative": 0.125,
+          "eligible": false
+        },
+        {
+          "period": "2023-02-28",
+          "n_reviews": 17,
+          "positive": 0.9412,
+          "negative": 0.0588,
+          "eligible": false
+        },
+        {
+          "period": "2023-03-31",
+          "n_reviews": 25,
+          "positive": 0.8,
+          "negative": 0.2,
+          "eligible": false
+        },
+        {
+          "period": "2023-04-30",
+          "n_reviews": 32,
+          "positive": 0.8438,
+          "negative": 0.1562,
+          "eligible": true
+        },
+        {
+          "period": "2023-05-31",
+          "n_reviews": 48,
+          "positive": 0.875,
+          "negative": 0.125,
+          "eligible": true
+        },
+        {
+          "period": "2023-06-30",
+          "n_reviews": 44,
+          "positive": 0.8864,
+          "negative": 0.0682,
+          "eligible": true
+        },
+        {
+          "period": "2023-07-31",
+          "n_reviews": 49,
+          "positive": 0.9184,
+          "negative": 0.0816,
+          "eligible": true
+        },
+        {
+          "period": "2023-08-31",
+          "n_reviews": 63,
+          "positive": 0.9365,
+          "negative": 0.0635,
+          "eligible": true
+        },
+        {
+          "period": "2023-09-30",
+          "n_reviews": 57,
+          "positive": 0.9298,
+          "negative": 0.0702,
+          "eligible": true
+        },
+        {
+          "period": "2023-10-31",
+          "n_reviews": 57,
+          "positive": 0.8772,
+          "negative": 0.1228,
+          "eligible": true
+        },
+        {
+          "period": "2023-11-30",
+          "n_reviews": 26,
+          "positive": 0.9231,
+          "negative": 0.0769,
+          "eligible": false
+        },
+        {
+          "period": "2023-12-31",
+          "n_reviews": 123,
+          "positive": 0.8455,
+          "negative": 0.1545,
+          "eligible": true
+        },
+        {
+          "period": "2024-01-31",
+          "n_reviews": 52,
+          "positive": 0.9423,
+          "negative": 0.0577,
+          "eligible": true
+        },
+        {
+          "period": "2024-02-29",
+          "n_reviews": 57,
+          "positive": 0.9474,
+          "negative": 0.0351,
+          "eligible": true
+        },
+        {
+          "period": "2024-03-31",
+          "n_reviews": 60,
+          "positive": 0.95,
+          "negative": 0.05,
+          "eligible": true
+        },
+        {
+          "period": "2024-04-30",
+          "n_reviews": 26,
+          "positive": 0.9615,
+          "negative": 0.0385,
+          "eligible": false
+        },
+        {
+          "period": "2024-05-31",
+          "n_reviews": 64,
+          "positive": 0.8906,
+          "negative": 0.0938,
+          "eligible": true
+        },
+        {
+          "period": "2024-06-30",
+          "n_reviews": 93,
+          "positive": 0.8065,
+          "negative": 0.1505,
+          "eligible": true
+        },
+        {
+          "period": "2024-07-31",
+          "n_reviews": 148,
+          "positive": 0.9054,
+          "negative": 0.0878,
+          "eligible": true
+        },
+        {
+          "period": "2024-08-31",
+          "n_reviews": 246,
+          "positive": 0.8374,
+          "negative": 0.1585,
+          "eligible": true
+        },
+        {
+          "period": "2024-09-30",
+          "n_reviews": 247,
+          "positive": 0.9231,
+          "negative": 0.0729,
+          "eligible": true
+        },
+        {
+          "period": "2024-10-31",
+          "n_reviews": 149,
+          "positive": 0.8725,
+          "negative": 0.1074,
+          "eligible": true
+        },
+        {
+          "period": "2024-11-30",
+          "n_reviews": 134,
+          "positive": 0.8582,
+          "negative": 0.1269,
+          "eligible": true
+        },
+        {
+          "period": "2024-12-31",
+          "n_reviews": 138,
+          "positive": 0.8623,
+          "negative": 0.1232,
+          "eligible": true
+        },
+        {
+          "period": "2025-01-31",
+          "n_reviews": 105,
+          "positive": 0.8762,
+          "negative": 0.0952,
+          "eligible": true
+        },
+        {
+          "period": "2025-02-28",
+          "n_reviews": 121,
+          "positive": 0.8595,
+          "negative": 0.1405,
+          "eligible": true
+        },
+        {
+          "period": "2025-03-31",
+          "n_reviews": 110,
+          "positive": 0.8818,
+          "negative": 0.1,
+          "eligible": true
+        },
+        {
+          "period": "2025-04-30",
+          "n_reviews": 86,
+          "positive": 0.8256,
+          "negative": 0.1744,
+          "eligible": true
+        },
+        {
+          "period": "2025-05-31",
+          "n_reviews": 112,
+          "positive": 0.875,
+          "negative": 0.1161,
+          "eligible": true
+        },
+        {
+          "period": "2025-06-30",
+          "n_reviews": 119,
+          "positive": 0.8151,
+          "negative": 0.1765,
+          "eligible": true
+        },
+        {
+          "period": "2025-07-31",
+          "n_reviews": 74,
+          "positive": 0.8378,
+          "negative": 0.1486,
+          "eligible": true
+        },
+        {
+          "period": "2025-08-31",
+          "n_reviews": 102,
+          "positive": 0.9118,
+          "negative": 0.0882,
+          "eligible": true
+        },
+        {
+          "period": "2025-09-30",
+          "n_reviews": 97,
+          "positive": 0.9175,
+          "negative": 0.0825,
+          "eligible": true
+        },
+        {
+          "period": "2025-10-31",
+          "n_reviews": 96,
+          "positive": 0.9167,
+          "negative": 0.0729,
+          "eligible": true
+        },
+        {
+          "period": "2025-11-30",
+          "n_reviews": 81,
+          "positive": 0.9259,
+          "negative": 0.0494,
+          "eligible": true
+        },
+        {
+          "period": "2025-12-31",
+          "n_reviews": 67,
+          "positive": 0.9254,
+          "negative": 0.0746,
+          "eligible": true
+        },
+        {
+          "period": "2026-01-31",
+          "n_reviews": 43,
+          "positive": 0.8837,
+          "negative": 0.1163,
+          "eligible": true
+        },
+        {
+          "period": "2026-02-28",
+          "n_reviews": 40,
+          "positive": 0.925,
+          "negative": 0.075,
+          "eligible": true
+        },
+        {
+          "period": "2026-03-31",
+          "n_reviews": 38,
+          "positive": 0.9474,
+          "negative": 0.0526,
+          "eligible": true
+        },
+        {
+          "period": "2026-04-30",
+          "n_reviews": 37,
+          "positive": 0.8919,
+          "negative": 0.1081,
+          "eligible": true
+        },
+        {
+          "period": "2026-05-31",
+          "n_reviews": 45,
+          "positive": 0.9333,
+          "negative": 0.0444,
+          "eligible": true
+        },
+        {
+          "period": "2026-06-30",
+          "n_reviews": 16,
+          "positive": 0.9375,
+          "negative": 0.0625,
+          "eligible": false
+        }
+      ],
+      "note": "Δ positif maks 9.9% vs ambang 15% (atas 37 periode >= 30 ulasan)."
+    }
+  }
+}
