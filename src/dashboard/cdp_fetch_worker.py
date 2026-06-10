@@ -97,11 +97,23 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
 
             ctx = browser.contexts[0] if browser.contexts else browser.new_context()
-            page = ctx.new_page()
-            try:
-                page.goto(args.url, wait_until="domcontentloaded")
-            except Exception:  # noqa: BLE001 — fetch tetap bisa jalan same-origin
-                pass
+            # Utamakan tab Shopee yang SUDAH dibuka pengguna (cookie & anti-bot
+            # sudah "hangat") daripada membuka tab baru + navigasi programatik
+            # yang bisa memicu anti-bot. Fetch get_ratings bersifat same-origin,
+            # jadi tab Shopee mana pun cukup.
+            shopee_pages = [
+                p for p in ctx.pages if "shopee.co.id" in (p.url or "").lower()
+            ]
+            opened_new = False
+            if shopee_pages:
+                page = shopee_pages[-1]
+            else:
+                page = ctx.new_page()
+                opened_new = True
+                try:
+                    page.goto(args.url, wait_until="domcontentloaded")
+                except Exception:  # noqa: BLE001 — fetch tetap bisa jalan same-origin
+                    pass
             rows, name = _paginate(
                 page,
                 shopid=shopid,
@@ -114,10 +126,11 @@ def main(argv: list[str] | None = None) -> int:
                 progress_cb=progress_cb,
                 diag=diag,
             )
-            try:
-                page.close()  # tutup hanya tab kita; Chrome pengguna tetap terbuka
-            except Exception:  # noqa: BLE001
-                pass
+            if opened_new:
+                try:
+                    page.close()  # tutup hanya tab yang KITA buka; tab pengguna tetap
+                except Exception:  # noqa: BLE001
+                    pass
     except Exception as exc:  # noqa: BLE001
         _emit({"type": "error", "msg": f"{type(exc).__name__}: {exc}"})
         return 1
@@ -125,16 +138,31 @@ def main(argv: list[str] | None = None) -> int:
     df = _rows_to_df(rows, args.category and name or (name or ""), args.category)
     if df.empty:
         reason = diag.get("error")
-        detail = f" Penyebab teknis: {reason}." if reason else ""
-        _emit(
-            {
-                "type": "error",
-                "msg": (
-                    f"0 ulasan terkumpul.{detail} Selesaikan captcha/login di "
-                    "Chrome lalu coba lagi, atau periksa URL produk."
-                ),
-            }
-        )
+        total = diag.get("rating_total")
+        raw = diag.get("raw_ratings_seen", 0)
+        stats = f"rating_total={total}, entri mentah dilihat={raw}"
+        if reason:
+            # Endpoint mengembalikan error (anti-bot / sesi).
+            msg = (
+                f"0 ulasan terkumpul. Penyebab teknis: error endpoint {reason} "
+                f"({stats}). Kemungkinan verifikasi anti-bot / sesi belum login — "
+                "selesaikan captcha/login di Chrome lalu coba lagi."
+            )
+        elif raw and not len(df):
+            # Endpoint memberi ulasan, tetapi semuanya tanpa teks (rating-only).
+            msg = (
+                f"0 ulasan BERKOMENTAR ({stats}). Endpoint mengembalikan ulasan "
+                "tetapi semuanya tanpa teks pada sampel ini — coba produk lain "
+                "atau naikkan 'Maks ulasan'."
+            )
+        else:
+            # Tidak ada array ulasan sama sekali (sering = belum login / anti-bot).
+            msg = (
+                f"0 ulasan terkumpul ({stats}). Endpoint tidak mengembalikan "
+                "ulasan — biasanya sesi belum login / cookie anti-bot belum valid "
+                "di Chrome ini. Login & buka produk hingga ulasan tampil, lalu ulangi."
+            )
+        _emit({"type": "error", "msg": msg})
         return 1
 
     out = Path(args.output)

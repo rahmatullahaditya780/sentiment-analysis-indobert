@@ -176,6 +176,7 @@ def _paginate(
     resolved_name: str | None = None
     offset, total = 0, None
     empty_streak = 0
+    raw_seen = 0  # total entri rating mentah (sebelum filter komentar) — diagnosis
     tag = f"type={rating_type}"
     while len(rows) < max_reviews:
         data = page.evaluate(_JS_FETCH, [itemid, shopid, offset, limit, rating_type])
@@ -194,6 +195,7 @@ def _paginate(
             total = (payload.get("item_rating_summary") or {}).get("rating_total")
         if not ratings:
             break
+        raw_seen += len(ratings)
         new_count = 0
         for r in ratings:
             comment = (r.get("comment") or "").strip()
@@ -229,6 +231,9 @@ def _paginate(
         if total and offset >= total:
             break
         time.sleep(delay)
+    if diag is not None:
+        diag["raw_ratings_seen"] = raw_seen
+        diag["rating_total"] = total
     return rows, resolved_name
 
 

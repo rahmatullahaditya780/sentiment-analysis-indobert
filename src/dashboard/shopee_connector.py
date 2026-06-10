@@ -335,18 +335,19 @@ def classify_fetch_error(message: str | None) -> dict:
             "category": "anti_bot",
             "title": "Terkena verifikasi anti-bot / sesi belum login.",
             "guidance": (
-                "Login ke Shopee **sekali** di sesi browser `.shopee_session` "
-                "(buka Chrome dengan user-data-dir tsb, login, tutup), lalu ulangi "
-                f"fetch. Naikkan jeda antar-permintaan bila perlu. {fallback}"
+                "Di **jendela Chrome yang terbuka**: login ke Shopee & selesaikan "
+                "captcha bila muncul, buka halaman produknya hingga ulasan tampil, "
+                f"lalu ulangi. Naikkan jeda antar-permintaan bila perlu. {fallback}"
             ),
         }
     if "login" in text or "0 ulasan" in text or "login-wall" in text:
         return {
             "category": "login_wall",
-            "title": "Tidak ada ulasan terambil — kemungkinan belum login.",
+            "title": "Tidak ada ulasan terambil.",
             "guidance": (
-                "Buka browser sesi `.shopee_session`, login ke Shopee, lalu coba "
-                f"lagi. Pastikan URL produk benar. {fallback}"
+                "Di **jendela Chrome yang terbuka**: pastikan Anda **login ke "
+                "Shopee** dan halaman produk menampilkan ulasan, lalu coba lagi. "
+                f"Pastikan juga URL produk benar. {fallback}"
             ),
         }
     if "timeout" in text or "timed out" in text:
@@ -661,3 +662,5 @@ def _run_fetch_ui(st, *, cmd: list[str], cap: int) -> None:
         err = classify_fetch_error(result["message"])
         status.error(f"**{err['title']}**")
         st.info(err["guidance"], icon="↩️")
+        with st.expander("Detail teknis (untuk diagnosis)"):
+            st.code(result.get("message") or "(tidak ada pesan)", language="text")
