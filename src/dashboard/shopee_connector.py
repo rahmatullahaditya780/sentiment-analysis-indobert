@@ -174,6 +174,55 @@ def parse_progress_line(line: str) -> dict | None:
     return None
 
 
+def classify_fetch_error(message: str | None) -> dict:
+    """Petakan pesan error mentah worker -> kategori + panduan tindak lanjut (FR-8.9).
+
+    Mengembalikan {category, title, guidance}. Murni (tanpa Streamlit) agar teruji.
+    Semua panduan mengarahkan ke CSV Upload sebagai fallback yang selalu tersedia.
+    """
+    text = (message or "").lower()
+    fallback = "Sebagai alternatif, gunakan tab **CSV Upload**."
+
+    if "tidak lengkap" in text or "pola" in text or "id produk" in text:
+        return {
+            "category": "invalid_id",
+            "title": "URL / ID produk tidak valid.",
+            "guidance": (
+                "Salin ulang URL dari halaman produk Shopee "
+                f"(mengandung `i.<shopid>.<itemid>`). {fallback}"
+            ),
+        }
+    if "login" in text or "0 ulasan" in text or "login-wall" in text:
+        return {
+            "category": "login_wall",
+            "title": "Tidak ada ulasan terambil — kemungkinan belum login.",
+            "guidance": (
+                "Buka browser sesi `.shopee_session`, login ke Shopee, lalu coba "
+                f"lagi. Pastikan URL produk benar. {fallback}"
+            ),
+        }
+    if "timeout" in text or "timed out" in text:
+        return {
+            "category": "timeout",
+            "title": "Pengambilan melebihi batas waktu (timeout).",
+            "guidance": (
+                "Koneksi lambat atau Shopee membatasi laju. Naikkan jeda "
+                f"antar-permintaan lalu coba lagi. {fallback}"
+            ),
+        }
+    if any(k in text for k in ("net::", "err_", "connection", "koneksi", "dns")):
+        return {
+            "category": "network",
+            "title": "Masalah jaringan saat menghubungi Shopee.",
+            "guidance": f"Periksa koneksi internet lalu coba lagi. {fallback}",
+        }
+    return {
+        "category": "unknown",
+        "title": "Pengambilan gagal.",
+        "guidance": f"{message or 'Kesalahan tidak diketahui.'} {fallback}",
+    }
+
+
 def run_fetch_subprocess(cmd: list[str], *, on_event=None) -> dict:
     """Jalankan worker, alirkan event NDJSON ke `on_event`, kembalikan hasil akhir.
 
@@ -326,8 +375,6 @@ def _run_fetch_ui(st, *, shopid, itemid, category, max_reviews, delay) -> None:
         status.success(f"Berhasil mengambil **{result['count']:,} ulasan**.")
         st.dataframe(df.head(), use_container_width=True)
     else:
-        st.error(
-            f"Pengambilan gagal: {result['message']}\n\n"
-            "Pastikan sudah login Shopee di sesi browser, atau gunakan tab "
-            "**CSV Upload** sebagai alternatif."
-        )
+        err = classify_fetch_error(result["message"])
+        status.error(f"**{err['title']}**")
+        st.info(err["guidance"], icon="↩️")

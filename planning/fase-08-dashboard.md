@@ -85,17 +85,23 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 
 ## Deliverables Checkpoint 8
 
-- [ ] Dashboard dapat dijalankan lokal dengan `streamlit run app.py`.
-- [ ] Module 1 — Input Interface berlapis berjalan (CSV Upload + URL Auto-Fetch).
-- [ ] Module 2 — Sentiment Analysis Results berjalan (pie, bar, trend chart).
-- [ ] Module 3 — Marketing Recommendation Panel berjalan (5 kondisi pemasaran).
-- [ ] Module 4 — Visualization berjalan (word cloud per kelas sentimen).
-- [ ] Module 5 — Settings & Configuration berjalan (filter & threshold).
-- [ ] Module 6 — Shopee Review Collector berlapis berjalan (router CSV/URL Auto-Fetch).
-- [ ] JSON Fetch Engine: pengambilan via endpoint JSON internal dalam sesi browser ber-login berhasil di mode lokal (paginasi `offset` + dedup, maks ±1.200 ulasan), dijalankan via subprocess dengan progress NDJSON.
-- [ ] Deteksi lingkungan (FR-8.14): jalur URL Auto-Fetch nonaktif otomatis di cloud, fallback ke CSV Upload.
-- [ ] Rate limiting + error/fallback handling (login-wall/0-ulasan/timeout) terimplementasi.
-- [ ] Model loading menggunakan `st.session_state` (performa optimal).
+- [x] Dashboard dapat dijalankan lokal dengan `streamlit run app.py`. *(boot headless terverifikasi: health HTTP 200)*
+- [x] Module 1 — Input Interface berlapis berjalan (CSV Upload + URL Auto-Fetch).
+- [x] Module 2 — Sentiment Analysis Results berjalan (pie, bar, trend chart).
+- [x] Module 3 — Marketing Recommendation Panel berjalan (5 kondisi pemasaran).
+- [x] Module 4 — Visualization berjalan (word cloud per kelas sentimen).
+- [x] Module 5 — Settings & Configuration berjalan (filter & threshold).
+- [x] Module 6 — Shopee Review Collector berlapis berjalan (router CSV/URL Auto-Fetch).
+- [~] JSON Fetch Engine: subprocess + progress NDJSON + cap ≤1.200 + dedup **terimplementasi & teruji plumbing-nya**; *fetch nyata ke Shopee menunggu **verifikasi manual** di desktop ber-sesi-login (di luar cakupan test otomatis).*
+- [x] Deteksi lingkungan (FR-8.14): jalur URL Auto-Fetch nonaktif otomatis di cloud, fallback ke CSV Upload.
+- [x] Rate limiting (`--delay`) + error/fallback handling (login-wall/0-ulasan/timeout/jaringan/ID) terimplementasi (`classify_fetch_error`).
+- [x] Model loading menggunakan `st.session_state` (performa optimal).
+
+> **Status implementasi (build order langkah 1–9):** seluruh modul kode + 80 unit
+> test lulus, lint/format bersih, boot dashboard hijau. Satu-satunya item yang
+> belum tertutup penuh adalah **fetch nyata ke Shopee** yang memerlukan sesi
+> browser ber-login — perlu dijalankan manual oleh pengguna di desktop sebelum
+> gate Fase 8 ditutup resmi.
 
 ## Implementasi Kode
 
