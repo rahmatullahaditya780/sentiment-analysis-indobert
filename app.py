@@ -11,8 +11,17 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.dashboard import recommendation_module, results_module, visualization_module
-from src.dashboard.analysis_pipeline import load_predictor, run_analysis
+from src.dashboard import (
+    recommendation_module,
+    results_module,
+    settings_module,
+    visualization_module,
+)
+from src.dashboard.analysis_pipeline import (
+    load_predictor,
+    recompute_from_predictions,
+    run_analysis,
+)
 from src.dashboard.input_module import render_csv_tab, render_url_tab
 
 st.set_page_config(
@@ -59,13 +68,39 @@ def main() -> None:
         st.session_state["result"] = result
 
     if "result" in st.session_state:
-        result = st.session_state["result"]
+        base = st.session_state["result"]
+
+        with st.sidebar:
+            st.divider()
+            filters = settings_module.render_sidebar(st, base.predictions)
+
+        filtered = settings_module.apply_filters(base.predictions, **filters)
         st.divider()
-        results_module.render(st, result)
+        if filtered.empty:
+            st.warning(
+                "Tidak ada ulasan yang cocok dengan filter saat ini. "
+                "Longgarkan kategori, rentang tanggal, atau confidence threshold."
+            )
+            return
+
+        active_filter = len(filtered) < len(base.predictions)
+        if active_filter:
+            st.info(
+                f"Menampilkan **{len(filtered):,}** dari {len(base.predictions):,} "
+                "ulasan sesuai filter.",
+                icon="🔎",
+            )
+        view = recompute_from_predictions(
+            filtered,
+            avg_prediction_time=base.avg_prediction_time,
+            total_prediction_time=base.total_prediction_time,
+        )
+
+        results_module.render(st, view)
         st.divider()
-        recommendation_module.render(st, result.recommendation)
+        recommendation_module.render(st, view.recommendation)
         st.divider()
-        visualization_module.render(st, result)
+        visualization_module.render(st, view)
 
 
 if __name__ == "__main__":

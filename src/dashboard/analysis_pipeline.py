@@ -138,24 +138,60 @@ def run_analysis(
     predictions = predictor.predict_batch(
         df, text_column=text_column, batch_size=batch_size
     )
+    return _assemble_result(
+        predictions,
+        use_trend=use_trend,
+        total_prediction_time=float(
+            predictions.attrs.get("total_prediction_time", 0.0)
+        ),
+        avg_prediction_time=float(predictions.attrs.get("avg_prediction_time", 0.0)),
+    )
 
+
+def recompute_from_predictions(
+    predictions: pd.DataFrame,
+    *,
+    use_trend: bool = True,
+    total_prediction_time: float = 0.0,
+    avg_prediction_time: float = 0.0,
+) -> AnalysisResult:
+    """Rakit ulang `AnalysisResult` dari DataFrame yang **sudah berlabel**.
+
+    Dipakai Module 5 (Settings) untuk merefleksikan filter pengguna TANPA
+    menjalankan inferensi ulang (hanya pandas): distribusi, kondisi pemasaran,
+    dan tren dihitung ulang atas subset terfilter. Waktu inferensi dibawa dari
+    hasil penuh (parameter) karena tak ada prediksi baru di sini.
+    """
+    return _assemble_result(
+        predictions,
+        use_trend=use_trend,
+        total_prediction_time=total_prediction_time,
+        avg_prediction_time=avg_prediction_time,
+    )
+
+
+def _assemble_result(
+    predictions: pd.DataFrame,
+    *,
+    use_trend: bool,
+    total_prediction_time: float,
+    avg_prediction_time: float,
+) -> AnalysisResult:
+    """Jalankan rule engine atas `predictions` berlabel -> `AnalysisResult`."""
     recommendation = recommend(
         predictions,
         label_column=LABEL_COLUMN,
         date_column=DATE_COLUMN,
         use_trend=use_trend,
     )
-
     trend_meta = recommendation.meta.get("trend", {}) if recommendation.meta else {}
     return AnalysisResult(
         predictions=predictions,
         recommendation=recommendation,
         distribution=recommendation.distribution,
         n_reviews=int(recommendation.distribution.get("n_reviews", len(predictions))),
-        total_prediction_time=float(
-            predictions.attrs.get("total_prediction_time", 0.0)
-        ),
-        avg_prediction_time=float(predictions.attrs.get("avg_prediction_time", 0.0)),
+        total_prediction_time=total_prediction_time,
+        avg_prediction_time=avg_prediction_time,
         has_dates=bool(trend_meta.get("available", False)),
     )
 
