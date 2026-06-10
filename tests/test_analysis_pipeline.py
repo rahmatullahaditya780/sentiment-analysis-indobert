@@ -11,7 +11,12 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from src.dashboard.analysis_pipeline import STANDARD_COLUMNS, normalize_input
+from src.dashboard.analysis_pipeline import (
+    STANDARD_COLUMNS,
+    has_predictions,
+    normalize_input,
+    run_analysis,
+)
 
 
 def test_normalize_menambah_kolom_opsional_yang_absen():
@@ -62,3 +67,46 @@ def test_normalize_semua_kosong_memunculkan_error():
 def test_normalize_bukan_dataframe_memunculkan_typeerror():
     with pytest.raises(TypeError):
         normalize_input(["bagus", "jelek"])
+
+
+# ── has_predictions & shortcut pra-prediksi (#2) ──────────────────────────────
+def test_has_predictions_true_saat_lengkap():
+    df = pd.DataFrame(
+        {
+            "review_text": ["a", "b"],
+            "predicted_label": ["positive", "negative"],
+            "confidence_score": [0.9, 0.8],
+        }
+    )
+    assert has_predictions(df) is True
+
+
+def test_has_predictions_false_saat_kolom_absen():
+    df = pd.DataFrame({"review_text": ["a"], "predicted_label": ["positive"]})
+    assert has_predictions(df) is False  # tanpa confidence_score
+
+
+def test_has_predictions_false_saat_label_kosong():
+    df = pd.DataFrame(
+        {
+            "review_text": ["a", "b"],
+            "predicted_label": ["positive", None],
+            "confidence_score": [0.9, 0.8],
+        }
+    )
+    assert has_predictions(df) is False
+
+
+def test_run_analysis_melewati_inferensi_saat_berlabel():
+    # predictor=None & tanpa torch: jika shortcut bekerja, model tak pernah dimuat.
+    df = pd.DataFrame(
+        {
+            "review_text": ["bagus", "jelek", "biasa"],
+            "predicted_label": ["positive", "negative", "neutral"],
+            "confidence_score": [0.99, 0.95, 0.70],
+        }
+    )
+    result = run_analysis(df, predictor=None)
+    assert result.inference_skipped is True
+    assert result.n_reviews == 3
+    assert result.recommendation.condition  # rule engine tetap jalan

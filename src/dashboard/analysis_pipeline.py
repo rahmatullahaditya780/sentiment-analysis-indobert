@@ -60,6 +60,7 @@ class AnalysisResult:
     n_reviews : jumlah ulasan yang dianalisis (setelah normalisasi).
     total_prediction_time / avg_prediction_time : monitoring inferensi (detik).
     has_dates : True bila trend analysis layak (ada `date_review` ter-parse).
+    inference_skipped : True bila CSV sudah berlabel -> inferensi dilewati.
     """
 
     predictions: pd.DataFrame
@@ -69,6 +70,27 @@ class AnalysisResult:
     total_prediction_time: float = 0.0
     avg_prediction_time: float = 0.0
     has_dates: bool = False
+    inference_skipped: bool = False
+
+
+def has_predictions(
+    data: pd.DataFrame,
+    *,
+    label_column: str = LABEL_COLUMN,
+    confidence_column: str = CONFIDENCE_COLUMN,
+) -> bool:
+    """True bila DataFrame sudah memuat hasil prediksi lengkap (semua baris).
+
+    Dipakai untuk melewati inferensi (mahal di CPU) saat CSV yang diunggah —
+    mis. `outputs/reports/omorfo_predictions.csv` — sudah berisi
+    `predicted_label` & `confidence_score` untuk setiap baris.
+    """
+    return (
+        label_column in data.columns
+        and confidence_column in data.columns
+        and len(data) > 0
+        and bool(data[label_column].notna().all())
+    )
 
 
 def normalize_input(
@@ -117,8 +139,9 @@ def run_analysis(
     text_column: str = TEXT_COLUMN,
     batch_size: int = 32,
     use_trend: bool = True,
+    progress_cb=None,
 ) -> AnalysisResult:
-    """Orkestrasi one-click: normalisasi -> inferensi -> rekomendasi.
+    """Orkestrasi one-click: normalisasi -> (inferensi) -> rekomendasi.
 
     Parameter
     ---------
@@ -127,16 +150,26 @@ def run_analysis(
         `st.session_state`). Bila None, dibuat sekali di sini (memuat model —
         mahal; hindari di jalur interaktif).
     use_trend : aktifkan trend analysis bila ada `date_review` (FR-8.7).
+    progress_cb : callable(done, total) opsional untuk progress bar inferensi.
+
+    Jika `data` sudah berlabel (`predicted_label` + `confidence_score` untuk semua
+    baris), inferensi **dilewati** (`inference_skipped=True`) — hemat waktu besar
+    di CPU untuk dataset yang sudah diprediksi.
 
     Mengembalikan `AnalysisResult`.
     """
     df = normalize_input(data, text_column=text_column)
 
+    # (#2) Shortcut: CSV sudah berlabel -> lewati inferensi IndoBERT.
+    if has_predictions(df):
+        df[CONFIDENCE_COLUMN] = pd.to_numeric(df[CONFIDENCE_COLUMN], errors="coerce")
+        return _assemble_result(df, use_trend=use_trend, inference_skipped=True)
+
     if predictor is None:
         predictor = load_predictor()
 
     predictions = predictor.predict_batch(
-        df, text_column=text_column, batch_size=batch_size
+        df, text_column=text_column, batch_size=batch_size, progress_cb=progress_cb
     )
     return _assemble_result(
         predictions,
@@ -174,8 +207,9 @@ def _assemble_result(
     predictions: pd.DataFrame,
     *,
     use_trend: bool,
-    total_prediction_time: float,
-    avg_prediction_time: float,
+    total_prediction_time: float = 0.0,
+    avg_prediction_time: float = 0.0,
+    inference_skipped: bool = False,
 ) -> AnalysisResult:
     """Jalankan rule engine atas `predictions` berlabel -> `AnalysisResult`."""
     recommendation = recommend(
@@ -193,6 +227,7 @@ def _assemble_result(
         total_prediction_time=total_prediction_time,
         avg_prediction_time=avg_prediction_time,
         has_dates=bool(trend_meta.get("available", False)),
+        inference_skipped=inference_skipped,
     )
 
 

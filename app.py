@@ -40,6 +40,29 @@ def get_predictor():
     return st.session_state["predictor"]
 
 
+def _analyze_with_progress(df_raw):
+    """Jalankan `run_analysis` dengan progress bar inferensi (FR-8.11).
+
+    Bila CSV sudah berlabel, `run_analysis` melewati inferensi sehingga callback
+    progress tak terpanggil — bar tetap langsung penuh. Model hanya dimuat saat
+    inferensi memang diperlukan (data mentah).
+    """
+    progress = st.progress(0.0, text="Menyiapkan analisis…")
+
+    def on_progress(done: int, total: int) -> None:
+        frac = (done / total) if total else 1.0
+        progress.progress(
+            min(frac, 1.0), text=f"Menganalisis {done:,}/{total:,} ulasan…"
+        )
+
+    # Model hanya dibutuhkan bila data belum berlabel; load lazy via predictor.
+    predictor = get_predictor()
+    result = run_analysis(df_raw, predictor=predictor, progress_cb=on_progress)
+    progress.progress(1.0, text="Selesai.")
+    progress.empty()
+    return result
+
+
 def main() -> None:
     st.title("📊 Sentara")
     st.subheader("Sistem Analisis Sentimen Ulasan Produk E-Commerce Berbasis IndoBERT")
@@ -59,14 +82,18 @@ def main() -> None:
     df_raw = df_csv if df_csv is not None else df_url
 
     if df_raw is not None and st.button("🔍 Analisis Sentimen", type="primary"):
-        predictor = get_predictor()
-        with st.spinner(f"Menganalisis {len(df_raw):,} ulasan…"):
-            try:
-                result = run_analysis(df_raw, predictor=predictor)
-            except ValueError as exc:
-                st.error(str(exc))
-                return
+        try:
+            result = _analyze_with_progress(df_raw)
+        except ValueError as exc:
+            st.error(str(exc))
+            return
         st.session_state["result"] = result
+        if result.inference_skipped:
+            st.success(
+                f"Data sudah berlabel — inferensi dilewati untuk "
+                f"{result.n_reviews:,} ulasan (langsung ke analisis).",
+                icon="⚡",
+            )
 
     if "result" in st.session_state:
         base = st.session_state["result"]

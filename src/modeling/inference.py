@@ -163,11 +163,15 @@ class SentimentPredictor:
         return self._device
 
     # ── Inti inferensi ────────────────────────────────────────────────────────
-    def _predict_proba(self, texts: list[str], batch_size: int = 32):
+    def _predict_proba(self, texts: list[str], batch_size: int = 32, progress_cb=None):
         """Jalankan forward pass batch-per-batch -> array probabilitas (N, C).
 
         Teks diasumsikan SUDAH dibersihkan (`preprocess_text`). Mengembalikan
         numpy array float (n_texts, num_labels).
+
+        `progress_cb` (opsional): callable(done:int, total:int) dipanggil setelah
+        tiap batch — dipakai dashboard Fase 8 untuk progress bar inferensi.
+        Default None (kompatibel mundur).
         """
         import numpy as np
         import torch
@@ -176,9 +180,10 @@ class SentimentPredictor:
         tokenizer = self.tokenizer
         device = self.device
 
+        total = len(texts)
         all_proba: list = []
         with torch.no_grad():
-            for start in range(0, len(texts), batch_size):
+            for start in range(0, total, batch_size):
                 batch = texts[start : start + batch_size]
                 enc = tokenizer(
                     batch,
@@ -190,6 +195,8 @@ class SentimentPredictor:
                 logits = model(**enc).logits
                 proba = torch.softmax(logits, dim=-1)
                 all_proba.append(proba.cpu().numpy())
+                if progress_cb is not None:
+                    progress_cb(min(start + batch_size, total), total)
 
         if not all_proba:
             return np.empty((0, len(self._id2label)), dtype=float)
@@ -219,6 +226,7 @@ class SentimentPredictor:
         text_column: str = DEFAULT_TEXT_COLUMN,
         batch_size: int = 32,
         keep_columns: bool = True,
+        progress_cb=None,
     ) -> pd.DataFrame:
         """Prediksi batch dari DataFrame atau list teks (FR-6.3).
 
@@ -227,6 +235,7 @@ class SentimentPredictor:
         data : DataFrame berisi kolom `text_column`, atau list[str] teks mentah.
         text_column : nama kolom teks (default 'review_text').
         keep_columns : jika True dan input DataFrame, kolom asli dipertahankan.
+        progress_cb : callable(done, total) opsional untuk progress bar (Fase 8).
 
         Mengembalikan DataFrame dengan tambahan kolom:
         `predicted_label`, `confidence_score`. Total & rata-rata prediction time
@@ -248,7 +257,9 @@ class SentimentPredictor:
         clean_texts = [preprocess_text(t) for t in raw_texts]
 
         start = time.perf_counter()
-        proba = self._predict_proba(clean_texts, batch_size=batch_size)
+        proba = self._predict_proba(
+            clean_texts, batch_size=batch_size, progress_cb=progress_cb
+        )
         elapsed = time.perf_counter() - start
 
         if len(proba) == 0:
@@ -302,7 +313,9 @@ def analyze_omorfo_reviews(
     distribution = {
         label: {
             "count": int(counts.get(label, 0)),
-            "proportion": round(float(counts.get(label, 0)) / total, 4) if total else 0.0,
+            "proportion": (
+                round(float(counts.get(label, 0)) / total, 4) if total else 0.0
+            ),
         }
         for label in ID2LABEL.values()
     }
