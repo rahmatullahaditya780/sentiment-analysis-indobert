@@ -36,9 +36,14 @@ import pandas as pd
 # Mirror pola id Shopee dari scrape_omorfo_api._URL_ID_RE (sumber kebenaran).
 _URL_ID_RE = re.compile(r"i\.(\d+)\.(\d+)")
 
-# Default sesi browser ber-login (persisten) untuk worker fetch.
+# Default sesi browser ber-login (persisten) untuk worker fetch & login.
 DEFAULT_USER_DATA_DIR = ".shopee_session"
 HARD_CAP = 1200  # FR-8.12
+
+# Cookie yang menandakan sesi Shopee sudah login (heuristik, dapat dikalibrasi).
+# SPC_EC/SPC_ST = token login; SPC_U = user id ("-1" bila anonim).
+_LOGIN_COOKIE_TOKENS = ("SPC_EC", "SPC_ST", "SPC_ST_")
+LOGIN_TIMEOUT_DEFAULT = 240  # detik menunggu pengguna login
 
 # Env var yang, bila ada, menandai lingkungan Streamlit Cloud.
 _CLOUD_ENV_MARKERS = ("STREAMLIT_RUNTIME_CLOUD", "STREAMLIT_CLOUD", "STREAMLIT_SHARING")
@@ -288,6 +293,92 @@ def run_fetch_subprocess(cmd: list[str], *, on_event=None) -> dict:
     return result
 
 
+def is_login_cookie(cookies) -> bool:
+    """True bila daftar cookie menandakan sesi Shopee sudah login (heuristik).
+
+    Murni (tanpa Streamlit/Playwright) agar teruji. Dipakai login worker untuk
+    mendeteksi login selesai.
+    """
+    for cookie in cookies or []:
+        name = cookie.get("name", "")
+        value = str(cookie.get("value", "")).strip()
+        if (
+            name in _LOGIN_COOKIE_TOKENS
+            and value
+            and value.lower()
+            not in (
+                "-",
+                "null",
+                "none",
+            )
+        ):
+            return True
+        if name == "SPC_U" and value not in ("", "-1"):
+            return True
+    return False
+
+
+def build_login_command(
+    *,
+    user_data_dir: str = DEFAULT_USER_DATA_DIR,
+    timeout: int = LOGIN_TIMEOUT_DEFAULT,
+    python_exe: str | None = None,
+) -> list[str]:
+    """Susun argumen CLI untuk menjalankan `login_worker` (subprocess). Teruji."""
+    return [
+        python_exe or sys.executable,
+        "-m",
+        "src.dashboard.login_worker",
+        "--user-data-dir",
+        user_data_dir,
+        "--timeout",
+        str(int(timeout)),
+    ]
+
+
+def run_login_subprocess(cmd: list[str], *, on_event=None) -> dict:
+    """Jalankan login worker, alirkan event NDJSON, kembalikan hasil akhir.
+
+    Mengembalikan {status: 'ok'|'error', already: bool, message: str}. `already`
+    True bila sesi memang sudah login (tak perlu input pengguna).
+    """
+    result = {
+        "status": "error",
+        "already": False,
+        "message": "Worker login tidak menghasilkan event.",
+    }
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        event = parse_progress_line(line)
+        if event is None:
+            continue
+        if on_event is not None:
+            on_event(event)
+        if event["type"] == "login_ok":
+            result = {
+                "status": "ok",
+                "already": bool(event.get("already")),
+                "message": "",
+            }
+        elif event["type"] == "error":
+            result = {
+                "status": "error",
+                "already": False,
+                "message": event.get("msg", "Kesalahan tidak diketahui."),
+            }
+    proc.wait()
+    return result
+
+
 def render_url_section(st):
     """Render tab URL Auto-Fetch: badge lingkungan, validasi URL, fetch + progress.
 
@@ -311,12 +402,17 @@ def render_url_section(st):
         "Lingkungan **lokal/desktop** terdeteksi — jalur URL Auto-Fetch tersedia."
     )
     st.caption(f"Deteksi lingkungan: {env_info['reason']}")
-    st.warning(
-        "**Prasyarat:** sesi browser `.shopee_session` harus **sudah login** ke "
-        "Shopee. Tanpa login, Shopee mengarahkan ke verifikasi anti-bot (DataDome) "
-        "dan fetch gagal (0 ulasan). Login cukup sekali (sesi disimpan persisten).",
-        icon="🔑",
-    )
+
+    # Gate login: tangkap sesi Shopee dulu sebelum membuka input URL.
+    if not st.session_state.get("shopee_logged_in", False):
+        _render_login_gate(st)
+        return st.session_state.get("url_fetched_df")
+
+    col_status, col_relogin = st.columns([3, 1])
+    col_status.success("Sesi Shopee: **sudah login**.", icon="🔓")
+    if col_relogin.button("Login ulang"):
+        st.session_state["shopee_logged_in"] = False
+        st.rerun()
 
     url = st.text_input(
         "URL produk Shopee",
@@ -353,6 +449,57 @@ def render_url_section(st):
         )
 
     return st.session_state.get("url_fetched_df")
+
+
+def _render_login_gate(st) -> None:
+    """Langkah 1 URL Auto-Fetch: arahkan pengguna login Shopee dulu (tangkap sesi).
+
+    Tanpa sesi login, Shopee mengarahkan ke verifikasi anti-bot (DataDome) dan
+    fetch gagal (0 ulasan). Login cukup **sekali** — sesi disimpan persisten di
+    `.shopee_session`.
+    """
+    st.info(
+        "**Langkah 1 — Login Shopee.** Klik tombol di bawah; sebuah jendela "
+        "browser akan terbuka. Login ke akun Shopee Anda, lalu halaman ini otomatis "
+        "lanjut begitu sesi terdeteksi. Setelah login, barulah tempel URL produk.",
+        icon="🔑",
+    )
+    col_login, col_skip = st.columns(2)
+    if col_login.button("🔐 Login Shopee", type="primary"):
+        _run_login_ui(st)
+    if col_skip.button("Lewati (sudah login sebelumnya)"):
+        st.session_state["shopee_logged_in"] = True
+        st.rerun()
+
+
+def _run_login_ui(st) -> None:
+    """Jalankan login worker (subprocess headful) & tunggu sesi terdeteksi."""
+    cmd = build_login_command()
+    status = st.empty()
+    status.info("Membuka browser… selesaikan login Shopee di jendela yang terbuka.")
+
+    def on_event(event: dict) -> None:
+        etype = event.get("type")
+        if etype == "login_open":
+            status.info(
+                "Jendela browser terbuka — **silakan login ke Shopee**. "
+                "Halaman ini menunggu hingga sesi terdeteksi…"
+            )
+        elif etype == "error":
+            status.error(event.get("msg", "Login gagal."))
+
+    with st.spinner("Menunggu login di jendela browser…"):
+        result = run_login_subprocess(cmd, on_event=on_event)
+
+    if result["status"] == "ok":
+        st.session_state["shopee_logged_in"] = True
+        st.rerun()
+    else:
+        status.error(f"Login gagal: {result['message']}")
+        st.info(
+            "Coba lagi, atau gunakan tab **CSV Upload** sebagai alternatif.",
+            icon="↩️",
+        )
 
 
 def _run_fetch_ui(st, *, shopid, itemid, category, max_reviews, delay) -> None:
