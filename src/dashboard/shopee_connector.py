@@ -1,8 +1,8 @@
 """
-Fase 8 — Module 6: Shopee Review Collector (tiered router) — bagian non-fetch.
+Fase 8 — Module 6: Shopee Review Collector (tiered router).
 
-Langkah ini menyediakan fondasi jalur **URL Auto-Fetch** tanpa menjalankan fetch
-nyata (itu menyusul: subprocess + progress NDJSON):
+Jalur **URL Auto-Fetch** (lokal/desktop saja): validasi URL, deteksi lingkungan,
+dan pengambilan ulasan via subprocess `fetch_worker` dengan progress streaming.
 
 - `validate_shopee_url`  : validasi & ekstraksi (shopid, itemid) dari URL produk
   Shopee (FR-8.10). Mirror regex `i.<shopid>.<itemid>` di
@@ -10,20 +10,35 @@ nyata (itu menyusul: subprocess + progress NDJSON):
 - `detect_environment`   : tentukan cloud vs lokal (FR-8.14). Jalur URL Auto-Fetch
   hanya aktif di lokal/desktop (browser ber-login tak tersedia di Streamlit Cloud
   headless — lihat catatan deployment di planning/fase-08-dashboard.md).
-- `render_url_section`   : UI tab URL (badge lingkungan + validasi URL). Tombol
-  Fetch dinonaktifkan sampai engine fetch dibangun pada langkah berikutnya.
+- `build_worker_command` : susun argumen CLI `fetch_worker` (clamp cap, FR-8.12).
+- `run_fetch_subprocess` : jalankan worker, alirkan event NDJSON ke callback UI
+  (progress bar + counter, FR-8.11), kembalikan hasil akhir.
+- `render_url_section`   : UI tab URL (badge lingkungan, validasi, fetch+progress).
 
-`validate_shopee_url` & `detect_environment` murni (tanpa Streamlit) agar teruji.
+`validate_shopee_url`, `detect_environment`, `build_worker_command`, &
+`parse_progress_line` murni (tanpa Streamlit) agar teruji. `sync_playwright`
+diisolasi di proses worker terpisah, bukan di proses Streamlit.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
+import time
+from pathlib import Path
+
+import pandas as pd
 
 # Mirror pola id Shopee dari scrape_omorfo_api._URL_ID_RE (sumber kebenaran).
 _URL_ID_RE = re.compile(r"i\.(\d+)\.(\d+)")
+
+# Default sesi browser ber-login (persisten) untuk worker fetch.
+DEFAULT_USER_DATA_DIR = ".shopee_session"
+HARD_CAP = 1200  # FR-8.12
 
 # Env var yang, bila ada, menandai lingkungan Streamlit Cloud.
 _CLOUD_ENV_MARKERS = ("STREAMLIT_RUNTIME_CLOUD", "STREAMLIT_CLOUD", "STREAMLIT_SHARING")
@@ -105,11 +120,119 @@ def detect_environment(*, env: dict | None = None, platform: str | None = None) 
     }
 
 
-def render_url_section(st) -> None:
-    """Render tab URL Auto-Fetch (langkah 7: badge lingkungan + validasi URL).
+def build_worker_command(
+    *,
+    shopid: str,
+    itemid: str,
+    output: str,
+    category: str = "",
+    max_reviews: int = HARD_CAP,
+    delay: float = 1.5,
+    user_data_dir: str = DEFAULT_USER_DATA_DIR,
+    python_exe: str | None = None,
+) -> list[str]:
+    """Susun argumen CLI untuk menjalankan `fetch_worker` sebagai subprocess.
 
-    Engine fetch (subprocess + progress) menyusul pada langkah berikutnya; tombol
-    Fetch sengaja dinonaktifkan di sini.
+    Cap di-clamp ke `HARD_CAP` (FR-8.12). Murni (tanpa efek samping) agar teruji.
+    """
+    cap = max(1, min(int(max_reviews), HARD_CAP))
+    return [
+        python_exe or sys.executable,
+        "-m",
+        "src.dashboard.fetch_worker",
+        "--shopid",
+        str(shopid),
+        "--itemid",
+        str(itemid),
+        "--category",
+        category,
+        "--max-reviews",
+        str(cap),
+        "--delay",
+        str(delay),
+        "--user-data-dir",
+        user_data_dir,
+        "--output",
+        output,
+    ]
+
+
+def parse_progress_line(line: str) -> dict | None:
+    """Parse satu baris stdout worker -> event NDJSON, atau None bila bukan event.
+
+    Toleran terhadap baris log `[api] ...` (non-JSON) yang ikut tercetak worker.
+    """
+    line = (line or "").strip()
+    if not line:
+        return None
+    try:
+        obj = json.loads(line)
+    except (ValueError, json.JSONDecodeError):
+        return None
+    if isinstance(obj, dict) and "type" in obj:
+        return obj
+    return None
+
+
+def run_fetch_subprocess(cmd: list[str], *, on_event=None) -> dict:
+    """Jalankan worker, alirkan event NDJSON ke `on_event`, kembalikan hasil akhir.
+
+    Mengembalikan {status: 'ok'|'error', path, count, message}. `on_event(event)`
+    dipanggil untuk tiap event terstruktur (start/progress/done/error) — dipakai
+    UI memperbarui progress bar. Stdout & stderr digabung; baris non-NDJSON
+    diabaikan.
+    """
+    result = {
+        "status": "error",
+        "path": None,
+        "count": 0,
+        "message": "Worker tidak menghasilkan event apa pun.",
+    }
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        event = parse_progress_line(line)
+        if event is None:
+            continue
+        if on_event is not None:
+            on_event(event)
+        if event["type"] == "done":
+            result = {
+                "status": "ok",
+                "path": event.get("path"),
+                "count": int(event.get("count", 0)),
+                "message": "",
+            }
+        elif event["type"] == "error":
+            result = {
+                "status": "error",
+                "path": None,
+                "count": 0,
+                "message": event.get("msg", "Kesalahan tidak diketahui."),
+            }
+    proc.wait()
+    if result["status"] == "error" and proc.returncode not in (0, 1, 2):
+        result["message"] = (
+            f"Worker berhenti tak normal (exit {proc.returncode}). "
+            "Periksa sesi browser / koneksi."
+        )
+    return result
+
+
+def render_url_section(st):
+    """Render tab URL Auto-Fetch: badge lingkungan, validasi URL, fetch + progress.
+
+    Mengembalikan DataFrame mentah hasil fetch (skema implementasi) bila berhasil,
+    atau None. Hasil juga disimpan di `st.session_state['url_fetched_df']` agar
+    bertahan lintas rerun (mis. saat tombol Analisis ditekan).
     """
     env_info = detect_environment()
 
@@ -121,7 +244,7 @@ def render_url_section(st) -> None:
             icon="☁️",
         )
         st.caption(f"Deteksi lingkungan: {env_info['reason']}")
-        return
+        return None
 
     st.success(
         "Lingkungan **lokal/desktop** terdeteksi — jalur URL Auto-Fetch tersedia."
@@ -133,19 +256,78 @@ def render_url_section(st) -> None:
         placeholder="https://shopee.co.id/...-i.188380895.25462161057",
         key="shopee_url",
     )
-    if url:
-        check = validate_shopee_url(url)
-        if check["valid"]:
-            st.success(check["message"])
-        else:
-            st.error(check["message"])
+    category = st.text_input("Kategori produk (opsional)", key="shopee_category")
+    col_a, col_b = st.columns(2)
+    max_reviews = col_a.number_input(
+        "Maks ulasan", min_value=50, max_value=HARD_CAP, value=HARD_CAP, step=50
+    )
+    delay = col_b.number_input(
+        "Jeda antar-permintaan (detik)",
+        min_value=0.5,
+        max_value=10.0,
+        value=1.5,
+        step=0.5,
+    )
 
-    st.button(
-        "🔗 Ambil Ulasan",
-        disabled=True,
-        help="Engine pengambilan ulasan diaktifkan pada langkah implementasi berikutnya.",
+    check = validate_shopee_url(url) if url else None
+    if check is not None:
+        (st.success if check["valid"] else st.error)(check["message"])
+
+    if st.button(
+        "🔗 Ambil Ulasan", disabled=not (check and check["valid"]), type="primary"
+    ):
+        _run_fetch_ui(
+            st,
+            shopid=check["shopid"],
+            itemid=check["itemid"],
+            category=category,
+            max_reviews=int(max_reviews),
+            delay=float(delay),
+        )
+
+    return st.session_state.get("url_fetched_df")
+
+
+def _run_fetch_ui(st, *, shopid, itemid, category, max_reviews, delay) -> None:
+    """Jalankan fetch via subprocess sambil memperbarui progress bar (FR-8.11)."""
+    out_path = str(
+        Path(tempfile.gettempdir()) / f"sentara_fetch_{int(time.time())}.csv"
     )
-    st.caption(
-        "Pengambilan otomatis (endpoint JSON internal via sesi browser ber-login) "
-        "akan diaktifkan pada tahap berikutnya."
+    cmd = build_worker_command(
+        shopid=shopid,
+        itemid=itemid,
+        output=out_path,
+        category=category,
+        max_reviews=max_reviews,
+        delay=delay,
     )
+
+    progress = st.progress(0.0)
+    status = st.empty()
+    cap = max(1, min(max_reviews, HARD_CAP))
+
+    def on_event(event: dict) -> None:
+        etype = event.get("type")
+        if etype == "start":
+            status.info(f"Memulai pengambilan (target ≤ {event.get('cap', cap)})…")
+        elif etype == "progress":
+            done = int(event.get("done", 0))
+            progress.progress(min(done / cap, 1.0))
+            status.info(f"Terkumpul **{done}** ulasan…")
+        elif etype == "error":
+            status.error(event.get("msg", "Gagal."))
+
+    result = run_fetch_subprocess(cmd, on_event=on_event)
+
+    if result["status"] == "ok":
+        progress.progress(1.0)
+        df = pd.read_csv(result["path"])
+        st.session_state["url_fetched_df"] = df
+        status.success(f"Berhasil mengambil **{result['count']:,} ulasan**.")
+        st.dataframe(df.head(), use_container_width=True)
+    else:
+        st.error(
+            f"Pengambilan gagal: {result['message']}\n\n"
+            "Pastikan sudah login Shopee di sesi browser, atau gunakan tab "
+            "**CSV Upload** sebagai alternatif."
+        )

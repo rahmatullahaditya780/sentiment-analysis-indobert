@@ -103,8 +103,10 @@ def _epoch_to_date(ctime: object) -> str | None:
 
 def _launch_context(pw, user_data_dir: str | Path | None, headful: bool):
     """Buka persistent context (Chrome asli + penyamaran otomasi) & beranda Shopee."""
-    ua = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-          "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+    ua = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    )
     launch_kwargs = dict(
         headless=not headful,
         locale="id-ID",
@@ -114,13 +116,16 @@ def _launch_context(pw, user_data_dir: str | Path | None, headful: bool):
     )
     target_dir = str(user_data_dir) if user_data_dir else ".shopee_session_tmp"
     try:
-        ctx = pw.chromium.launch_persistent_context(target_dir, channel="chrome", **launch_kwargs)
+        ctx = pw.chromium.launch_persistent_context(
+            target_dir, channel="chrome", **launch_kwargs
+        )
         print("[api] pakai Chrome asli (channel=chrome)")
     except Exception as exc:  # noqa: BLE001 — Chrome tak ada → fallback Chromium
         print(f"[api] channel=chrome gagal ({exc}); fallback Chromium")
         ctx = pw.chromium.launch_persistent_context(target_dir, **launch_kwargs)
     ctx.add_init_script(
-        "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});")
+        "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
+    )
     page = ctx.pages[0] if ctx.pages else ctx.new_page()
     page.set_default_timeout(30000)
     # Beranda → dapatkan cookie anti-bot yang valid dalam sesi login.
@@ -129,14 +134,28 @@ def _launch_context(pw, user_data_dir: str | Path | None, headful: bool):
     return ctx, page
 
 
-def _paginate(page, *, shopid: str, itemid: str, rating_type: int, limit: int,
-              max_reviews: int, delay: float, seen: set[str],
-              max_empty_pages: int = 4) -> tuple[list[dict], str | None]:
+def _paginate(
+    page,
+    *,
+    shopid: str,
+    itemid: str,
+    rating_type: int,
+    limit: int,
+    max_reviews: int,
+    delay: float,
+    seen: set[str],
+    max_empty_pages: int = 4,
+    progress_cb=None,
+) -> tuple[list[dict], str | None]:
     """Paginasi satu `type` via in-browser fetch. Tulis ke `seen` (dedup global).
 
     Berhenti bila: capai max_reviews, halaman kosong, offset >= total, ATAU
     `max_empty_pages` halaman beruntun tanpa ulasan-berkomentar baru (banyak entri
     rating-only di Shopee yang kita lewati — hindari paginasi sia-sia).
+
+    `progress_cb` (opsional): callable(done:int, total:int|None) dipanggil setelah
+    tiap halaman — dipakai dashboard Fase 8 untuk progress bar. Default None
+    (kompatibel mundur dengan pemakaian CLI Fase 6).
     """
     rows: list[dict] = []
     resolved_name: str | None = None
@@ -167,17 +186,23 @@ def _paginate(page, *, shopid: str, itemid: str, rating_type: int, limit: int,
                 pinfo = r.get("product_items") or []
                 if pinfo and isinstance(pinfo, list):
                     resolved_name = (pinfo[0].get("name") or "").strip()
-            rows.append({
-                "review_id": cmtid or _epoch_to_date(r.get("ctime")),
-                "review_text": comment,
-                "rating": r.get("rating_star"),
-                "date_review": _epoch_to_date(r.get("ctime")),
-            })
+            rows.append(
+                {
+                    "review_id": cmtid or _epoch_to_date(r.get("ctime")),
+                    "review_text": comment,
+                    "rating": r.get("rating_star"),
+                    "date_review": _epoch_to_date(r.get("ctime")),
+                }
+            )
             new_count += 1
         print(f"[api] {tag} offset {offset}: +{new_count} (subtotal {len(rows)})")
+        if progress_cb is not None:
+            progress_cb(len(rows), total)
         empty_streak = empty_streak + 1 if new_count == 0 else 0
         if empty_streak >= max_empty_pages:
-            print(f"[api] {tag}: {max_empty_pages} halaman tanpa komentar baru — berhenti")
+            print(
+                f"[api] {tag}: {max_empty_pages} halaman tanpa komentar baru — berhenti"
+            )
             break
         offset += limit
         if total and offset >= total:
@@ -186,7 +211,9 @@ def _paginate(page, *, shopid: str, itemid: str, rating_type: int, limit: int,
     return rows, resolved_name
 
 
-def _rows_to_df(rows: list[dict], product_name: str, product_category: str) -> pd.DataFrame:
+def _rows_to_df(
+    rows: list[dict], product_name: str, product_category: str
+) -> pd.DataFrame:
     """Bungkus list dict → DataFrame berskema implementasi."""
     if not rows:
         return pd.DataFrame(columns=IMPLEMENTATION_COLUMNS)
@@ -209,15 +236,28 @@ def fetch_ratings(
     user_data_dir: str | Path | None = None,
     headful: bool = True,
     rating_type: int = 0,
+    progress_cb=None,
 ) -> pd.DataFrame:
-    """Ambil ulasan satu `type` → DataFrame berskema implementasi."""
+    """Ambil ulasan satu `type` → DataFrame berskema implementasi.
+
+    `progress_cb` (opsional): diteruskan ke `_paginate` untuk progress dashboard.
+    """
     from playwright.sync_api import sync_playwright
 
     seen: set[str] = set()
     with sync_playwright() as pw:
         ctx, page = _launch_context(pw, user_data_dir, headful)
-        rows, name = _paginate(page, shopid=shopid, itemid=itemid, rating_type=rating_type,
-                               limit=limit, max_reviews=max_reviews, delay=delay, seen=seen)
+        rows, name = _paginate(
+            page,
+            shopid=shopid,
+            itemid=itemid,
+            rating_type=rating_type,
+            limit=limit,
+            max_reviews=max_reviews,
+            delay=delay,
+            seen=seen,
+            progress_cb=progress_cb,
+        )
         ctx.close()
     if not rows:
         print("[api] 0 ulasan — periksa sesi login / id produk")
@@ -251,16 +291,31 @@ def run_hybrid(
 
         print(f"\n[api] === NATURAL (type=0, target {main_target}) ===")
         seen_nat: set[str] = set()
-        nat_rows, name = _paginate(page, shopid=shopid, itemid=itemid, rating_type=0,
-                                   limit=limit, max_reviews=main_target, delay=delay,
-                                   seen=seen_nat)
+        nat_rows, name = _paginate(
+            page,
+            shopid=shopid,
+            itemid=itemid,
+            rating_type=0,
+            limit=limit,
+            max_reviews=main_target,
+            delay=delay,
+            seen=seen_nat,
+        )
 
         print("\n[api] === MINORITAS (type=1..4, ambil semua) ===")
         seen_min: set[str] = set()
         min_rows: list[dict] = []
         for star in (1, 2, 3, 4):
-            rows, n2 = _paginate(page, shopid=shopid, itemid=itemid, rating_type=star,
-                                 limit=limit, max_reviews=10_000, delay=delay, seen=seen_min)
+            rows, n2 = _paginate(
+                page,
+                shopid=shopid,
+                itemid=itemid,
+                rating_type=star,
+                limit=limit,
+                max_reviews=10_000,
+                delay=delay,
+                seen=seen_min,
+            )
             min_rows.extend(rows)
             name = name or n2
         ctx.close()
@@ -295,20 +350,37 @@ def run_hybrid_many(
         for i, p in enumerate(products, start=1):
             shopid, itemid = str(p["shopid"]), str(p["itemid"])
             category = p.get("category", "")
-            print(f"\n[api] ===== Produk {i}/{len(products)} "
-                  f"(itemid={itemid}, kategori={category or '-'}) =====")
+            print(
+                f"\n[api] ===== Produk {i}/{len(products)} "
+                f"(itemid={itemid}, kategori={category or '-'}) ====="
+            )
 
             print("[api] --- natural (type=0) ---")
             seen_nat: set[str] = set()
-            nat_rows, name = _paginate(page, shopid=shopid, itemid=itemid, rating_type=0,
-                                       limit=limit, max_reviews=main_target_per, delay=delay,
-                                       seen=seen_nat)
+            nat_rows, name = _paginate(
+                page,
+                shopid=shopid,
+                itemid=itemid,
+                rating_type=0,
+                limit=limit,
+                max_reviews=main_target_per,
+                delay=delay,
+                seen=seen_nat,
+            )
             print("[api] --- minoritas (type=1..4) ---")
             seen_min: set[str] = set()
             min_rows: list[dict] = []
             for star in (1, 2, 3, 4):
-                rows, n2 = _paginate(page, shopid=shopid, itemid=itemid, rating_type=star,
-                                     limit=limit, max_reviews=10_000, delay=delay, seen=seen_min)
+                rows, n2 = _paginate(
+                    page,
+                    shopid=shopid,
+                    itemid=itemid,
+                    rating_type=star,
+                    limit=limit,
+                    max_reviews=10_000,
+                    delay=delay,
+                    seen=seen_min,
+                )
                 min_rows.extend(rows)
                 name = name or n2
 
@@ -332,28 +404,58 @@ def run_hybrid_many(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--url", default=None, help="URL produk Shopee (untuk ambil id)")
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--url", default=None, help="URL produk Shopee (untuk ambil id)"
+    )
     parser.add_argument("--shopid", default=None, help="Shop ID (jika tanpa --url)")
     parser.add_argument("--itemid", default=None, help="Item ID (jika tanpa --url)")
     parser.add_argument("--product-name", default="", help="Nama produk (opsional)")
     parser.add_argument("--category", default="", help="Isi kolom product_category")
-    parser.add_argument("--output", default=DEFAULT_OUTPUT, help=f"CSV keluaran ({DEFAULT_OUTPUT})")
-    parser.add_argument("--limit", type=int, default=50, help="Ulasan per request (maks ~50)")
+    parser.add_argument(
+        "--output", default=DEFAULT_OUTPUT, help=f"CSV keluaran ({DEFAULT_OUTPUT})"
+    )
+    parser.add_argument(
+        "--limit", type=int, default=50, help="Ulasan per request (maks ~50)"
+    )
     parser.add_argument("--max", type=int, default=2000, help="Batas total ulasan")
-    parser.add_argument("--delay", type=float, default=1.5, help="Jeda detik antar-request")
-    parser.add_argument("--user-data-dir", default=".shopee_session", help="Profil sesi login")
-    parser.add_argument("--type", type=int, default=0, dest="rating_type",
-                        help="Param 'type' endpoint: 0=semua (natural). Non-0=filter tab bintang.")
-    parser.add_argument("--mode", choices=["single", "hybrid", "hybrid-multi"], default="single",
-                        help="single=satu type; hybrid=1 produk natural+minoritas; "
-                        "hybrid-multi=banyak produk (pakai --urls-file) dalam 1 sesi")
-    parser.add_argument("--urls-file", default=None,
-                        help="JSON [{\"url\":..., \"category\":...}, ...] untuk hybrid-multi")
-    parser.add_argument("--main-target", type=int, default=1200,
-                        help="Target ulasan natural (mode hybrid)")
-    parser.add_argument("--minority-output", default="data/implementation/omorfo_reviews_minoritas.csv",
-                        help="CSV bukti minoritas (mode hybrid)")
+    parser.add_argument(
+        "--delay", type=float, default=1.5, help="Jeda detik antar-request"
+    )
+    parser.add_argument(
+        "--user-data-dir", default=".shopee_session", help="Profil sesi login"
+    )
+    parser.add_argument(
+        "--type",
+        type=int,
+        default=0,
+        dest="rating_type",
+        help="Param 'type' endpoint: 0=semua (natural). Non-0=filter tab bintang.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["single", "hybrid", "hybrid-multi"],
+        default="single",
+        help="single=satu type; hybrid=1 produk natural+minoritas; "
+        "hybrid-multi=banyak produk (pakai --urls-file) dalam 1 sesi",
+    )
+    parser.add_argument(
+        "--urls-file",
+        default=None,
+        help='JSON [{"url":..., "category":...}, ...] untuk hybrid-multi',
+    )
+    parser.add_argument(
+        "--main-target",
+        type=int,
+        default=1200,
+        help="Target ulasan natural (mode hybrid)",
+    )
+    parser.add_argument(
+        "--minority-output",
+        default="data/implementation/omorfo_reviews_minoritas.csv",
+        help="CSV bukti minoritas (mode hybrid)",
+    )
     args = parser.parse_args()
 
     import json
@@ -364,7 +466,9 @@ def main() -> None:
         df.to_csv(p, index=False, encoding="utf-8")
         print(f"\nOK [{label}]: {len(df)} ulasan -> {p}")
         if not df.empty:
-            print(f"Distribusi rating:\n{df['rating'].value_counts().sort_index().to_string()}")
+            print(
+                f"Distribusi rating:\n{df['rating'].value_counts().sort_index().to_string()}"
+            )
 
     if args.mode == "hybrid-multi":
         if not args.urls_file:
@@ -374,12 +478,22 @@ def main() -> None:
         for entry in raw:
             url = entry["url"] if isinstance(entry, dict) else entry
             sid, iid = parse_ids_from_url(url)
-            products.append({"shopid": sid, "itemid": iid,
-                             "category": entry.get("category", "") if isinstance(entry, dict) else ""})
+            products.append(
+                {
+                    "shopid": sid,
+                    "itemid": iid,
+                    "category": (
+                        entry.get("category", "") if isinstance(entry, dict) else ""
+                    ),
+                }
+            )
         print(f"[api] hybrid-multi: {len(products)} produk")
         df_nat, df_min = run_hybrid_many(
-            products, main_target_per=args.main_target, limit=args.limit,
-            delay=args.delay, user_data_dir=args.user_data_dir,
+            products,
+            main_target_per=args.main_target,
+            limit=args.limit,
+            delay=args.delay,
+            user_data_dir=args.user_data_dir,
         )
         _save(df_nat, args.output, "natural-gabung")
         _save(df_min, args.minority_output, "minoritas-gabung")
@@ -396,19 +510,28 @@ def main() -> None:
 
     if args.mode == "hybrid":
         df_nat, df_min = run_hybrid(
-            shopid=shopid, itemid=itemid,
-            product_name=args.product_name, product_category=args.category,
-            main_target=args.main_target, limit=args.limit, delay=args.delay,
+            shopid=shopid,
+            itemid=itemid,
+            product_name=args.product_name,
+            product_category=args.category,
+            main_target=args.main_target,
+            limit=args.limit,
+            delay=args.delay,
             user_data_dir=args.user_data_dir,
         )
         _save(df_nat, args.output, "natural")
         _save(df_min, args.minority_output, "minoritas")
     else:
         df = fetch_ratings(
-            shopid=shopid, itemid=itemid,
-            product_name=args.product_name, product_category=args.category,
-            limit=args.limit, max_reviews=args.max, delay=args.delay,
-            user_data_dir=args.user_data_dir, rating_type=args.rating_type,
+            shopid=shopid,
+            itemid=itemid,
+            product_name=args.product_name,
+            product_category=args.category,
+            limit=args.limit,
+            max_reviews=args.max,
+            delay=args.delay,
+            user_data_dir=args.user_data_dir,
+            rating_type=args.rating_type,
         )
         _save(df, args.output, "single")
 

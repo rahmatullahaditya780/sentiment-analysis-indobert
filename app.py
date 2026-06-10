@@ -51,11 +51,12 @@ def main() -> None:
         st.caption("Model: `indolem/indobert-base-uncased` (fine-tuned)")
 
     tab_csv, tab_url = st.tabs(["📁 CSV Upload", "🔗 URL Auto-Fetch (Lokal saja)"])
-    df_raw = None
     with tab_csv:
-        df_raw = render_csv_tab(st)
+        df_csv = render_csv_tab(st)
     with tab_url:
-        render_url_tab(st)
+        df_url = render_url_tab(st)
+    # Prioritaskan CSV bila keduanya terisi; jika tidak, pakai hasil URL fetch.
+    df_raw = df_csv if df_csv is not None else df_url
 
     if df_raw is not None and st.button("🔍 Analisis Sentimen", type="primary"):
         predictor = get_predictor()

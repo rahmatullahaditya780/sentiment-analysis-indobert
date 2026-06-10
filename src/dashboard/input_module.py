@@ -83,13 +83,13 @@ def render_csv_tab(st) -> pd.DataFrame | None:
     return df
 
 
-def render_url_tab(st) -> None:
+def render_url_tab(st) -> pd.DataFrame | None:
     """Tab URL Auto-Fetch — delegasi ke Module 6 (`shopee_connector`).
 
     Jalur ini memakai endpoint JSON internal Shopee via sesi browser ber-login
-    dan **hanya aktif di app lokal/desktop** (lihat FR-8.14). Deteksi lingkungan
-    & validasi URL ditangani `shopee_connector`; engine fetch menyusul.
+    dan **hanya aktif di app lokal/desktop** (lihat FR-8.14). Mengembalikan
+    DataFrame mentah hasil fetch bila ada, atau None.
     """
     from src.dashboard.shopee_connector import render_url_section
 
-    render_url_section(st)
+    return render_url_section(st)
