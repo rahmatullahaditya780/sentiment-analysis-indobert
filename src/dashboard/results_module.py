@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import plotly.graph_objects as go
 
-# Warna konsisten lintas modul (Module 4 word cloud mengikuti palet ini).
+# Warna kanonik lintas modul — selaras prototipe (Design/Sentara_Prototype.html).
+# Module 4 word cloud & `ui_common.SENTIMENT_HEX` mengikuti palet ini.
 SENTIMENT_COLORS = {
-    "positive": "#2E9E5B",  # hijau
-    "negative": "#D64545",  # merah
-    "neutral": "#9AA0A6",  # abu
+    "positive": "#16A34A",  # hijau
+    "negative": "#DC2626",  # merah
+    "neutral": "#D97706",  # amber
 }
 SENTIMENT_LABELS_ID = {
     "positive": "Positif",

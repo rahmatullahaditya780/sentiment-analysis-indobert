@@ -43,6 +43,13 @@ def test_trend_none_saat_tidak_tersedia():
     assert build_trend_chart({"available": True, "periods": []}) is None
 
 
+def test_palet_sentimen_satu_sumber():
+    """ui_common.SENTIMENT_HEX wajib objek yang sama — penjaga anti-divergen."""
+    from src.dashboard import results_module, ui_common
+
+    assert ui_common.SENTIMENT_HEX is results_module.SENTIMENT_COLORS
+
+
 def test_trend_membangun_dua_garis_saat_ada_periode():
     meta = {
         "available": True,

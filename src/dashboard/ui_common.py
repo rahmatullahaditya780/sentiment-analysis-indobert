@@ -19,12 +19,32 @@ from src.dashboard.analysis_pipeline import (
     run_analysis,
 )
 
-# Warna kondisi pemasaran (semafor) — selaras recommendation_module & prototipe.
-SENTIMENT_HEX = {
-    "positive": "#16A34A",
-    "neutral": "#D97706",
-    "negative": "#DC2626",
-}
+# Satu sumber palet sentimen: re-export dari results_module agar tidak ada
+# divergensi warna antar halaman/chart (results_module bebas streamlit).
+from src.dashboard.results_module import (  # noqa: F401  (re-export)
+    SENTIMENT_COLORS as SENTIMENT_HEX,
+)
+from src.dashboard.visualization_module import (
+    build_frequencies,
+    build_wordcloud_from_frequencies,
+)
+
+
+# Kunci cache WAJIB tuple string (bukan DataFrame/AnalysisResult — mahal/unhashable).
+# `max_entries` membatasi memori: 16 array word cloud 800×400 ≈ 20 MB, aman
+# untuk Streamlit Cloud 1 GB.
+@st.cache_data(show_spinner=False, max_entries=16)
+def cached_frequencies(texts: tuple[str, ...]) -> dict[str, int]:
+    """Frekuensi kata word cloud, di-cache per kombinasi teks."""
+    return build_frequencies(texts)
+
+
+@st.cache_data(show_spinner=False, max_entries=16)
+def cached_wordcloud(texts: tuple[str, ...], hex_color: str):
+    """Gambar word cloud, di-cache — tidak digambar ulang tiap rerun halaman."""
+    return build_wordcloud_from_frequencies(
+        build_frequencies(texts), hex_color=hex_color
+    )
 
 
 def get_predictor():

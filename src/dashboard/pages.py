@@ -23,29 +23,20 @@ from src.dashboard import (
     settings_module,
     visualization_module,
 )
-from src.dashboard.shopee_connector import detect_environment
+from src.dashboard.model_info import fmt_id, load_model_metrics
+from src.dashboard.shopee_connector import HARD_CAP, detect_environment
 from src.dashboard.ui_common import (
     SENTIMENT_HEX,
     analyze_with_progress,
+    cached_wordcloud,
     resolve_view,
 )
 from src.recommendation.config import (
     CONDITIONS,
     EXCELLENT,
-    GOOD,
     MIXED,
-    MODERATE,
-    POOR,
+    condition_criteria,
 )
-
-# Kriteria 5 kondisi (selaras CLAUDE.md & planning/fase-07).
-CONDITION_CRITERIA = {
-    EXCELLENT: "Positif ≥ 50% DAN Negatif ≤ 20%",
-    GOOD: "Positif 40–49% DAN Negatif 20–30%",
-    MODERATE: "Positif 30–39% DAN Negatif 30–40%",
-    POOR: "Positif < 30% DAN Negatif > 40%",
-    MIXED: "Netral > 35% ATAU tren berubah signifikan",
-}
 
 _LABEL_EMOJI = {
     "positive": "🟢 Positif",
@@ -90,8 +81,8 @@ def page_dashboard() -> None:
 
     with st.container(border=True):
         st.markdown("**Kata Dominan (semua ulasan)**")
-        img = visualization_module.build_wordcloud_image(
-            view.predictions["review_text"].tolist(), hex_color="#FF4B4B"
+        img = cached_wordcloud(
+            tuple(view.predictions["review_text"].tolist()), "#FF4B4B"
         )
         if img is not None:
             st.image(img, width="stretch")
@@ -178,9 +169,12 @@ def page_input() -> None:
         with st.container(border=True):
             st.markdown("**Model IndoBERT**")
             st.caption("indolem/indobert-base-uncased · fine-tuned 3 kelas")
+            m = load_model_metrics()
             st.markdown(
-                "- Macro F1 (test): **0,9031** (target ≥ 0,85)\n"
-                "- Cross-validation: **0,9016 ± 0,010**"
+                f"- Macro F1 (test): **{fmt_id(m['f1_macro'])}** "
+                f"(target ≥ {fmt_id(m['target_f1'], 2)})\n"
+                f"- Cross-validation: **{fmt_id(m['cv_mean'])} "
+                f"± {fmt_id(m['cv_std'], 3)}**"
             )
 
 
@@ -264,9 +258,10 @@ def page_rekomendasi() -> None:
 
     st.divider()
     st.subheader("Acuan Klasifikasi 5 Kondisi")
+    criteria = condition_criteria()
     for cond in CONDITIONS:
         icon = recommendation_module.condition_style(cond)["icon"]
-        line = f"{icon} **{cond}** — {CONDITION_CRITERIA[cond]}"
+        line = f"{icon} **{cond}** — {criteria[cond]}"
         if cond == rec.condition:
             st.markdown(f"> {line}  ◄ **kondisi saat ini**")
         else:
@@ -297,10 +292,12 @@ def page_pengaturan() -> None:
 
     st.divider()
     st.subheader("Ambang Rule-Based (acuan, read-only)")
+    criteria = condition_criteria()
+    hard_cap_id = f"{HARD_CAP:,}".replace(",", ".")  # 1200 -> "1.200"
     st.markdown(
-        "- **Excellent** — Positif ≥ 50%\n"
-        "- **Mixed/Unstable** — Netral > 35% atau tren berubah signifikan\n"
-        "- Maks. ulasan per produk (URL Auto-Fetch): **1.200**"
+        f"- **{EXCELLENT}** — {criteria[EXCELLENT]}\n"
+        f"- **{MIXED}** — {criteria[MIXED]}\n"
+        f"- Maks. ulasan per produk (URL Auto-Fetch): **{hard_cap_id}**"
     )
 
 
@@ -332,7 +329,7 @@ def page_ekspor() -> None:
             f"**{prop['positive']:.1%} / {prop['neutral']:.1%} / "
             f"{prop['negative']:.1%}**\n"
             f"- Kondisi pemasaran: **{view.recommendation.condition}**\n"
-            f"- Macro F1-Score model: **0,9031**"
+            f"- Macro F1-Score model: **{fmt_id(load_model_metrics()['f1_macro'])}**"
         )
     st.info(
         "Ekspor PDF & PNG dijadwalkan pada Fase 10 (Deployment & Dokumentasi).",
@@ -376,9 +373,11 @@ def page_tentang() -> None:
         )
     with col2, st.container(border=True):
         st.markdown("**Informasi Skripsi**")
+        m = load_model_metrics()
         st.markdown(
             "- Nama: **Aditya Rahmatullah**\n"
             "- NIM: **60900122038**\n"
             "- Program Studi: **Sistem Informasi**\n"
-            "- Capaian: **Macro F1 0,9031** (≥ 0,85)"
+            f"- Capaian: **Macro F1 {fmt_id(m['f1_macro'])}** "
+            f"(≥ {fmt_id(m['target_f1'], 2)})"
         )

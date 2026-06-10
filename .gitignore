@@ -47,3 +47,4 @@ build/
 
 # Sesi login browser scraper (cookie pribadi)
 .shopee_session/
+.shopee_cdp_profile/

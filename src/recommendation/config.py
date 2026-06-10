@@ -105,6 +105,46 @@ STRATEGY_MAP: dict[str, list[str]] = {
 }
 
 
+def _pct(value: float) -> int:
+    """Proporsi -> persen bulat via truncation (0.499 -> 49, 0.401 -> 40)."""
+    return int(value * 100)
+
+
+def condition_criteria() -> dict[str, str]:
+    """Teks kriteria 5 kondisi untuk tampilan, digenerate dari THRESHOLDS.
+
+    Satu-satunya sumber angka adalah THRESHOLDS & NEUTRAL_MIXED_THRESHOLD —
+    dashboard tidak boleh menduplikasi nilai ambang sebagai string lepas.
+    Kata-kata mengikuti tabel `planning/fase-07-marketing-recommendation.md`.
+    """
+    exc, good, mod, poor = (
+        THRESHOLDS[EXCELLENT],
+        THRESHOLDS[GOOD],
+        THRESHOLDS[MODERATE],
+        THRESHOLDS[POOR],
+    )
+    return {
+        EXCELLENT: (
+            f"Positif ≥ {_pct(exc['pos_min'])}% DAN Negatif ≤ {_pct(exc['neg_max'])}%"
+        ),
+        GOOD: (
+            f"Positif {_pct(good['pos_min'])}–{_pct(good['pos_max'])}% "
+            f"DAN Negatif {_pct(good['neg_min'])}–{_pct(good['neg_max'])}%"
+        ),
+        MODERATE: (
+            f"Positif {_pct(mod['pos_min'])}–{_pct(mod['pos_max'])}% "
+            f"DAN Negatif {_pct(mod['neg_min'])}–{_pct(mod['neg_max'])}%"
+        ),
+        POOR: (
+            f"Positif < {_pct(poor['pos_max']) + 1}% "
+            f"DAN Negatif > {_pct(poor['neg_min'])}%"
+        ),
+        MIXED: (
+            f"Netral > {_pct(NEUTRAL_MIXED_THRESHOLD)}% " "ATAU tren berubah signifikan"
+        ),
+    }
+
+
 def ensure_output_dirs() -> None:
     """Pastikan folder output Fase 7 ada (idempoten)."""
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)

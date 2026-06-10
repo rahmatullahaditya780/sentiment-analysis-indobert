@@ -125,6 +125,11 @@ DISPLAY_STOPWORDS: frozenset[str] = frozenset(
 _WORD_RE = re.compile(r"[a-zA-Z]+")
 _MIN_WORD_LEN = 3
 
+# Dimensi & kapasitas word cloud (dipakai builder + acuan ukuran cache).
+WC_WIDTH = 800
+WC_HEIGHT = 400
+WC_MAX_WORDS = 100
+
 
 def build_frequencies(
     texts,
@@ -156,22 +161,24 @@ def _solid_color_func(hex_color: str):
     return color_func
 
 
-def build_wordcloud_image(texts, *, hex_color: str = "#2E9E5B", max_words: int = 100):
-    """Bangun array gambar word cloud (RGB) dari daftar teks; None bila kosong.
+def build_wordcloud_from_frequencies(
+    freq: dict[str, int], *, hex_color: str, max_words: int = WC_MAX_WORDS
+):
+    """Bangun array gambar word cloud (RGB) dari peta frekuensi; None bila kosong.
 
-    Mengembalikan `numpy.ndarray` siap dipakai `st.image`, atau None jika tak
-    ada kata tersisa setelah penyaringan. Import `wordcloud` lokal agar modul
-    tetap ringan untuk unit test `build_frequencies`.
+    Mengembalikan `numpy.ndarray` siap dipakai `st.image`. Dipisah dari
+    `build_frequencies` agar frekuensi bisa dihitung/dicek (empty state) dan
+    di-cache terpisah. Import `wordcloud` lokal agar modul tetap ringan untuk
+    unit test fungsi murni.
     """
-    freq = build_frequencies(texts)
     if not freq:
         return None
 
     from wordcloud import WordCloud
 
     wc = WordCloud(
-        width=800,
-        height=400,
+        width=WC_WIDTH,
+        height=WC_HEIGHT,
         background_color="white",
         max_words=max_words,
         color_func=_solid_color_func(hex_color),
@@ -179,6 +186,18 @@ def build_wordcloud_image(texts, *, hex_color: str = "#2E9E5B", max_words: int =
     )
     wc.generate_from_frequencies(freq)
     return wc.to_array()
+
+
+def build_wordcloud_image(
+    texts,
+    *,
+    hex_color: str = SENTIMENT_COLORS["positive"],
+    max_words: int = WC_MAX_WORDS,
+):
+    """Wrapper lama: daftar teks -> frekuensi -> gambar word cloud (atau None)."""
+    return build_wordcloud_from_frequencies(
+        build_frequencies(texts), hex_color=hex_color, max_words=max_words
+    )
 
 
 def build_category_distribution(
@@ -225,6 +244,10 @@ def build_category_distribution(
 
 def render(st, result) -> None:
     """Render Module 4: word cloud per kelas + distribusi per kategori."""
+    # Import lokal: helper ter-cache butuh streamlit; modul ini tetap murni
+    # di level import agar unit test fungsi builder tidak menyeret streamlit.
+    from src.dashboard.ui_common import cached_wordcloud
+
     st.subheader("Visualisasi Kata & Kategori")
 
     df = result.predictions
@@ -234,7 +257,7 @@ def render(st, result) -> None:
         with col:
             st.caption(f"{SENTIMENT_LABELS_ID[label]}")
             texts = df.loc[df["predicted_label"] == label, "review_text"].tolist()
-            image = build_wordcloud_image(texts, hex_color=SENTIMENT_COLORS[label])
+            image = cached_wordcloud(tuple(texts), SENTIMENT_COLORS[label])
             if image is not None:
                 st.image(image, width="stretch")
             else:

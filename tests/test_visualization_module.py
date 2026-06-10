@@ -12,8 +12,11 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from src.dashboard.visualization_module import (
+    WC_HEIGHT,
+    WC_WIDTH,
     build_category_distribution,
     build_frequencies,
+    build_wordcloud_from_frequencies,
 )
 
 
@@ -35,6 +38,19 @@ def test_frequencies_abaikan_non_string():
 
 def test_frequencies_kosong_saat_semua_tersaring():
     assert build_frequencies(["yang di ke", "aku kamu"]) == {}
+
+
+def test_wordcloud_none_saat_frekuensi_kosong():
+    assert build_wordcloud_from_frequencies({}, hex_color="#16A34A") is None
+
+
+def test_wordcloud_array_sesuai_dimensi():
+    image = build_wordcloud_from_frequencies(
+        {"bagus": 5, "mantap": 3}, hex_color="#16A34A"
+    )
+    assert image is not None
+    assert image.shape[0] == WC_HEIGHT
+    assert image.shape[1] == WC_WIDTH
 
 
 def test_category_distribution_none_tanpa_kolom():

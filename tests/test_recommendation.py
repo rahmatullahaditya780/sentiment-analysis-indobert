@@ -223,3 +223,37 @@ class TestRecommendOrchestration:
     def test_accepts_dict_input(self):
         rec = recommend({"positive": 0.25, "negative": 0.50, "neutral": 0.25})
         assert rec.condition == POOR
+
+
+# ── condition_criteria (teks kriteria digenerate dari THRESHOLDS) ─────────────
+class TestConditionCriteria:
+    def test_semua_kondisi_ada(self):
+        from src.recommendation.config import CONDITIONS, condition_criteria
+
+        criteria = condition_criteria()
+        assert set(criteria) == set(CONDITIONS)
+        assert all(isinstance(v, str) and v for v in criteria.values())
+
+    def test_angka_turunan_thresholds(self):
+        from src.recommendation.config import THRESHOLDS, condition_criteria
+
+        criteria = condition_criteria()
+        exc = THRESHOLDS[EXCELLENT]
+        assert f"{int(exc['pos_min'] * 100)}%" in criteria[EXCELLENT]  # 50%
+        assert f"{int(exc['neg_max'] * 100)}%" in criteria[EXCELLENT]  # 20%
+        # Wording selaras tabel fase-07 (pin agar tidak berubah diam-diam).
+        assert criteria[EXCELLENT] == "Positif >= 50% DAN Negatif <= 20%".replace(
+            ">=", "≥"
+        ).replace("<=", "≤")
+        assert criteria[GOOD] == "Positif 40–49% DAN Negatif 20–30%"
+        assert criteria[POOR] == "Positif < 30% DAN Negatif > 40%"
+
+    def test_mixed_memuat_ambang_netral(self):
+        from src.recommendation.config import (
+            NEUTRAL_MIXED_THRESHOLD,
+            condition_criteria,
+        )
+
+        teks = condition_criteria()[MIXED]
+        assert f"{int(NEUTRAL_MIXED_THRESHOLD * 100)}%" in teks  # 35%
+        assert "tren" in teks
