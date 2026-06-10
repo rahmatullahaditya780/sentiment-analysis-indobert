@@ -13,7 +13,8 @@ import sys
 from src.dashboard.shopee_connector import (
     build_login_command,
     is_login_cookie,
-    run_login_subprocess,
+    start_browse_session,
+    stop_browse_session,
 )
 
 
@@ -55,6 +56,11 @@ def test_login_command_fresh_flag():
     assert "--fresh" in build_login_command(fresh=True)
 
 
+def test_login_command_keep_open_flag():
+    assert "--keep-open" not in build_login_command()
+    assert "--keep-open" in build_login_command(keep_open=True)
+
+
 # ── _wipe_session (login bersih) ──────────────────────────────────────────────
 def test_wipe_session_menghapus_dir(tmp_path):
     from src.dashboard.login_worker import _wipe_session
@@ -72,26 +78,32 @@ def test_wipe_session_aman_untuk_path_tak_ada(tmp_path):
     assert _wipe_session(str(tmp_path / "tidak_ada")) is False
 
 
-# ── run_login_subprocess (fake emitter, tanpa browser) ────────────────────────
-def test_run_login_ok_already():
-    cmd = [
-        sys.executable,
-        "-c",
-        'print(\'{"type":"login_ok","already":true}\')',
-    ]
+# ── start/stop_browse_session (fake worker keep-open, tanpa browser) ──────────
+def test_start_browse_session_siap_lalu_ditutup():
+    # Fake worker: emit session_ready, lalu blok di stdin (browser "terbuka")
+    # sampai menerima perintah quit -> keluar.
+    fake = (
+        "import sys\n"
+        'sys.stdout.write(\'{"type":"session_ready"}\\n\'); sys.stdout.flush()\n'
+        "sys.stdin.readline()\n"
+    )
+    cmd = [sys.executable, "-c", fake]
     events = []
-    result = run_login_subprocess(cmd, on_event=events.append)
+    result = start_browse_session(cmd, on_event=events.append)
     assert result["status"] == "ok"
-    assert result["already"] is True
-    assert any(e["type"] == "login_ok" for e in events)
+    proc = result["proc"]
+    assert proc is not None and proc.poll() is None  # masih hidup (browser terbuka)
+    stop_browse_session(proc)  # kirim quit
+    assert proc.poll() is not None  # sudah tertutup
 
 
-def test_run_login_error():
+def test_start_browse_session_error():
     cmd = [
         sys.executable,
         "-c",
         'print(\'{"type":"error","msg":"Timeout menunggu login (240 dtk)."}\')',
     ]
-    result = run_login_subprocess(cmd)
+    result = start_browse_session(cmd)
     assert result["status"] == "error"
+    assert result["proc"] is None
     assert "timeout" in result["message"].lower()

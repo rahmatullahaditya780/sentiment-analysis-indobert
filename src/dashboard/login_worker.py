@@ -61,6 +61,14 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Hapus profil sesi lama dulu (login dari nol, lepas anti-bot basi).",
     )
+    parser.add_argument(
+        "--keep-open",
+        action="store_true",
+        help=(
+            "Setelah login, biarkan browser terbuka untuk pengguna menjelajah "
+            "produk; tutup hanya saat menerima perintah quit via stdin."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.fresh:
@@ -83,8 +91,7 @@ def main(argv: list[str] | None = None) -> int:
 
             if is_login_cookie(ctx.cookies()):
                 _emit({"type": "login_ok", "already": True})
-                ctx.close()
-                return 0
+                return _after_login(ctx, page, keep_open=args.keep_open)
 
             try:
                 page.goto(LOGIN_URL, wait_until="domcontentloaded")
@@ -106,8 +113,7 @@ def main(argv: list[str] | None = None) -> int:
                     return 1
                 if is_login_cookie(cookies):
                     _emit({"type": "login_ok", "already": False})
-                    ctx.close()
-                    return 0
+                    return _after_login(ctx, page, keep_open=args.keep_open)
                 time.sleep(args.poll)
 
             _emit(
@@ -121,6 +127,40 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:  # noqa: BLE001
         _emit({"type": "error", "msg": f"{type(exc).__name__}: {exc}"})
         return 1
+
+
+def _after_login(ctx, page, *, keep_open: bool) -> int:
+    """Tutup browser (mode sekali-jalan) ATAU jaga tetap terbuka untuk menjelajah.
+
+    Mode keep-open: arahkan ke homepage agar pengguna bisa mencari produk, emit
+    `session_ready`, lalu blok membaca stdin sampai menerima `{"cmd":"quit"}`
+    (atau EOF saat induk menutup stdin). Browser tetap interaktif selama loop ini.
+    """
+    if not keep_open:
+        ctx.close()
+        return 0
+
+    try:
+        page.goto("https://shopee.co.id", wait_until="domcontentloaded")
+    except Exception:  # noqa: BLE001
+        pass
+    _emit({"type": "session_ready"})
+
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            cmd = json.loads(line)
+        except (ValueError, json.JSONDecodeError):
+            continue
+        if isinstance(cmd, dict) and cmd.get("cmd") == "quit":
+            break
+    try:
+        ctx.close()
+    except Exception:  # noqa: BLE001
+        pass
+    return 0
 
 
 if __name__ == "__main__":

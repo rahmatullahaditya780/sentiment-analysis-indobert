@@ -323,12 +323,14 @@ def build_login_command(
     user_data_dir: str = DEFAULT_USER_DATA_DIR,
     timeout: int = LOGIN_TIMEOUT_DEFAULT,
     fresh: bool = False,
+    keep_open: bool = False,
     python_exe: str | None = None,
 ) -> list[str]:
     """Susun argumen CLI untuk menjalankan `login_worker` (subprocess). Teruji.
 
-    `fresh=True` menambah `--fresh` → worker menghapus profil sesi lama dulu
-    (lepas cookie login/anti-bot basi) agar login mulai dari nol.
+    `fresh=True` → worker menghapus profil sesi lama dulu (lepas cookie basi).
+    `keep_open=True` → browser tetap terbuka setelah login (mode jelajah) sampai
+    menerima perintah quit.
     """
     cmd = [
         python_exe or sys.executable,
@@ -341,22 +343,22 @@ def build_login_command(
     ]
     if fresh:
         cmd.append("--fresh")
+    if keep_open:
+        cmd.append("--keep-open")
     return cmd
 
 
-def run_login_subprocess(cmd: list[str], *, on_event=None) -> dict:
-    """Jalankan login worker, alirkan event NDJSON, kembalikan hasil akhir.
+def start_browse_session(cmd: list[str], *, on_event=None):
+    """Mulai sesi browse (login + browser tetap terbuka). Kembalikan dict hasil.
 
-    Mengembalikan {status: 'ok'|'error', already: bool, message: str}. `already`
-    True bila sesi memang sudah login (tak perlu input pengguna).
+    Membaca stdout worker sampai `session_ready` (sukses) atau `error`. Pada
+    sukses, mengembalikan {status:'ok', proc:Popen} dengan **proc tetap hidup**
+    (browser terbuka) — simpan di session_state. `on_event` menerima event
+    login_reset/login_open/login_ok untuk umpan balik UI.
     """
-    result = {
-        "status": "error",
-        "already": False,
-        "message": "Worker login tidak menghasilkan event.",
-    }
     proc = subprocess.Popen(
         cmd,
+        stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -371,20 +373,47 @@ def run_login_subprocess(cmd: list[str], *, on_event=None) -> dict:
             continue
         if on_event is not None:
             on_event(event)
-        if event["type"] == "login_ok":
-            result = {
-                "status": "ok",
-                "already": bool(event.get("already")),
-                "message": "",
-            }
-        elif event["type"] == "error":
-            result = {
-                "status": "error",
-                "already": False,
-                "message": event.get("msg", "Kesalahan tidak diketahui."),
-            }
-    proc.wait()
-    return result
+        if event["type"] == "session_ready":
+            return {"status": "ok", "proc": proc, "message": ""}
+        if event["type"] == "error":
+            try:
+                proc.wait(timeout=5)
+            except Exception:  # noqa: BLE001
+                pass
+            return {"status": "error", "proc": None, "message": event.get("msg", "")}
+    # stdout berakhir tanpa session_ready → worker mati tak terduga.
+    try:
+        proc.wait(timeout=5)
+    except Exception:  # noqa: BLE001
+        pass
+    return {
+        "status": "error",
+        "proc": None,
+        "message": "Sesi browser berakhir sebelum siap.",
+    }
+
+
+def stop_browse_session(proc) -> None:
+    """Tutup sesi browse dengan rapi (lepas lock profil agar fetch bisa jalan)."""
+    if proc is None:
+        return
+    try:
+        if proc.stdin and not proc.stdin.closed:
+            proc.stdin.write('{"cmd":"quit"}\n')
+            proc.stdin.flush()
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        proc.wait(timeout=8)
+    except Exception:  # noqa: BLE001 — paksa tutup bila tak merespons
+        try:
+            proc.terminate()
+            proc.wait(timeout=5)
+        except Exception:  # noqa: BLE001
+            try:
+                proc.kill()
+            except Exception:  # noqa: BLE001
+                pass
 
 
 def render_url_section(st):
@@ -411,19 +440,27 @@ def render_url_section(st):
     )
     st.caption(f"Deteksi lingkungan: {env_info['reason']}")
 
-    # Gate login: tangkap sesi Shopee dulu sebelum membuka input URL.
-    if not st.session_state.get("shopee_logged_in", False):
-        _render_login_gate(st)
+    proc = st.session_state.get("browse_proc")
+    session_alive = proc is not None and proc.poll() is None
+    if not session_alive:
+        st.session_state.pop("browse_proc", None)
+        _render_browse_gate(st)
         return st.session_state.get("url_fetched_df")
 
-    col_status, col_relogin = st.columns([3, 1])
-    col_status.success("Sesi Shopee: **sudah login**.", icon="🔓")
-    if col_relogin.button("Login ulang"):
-        st.session_state["shopee_logged_in"] = False
+    # Sesi browse aktif: pengguna menjelajah di browser, lalu menempel URL.
+    col_status, col_close = st.columns([3, 1])
+    col_status.success(
+        "🔓 **Sesi browser aktif** — cari produk di jendela browser yang terbuka, "
+        "lalu **salin URL** halaman produknya ke kolom di bawah.",
+        icon="🧭",
+    )
+    if col_close.button("Tutup browser"):
+        stop_browse_session(proc)
+        st.session_state.pop("browse_proc", None)
         st.rerun()
 
     url = st.text_input(
-        "URL produk Shopee",
+        "URL produk Shopee (salin dari browser)",
         placeholder="https://shopee.co.id/...-i.188380895.25462161057",
         key="shopee_url",
     )
@@ -447,6 +484,10 @@ def render_url_section(st):
     if st.button(
         "🔗 Ambil Ulasan", disabled=not (check and check["valid"]), type="primary"
     ):
+        # Tutup browser browse dulu agar lock profil dilepas, baru fetch.
+        st.caption("Menutup browser jelajah & memulai pengambilan…")
+        stop_browse_session(proc)
+        st.session_state.pop("browse_proc", None)
         _run_fetch_ui(
             st,
             shopid=check["shopid"],
@@ -459,17 +500,16 @@ def render_url_section(st):
     return st.session_state.get("url_fetched_df")
 
 
-def _render_login_gate(st) -> None:
-    """Langkah 1 URL Auto-Fetch: arahkan pengguna login Shopee dulu (tangkap sesi).
+def _render_browse_gate(st) -> None:
+    """Langkah 1: login Shopee & buka browser jelajah (tetap terbuka).
 
-    Tanpa sesi login, Shopee mengarahkan ke verifikasi anti-bot (DataDome) dan
-    fetch gagal (0 ulasan). Login cukup **sekali** — sesi disimpan persisten di
-    `.shopee_session`.
+    Browser dibiarkan terbuka setelah login agar pengguna mencari produk di sana,
+    lalu menyalin URL-nya. Tanpa login, Shopee mengarahkan ke anti-bot (DataDome).
     """
     st.info(
-        "**Langkah 1 — Login Shopee.** Klik tombol di bawah; sebuah jendela "
-        "browser akan terbuka. Login ke akun Shopee Anda, lalu halaman ini otomatis "
-        "lanjut begitu sesi terdeteksi. Setelah login, barulah tempel URL produk.",
+        "**Langkah 1 — Login & buka browser jelajah.** Klik tombol; jendela "
+        "browser terbuka. Login ke Shopee, lalu **browser tetap terbuka** untuk "
+        "Anda mencari produk. Setelah ketemu, salin URL produk ke Langkah 2.",
         icon="🔑",
     )
     fresh = st.checkbox(
@@ -480,17 +520,13 @@ def _render_login_gate(st) -> None:
             "sesi lama dihapus agar login mulai dari nol tanpa cookie basi."
         ),
     )
-    col_login, col_skip = st.columns(2)
-    if col_login.button("🔐 Login Shopee", type="primary"):
-        _run_login_ui(st, fresh=fresh)
-    if col_skip.button("Lewati (sudah login sebelumnya)"):
-        st.session_state["shopee_logged_in"] = True
-        st.rerun()
+    if st.button("🔐 Login & Buka Browser Jelajah", type="primary"):
+        _start_browse_ui(st, fresh=fresh)
 
 
-def _run_login_ui(st, *, fresh: bool = False) -> None:
-    """Jalankan login worker (subprocess headful) & tunggu sesi terdeteksi."""
-    cmd = build_login_command(fresh=fresh)
+def _start_browse_ui(st, *, fresh: bool = False) -> None:
+    """Mulai sesi browse (subprocess headful keep-open) & tunggu siap."""
+    cmd = build_login_command(fresh=fresh, keep_open=True)
     status = st.empty()
     status.info("Membuka browser… selesaikan login Shopee di jendela yang terbuka.")
 
@@ -503,19 +539,20 @@ def _run_login_ui(st, *, fresh: bool = False) -> None:
                 "Jendela browser terbuka — **silakan login ke Shopee**. "
                 "Halaman ini menunggu hingga sesi terdeteksi…"
             )
-        elif etype == "error":
-            status.error(event.get("msg", "Login gagal."))
+        elif etype == "login_ok":
+            status.info("Login terdeteksi — menyiapkan sesi jelajah…")
 
     with st.spinner("Menunggu login di jendela browser…"):
-        result = run_login_subprocess(cmd, on_event=on_event)
+        result = start_browse_session(cmd, on_event=on_event)
 
     if result["status"] == "ok":
-        st.session_state["shopee_logged_in"] = True
+        st.session_state["browse_proc"] = result["proc"]
         st.rerun()
     else:
-        status.error(f"Login gagal: {result['message']}")
+        status.error(f"Gagal membuka sesi: {result['message']}")
         st.info(
-            "Coba lagi, atau gunakan tab **CSV Upload** sebagai alternatif.",
+            "Coba lagi (boleh centang 'sesi bersih'), atau gunakan tab "
+            "**CSV Upload** sebagai alternatif.",
             icon="↩️",
         )
 
