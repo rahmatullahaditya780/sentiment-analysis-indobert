@@ -140,13 +140,13 @@ def render(st, result) -> None:
     )
 
     left, right = st.columns(2)
-    left.plotly_chart(build_distribution_pie(dist), use_container_width=True)
-    right.plotly_chart(build_distribution_bar(dist), use_container_width=True)
+    left.plotly_chart(build_distribution_pie(dist), width="stretch")
+    right.plotly_chart(build_distribution_bar(dist), width="stretch")
 
     trend_meta = (result.recommendation.meta or {}).get("trend", {})
     trend_fig = build_trend_chart(trend_meta)
     if trend_fig is not None:
-        st.plotly_chart(trend_fig, use_container_width=True)
+        st.plotly_chart(trend_fig, width="stretch")
         if trend_meta.get("note"):
             st.caption(trend_meta["note"])
     else:
@@ -170,6 +170,6 @@ def render(st, result) -> None:
         ]
         st.dataframe(
             result.predictions[show_cols],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )

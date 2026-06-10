@@ -1,0 +1,8 @@
+# Tema Sentara — selaras palet prototipe (Design/Sentara_Prototype.html).
+# Aksen merah #FF4B4B kebetulan adalah warna primer default Streamlit.
+[theme]
+primaryColor = "#FF4B4B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F5F7"
+textColor = "#1A1D21"
+font = "sans serif"

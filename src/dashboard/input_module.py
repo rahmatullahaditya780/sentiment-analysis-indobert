@@ -79,7 +79,7 @@ def render_csv_tab(st) -> pd.DataFrame | None:
         return None
 
     st.success(f"Terbaca **{len(df):,} baris**. Pratinjau 5 baris pertama:")
-    st.dataframe(df.head(), use_container_width=True)
+    st.dataframe(df.head(), width="stretch")
     return df
 
 

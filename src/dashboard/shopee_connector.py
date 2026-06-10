@@ -373,7 +373,7 @@ def _run_fetch_ui(st, *, shopid, itemid, category, max_reviews, delay) -> None:
         df = pd.read_csv(result["path"])
         st.session_state["url_fetched_df"] = df
         status.success(f"Berhasil mengambil **{result['count']:,} ulasan**.")
-        st.dataframe(df.head(), use_container_width=True)
+        st.dataframe(df.head(), width="stretch")
     else:
         err = classify_fetch_error(result["message"])
         status.error(f"**{err['title']}**")

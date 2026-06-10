@@ -1,15 +1,14 @@
 """
 Fase 8 — Module 5: Settings & Configuration (filter & threshold).
 
-Menyediakan kontrol di sidebar untuk memfilter hasil **tanpa inferensi ulang**
-(FR-8.8):
+Menyediakan kontrol untuk memfilter hasil **tanpa inferensi ulang** (FR-8.8):
 - Filter kategori produk (`product_category`).
 - Filter rentang tanggal (`date_review`).
 - Confidence threshold (`confidence_score`).
 
-`apply_filters` murni (tanpa Streamlit) & teruji; `render_sidebar` membangun
-widget dan mengembalikan pilihan pengguna. app.py memakai keduanya lalu memanggil
-`analysis_pipeline.recompute_from_predictions` atas DataFrame terfilter.
+`apply_filters` murni (tanpa Streamlit) & teruji; `render_filters` membangun
+widget (dipakai di body halaman Pengaturan) dan mengembalikan pilihan pengguna.
+Hasilnya diteruskan ke `analysis_pipeline.recompute_from_predictions`.
 """
 
 from __future__ import annotations
@@ -71,13 +70,12 @@ def _date_bounds(predictions: pd.DataFrame):
     return dates.min().date(), dates.max().date()
 
 
-def render_sidebar(st, predictions: pd.DataFrame) -> dict:
-    """Render kontrol filter di sidebar; kembalikan dict pilihan pengguna.
+def render_filters(st, predictions: pd.DataFrame) -> dict:
+    """Render kontrol filter (kategori/tanggal/confidence); kembalikan pilihan.
 
     Hanya menampilkan kontrol yang relevan dengan kolom data yang tersedia.
+    Dipakai di body halaman Pengaturan (multipage).
     """
-    st.header("⚙️ Settings & Filter")
-
     categories = _available_categories(predictions)
     selected_categories = (
         st.multiselect(

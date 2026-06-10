@@ -236,13 +236,13 @@ def render(st, result) -> None:
             texts = df.loc[df["predicted_label"] == label, "review_text"].tolist()
             image = build_wordcloud_image(texts, hex_color=SENTIMENT_COLORS[label])
             if image is not None:
-                st.image(image, use_container_width=True)
+                st.image(image, width="stretch")
             else:
                 st.caption("_Tidak cukup kata untuk ditampilkan._")
 
     cat_fig = build_category_distribution(df)
     if cat_fig is not None:
-        st.plotly_chart(cat_fig, use_container_width=True)
+        st.plotly_chart(cat_fig, width="stretch")
     else:
         st.caption(
             "Distribusi per kategori tidak ditampilkan — data tidak memiliki "

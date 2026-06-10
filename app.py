@@ -1,28 +1,16 @@
 """
 Sistem Analisis Sentimen Ulasan Produk E-Commerce Berbasis IndoBERT
-Entry point Streamlit — Fase 8 (Dashboard Development).
+Entry point Streamlit — Fase 8 (Dashboard multipage).
 
-Mengintegrasikan modul-modul dashboard. Model IndoBERT dimuat sekali dan
-disimpan di `st.session_state` agar tidak di-load ulang setiap interaksi
-(UI Requirement: Model Loading).
+Mendefinisikan navigasi sidebar bergrup (struktur selaras
+`Design/Sentara_Prototype.html`). Logika tiap halaman ada di
+`src/dashboard/pages.py`; state lintas-halaman dikelola `src/dashboard/ui_common.py`.
+Model IndoBERT dimuat sekali & disimpan di `st.session_state`.
 """
 
 from __future__ import annotations
 
 import streamlit as st
-
-from src.dashboard import (
-    recommendation_module,
-    results_module,
-    settings_module,
-    visualization_module,
-)
-from src.dashboard.analysis_pipeline import (
-    load_predictor,
-    recompute_from_predictions,
-    run_analysis,
-)
-from src.dashboard.input_module import render_csv_tab, render_url_tab
 
 st.set_page_config(
     page_title="Sentara — Analisis Sentimen OmorfoShop",
@@ -31,105 +19,40 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-def get_predictor():
-    """Muat & cache `SentimentPredictor` di session_state (sekali per sesi)."""
-    if "predictor" not in st.session_state:
-        with st.spinner("Memuat model IndoBERT (sekali saja)…"):
-            st.session_state["predictor"] = load_predictor()
-    return st.session_state["predictor"]
-
-
-def _analyze_with_progress(df_raw):
-    """Jalankan `run_analysis` dengan progress bar inferensi (FR-8.11).
-
-    Bila CSV sudah berlabel, `run_analysis` melewati inferensi sehingga callback
-    progress tak terpanggil — bar tetap langsung penuh. Model hanya dimuat saat
-    inferensi memang diperlukan (data mentah).
-    """
-    progress = st.progress(0.0, text="Menyiapkan analisis…")
-
-    def on_progress(done: int, total: int) -> None:
-        frac = (done / total) if total else 1.0
-        progress.progress(
-            min(frac, 1.0), text=f"Menganalisis {done:,}/{total:,} ulasan…"
-        )
-
-    # Model hanya dibutuhkan bila data belum berlabel; load lazy via predictor.
-    predictor = get_predictor()
-    result = run_analysis(df_raw, predictor=predictor, progress_cb=on_progress)
-    progress.progress(1.0, text="Selesai.")
-    progress.empty()
-    return result
+from src.dashboard import pages  # noqa: E402 — set_page_config harus lebih dulu
 
 
 def main() -> None:
-    st.title("📊 Sentara")
-    st.subheader("Sistem Analisis Sentimen Ulasan Produk E-Commerce Berbasis IndoBERT")
-
     with st.sidebar:
-        st.header("Navigasi")
-        st.caption("Fase 8 — Dashboard sedang dibangun bertahap.")
+        st.markdown("### 📊 Sentara")
+        st.caption("Analisis Sentimen Ulasan E-Commerce — IndoBERT")
         st.divider()
-        st.caption("Model: `indolem/indobert-base-uncased` (fine-tuned)")
 
-    tab_csv, tab_url = st.tabs(["📁 CSV Upload", "🔗 URL Auto-Fetch (Lokal saja)"])
-    with tab_csv:
-        df_csv = render_csv_tab(st)
-    with tab_url:
-        df_url = render_url_tab(st)
-    # Prioritaskan CSV bila keduanya terisi; jika tidak, pakai hasil URL fetch.
-    df_raw = df_csv if df_csv is not None else df_url
-
-    if df_raw is not None and st.button("🔍 Analisis Sentimen", type="primary"):
-        try:
-            result = _analyze_with_progress(df_raw)
-        except ValueError as exc:
-            st.error(str(exc))
-            return
-        st.session_state["result"] = result
-        if result.inference_skipped:
-            st.success(
-                f"Data sudah berlabel — inferensi dilewati untuk "
-                f"{result.n_reviews:,} ulasan (langsung ke analisis).",
-                icon="⚡",
-            )
-
-    if "result" in st.session_state:
-        base = st.session_state["result"]
-
-        with st.sidebar:
-            st.divider()
-            filters = settings_module.render_sidebar(st, base.predictions)
-
-        filtered = settings_module.apply_filters(base.predictions, **filters)
-        st.divider()
-        if filtered.empty:
-            st.warning(
-                "Tidak ada ulasan yang cocok dengan filter saat ini. "
-                "Longgarkan kategori, rentang tanggal, atau confidence threshold."
-            )
-            return
-
-        active_filter = len(filtered) < len(base.predictions)
-        if active_filter:
-            st.info(
-                f"Menampilkan **{len(filtered):,}** dari {len(base.predictions):,} "
-                "ulasan sesuai filter.",
-                icon="🔎",
-            )
-        view = recompute_from_predictions(
-            filtered,
-            avg_prediction_time=base.avg_prediction_time,
-            total_prediction_time=base.total_prediction_time,
-        )
-
-        results_module.render(st, view)
-        st.divider()
-        recommendation_module.render(st, view.recommendation)
-        st.divider()
-        visualization_module.render(st, view)
+    nav = st.navigation(
+        {
+            "Menu": [
+                st.Page(
+                    pages.page_dashboard, title="Dashboard", icon="🏠", default=True
+                ),
+                st.Page(pages.page_input, title="Input & Pengambilan Data", icon="📥"),
+            ],
+            "Hasil Analisis": [
+                st.Page(pages.page_detail, title="Detail Ulasan", icon="📋"),
+                st.Page(
+                    pages.page_visualisasi, title="Visualisasi & Word Cloud", icon="☁️"
+                ),
+                st.Page(
+                    pages.page_rekomendasi, title="Rekomendasi Strategi", icon="💡"
+                ),
+            ],
+            "Lainnya": [
+                st.Page(pages.page_pengaturan, title="Pengaturan", icon="⚙️"),
+                st.Page(pages.page_ekspor, title="Ekspor Laporan", icon="⬇️"),
+                st.Page(pages.page_tentang, title="Tentang & Bantuan", icon="ℹ️"),
+            ],
+        }
+    )
+    nav.run()
 
 
-if __name__ == "__main__":
-    main()
+main()
