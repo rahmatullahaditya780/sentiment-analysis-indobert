@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -36,12 +37,35 @@ def _emit(obj: dict) -> None:
     sys.stdout.flush()
 
 
+def _wipe_session(user_data_dir: str) -> bool:
+    """Hapus profil sesi (cookie login & anti-bot basi) untuk login dari nol.
+
+    Aman: hanya menghapus direktori yang ada, bukan root/anchor/PROJECT_ROOT.
+    Mengembalikan True bila ada yang dihapus.
+    """
+    path = Path(user_data_dir).resolve()
+    unsafe = {Path(path.anchor).resolve(), PROJECT_ROOT.resolve()}
+    if not path.name or path in unsafe or not path.exists() or not path.is_dir():
+        return False
+    shutil.rmtree(path, ignore_errors=True)
+    return True
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Login Shopee worker (NDJSON).")
     parser.add_argument("--user-data-dir", default=".shopee_session")
     parser.add_argument("--timeout", type=int, default=240)
     parser.add_argument("--poll", type=float, default=3.0)
+    parser.add_argument(
+        "--fresh",
+        action="store_true",
+        help="Hapus profil sesi lama dulu (login dari nol, lepas anti-bot basi).",
+    )
     args = parser.parse_args(argv)
+
+    if args.fresh:
+        wiped = _wipe_session(args.user_data_dir)
+        _emit({"type": "login_reset", "wiped": wiped})
 
     from src.dashboard.shopee_connector import is_login_cookie
     from src.scraping.scrape_omorfo_api import _launch_context

@@ -322,10 +322,15 @@ def build_login_command(
     *,
     user_data_dir: str = DEFAULT_USER_DATA_DIR,
     timeout: int = LOGIN_TIMEOUT_DEFAULT,
+    fresh: bool = False,
     python_exe: str | None = None,
 ) -> list[str]:
-    """Susun argumen CLI untuk menjalankan `login_worker` (subprocess). Teruji."""
-    return [
+    """Susun argumen CLI untuk menjalankan `login_worker` (subprocess). Teruji.
+
+    `fresh=True` menambah `--fresh` → worker menghapus profil sesi lama dulu
+    (lepas cookie login/anti-bot basi) agar login mulai dari nol.
+    """
+    cmd = [
         python_exe or sys.executable,
         "-m",
         "src.dashboard.login_worker",
@@ -334,6 +339,9 @@ def build_login_command(
         "--timeout",
         str(int(timeout)),
     ]
+    if fresh:
+        cmd.append("--fresh")
+    return cmd
 
 
 def run_login_subprocess(cmd: list[str], *, on_event=None) -> dict:
@@ -464,23 +472,33 @@ def _render_login_gate(st) -> None:
         "lanjut begitu sesi terdeteksi. Setelah login, barulah tempel URL produk.",
         icon="🔑",
     )
+    fresh = st.checkbox(
+        "🧹 Mulai sesi bersih (hapus login lama)",
+        value=False,
+        help=(
+            "Centang bila sebelumnya gagal/terjebak verifikasi anti-bot. Profil "
+            "sesi lama dihapus agar login mulai dari nol tanpa cookie basi."
+        ),
+    )
     col_login, col_skip = st.columns(2)
     if col_login.button("🔐 Login Shopee", type="primary"):
-        _run_login_ui(st)
+        _run_login_ui(st, fresh=fresh)
     if col_skip.button("Lewati (sudah login sebelumnya)"):
         st.session_state["shopee_logged_in"] = True
         st.rerun()
 
 
-def _run_login_ui(st) -> None:
+def _run_login_ui(st, *, fresh: bool = False) -> None:
     """Jalankan login worker (subprocess headful) & tunggu sesi terdeteksi."""
-    cmd = build_login_command()
+    cmd = build_login_command(fresh=fresh)
     status = st.empty()
     status.info("Membuka browser… selesaikan login Shopee di jendela yang terbuka.")
 
     def on_event(event: dict) -> None:
         etype = event.get("type")
-        if etype == "login_open":
+        if etype == "login_reset":
+            status.info("Profil sesi lama dihapus — memulai login bersih…")
+        elif etype == "login_open":
             status.info(
                 "Jendela browser terbuka — **silakan login ke Shopee**. "
                 "Halaman ini menunggu hingga sesi terdeteksi…"

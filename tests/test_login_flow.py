@@ -50,6 +50,28 @@ def test_login_command_struktur():
     assert cmd[i + 1] == "120"
 
 
+def test_login_command_fresh_flag():
+    assert "--fresh" not in build_login_command()
+    assert "--fresh" in build_login_command(fresh=True)
+
+
+# ── _wipe_session (login bersih) ──────────────────────────────────────────────
+def test_wipe_session_menghapus_dir(tmp_path):
+    from src.dashboard.login_worker import _wipe_session
+
+    sess = tmp_path / ".shopee_session"
+    sess.mkdir()
+    (sess / "Cookies").write_text("stale")
+    assert _wipe_session(str(sess)) is True
+    assert not sess.exists()
+
+
+def test_wipe_session_aman_untuk_path_tak_ada(tmp_path):
+    from src.dashboard.login_worker import _wipe_session
+
+    assert _wipe_session(str(tmp_path / "tidak_ada")) is False
+
+
 # ── run_login_subprocess (fake emitter, tanpa browser) ────────────────────────
 def test_run_login_ok_already():
     cmd = [
