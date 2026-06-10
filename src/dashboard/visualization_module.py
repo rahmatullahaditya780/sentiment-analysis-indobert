@@ -200,6 +200,47 @@ def build_wordcloud_image(
     )
 
 
+def top_keywords(freq: dict[str, int], *, top_n: int = 15) -> list[tuple[str, int]]:
+    """`top_n` kata berfrekuensi tertinggi, urut menurun (tie: alfabetis)."""
+    return sorted(freq.items(), key=lambda kv: (-kv[1], kv[0]))[:top_n]
+
+
+def build_top_keywords_chart(
+    freq: dict[str, int],
+    *,
+    top_n: int = 15,
+    color: str,
+    title: str = "",
+) -> go.Figure | None:
+    """Bar horizontal top-N kata kunci; None bila frekuensi kosong.
+
+    Urutan dibalik (naik) agar kata berfrekuensi terbesar tampil paling atas
+    pada sumbu-Y Plotly.
+    """
+    pairs = top_keywords(freq, top_n=top_n)
+    if not pairs:
+        return None
+    pairs = pairs[::-1]
+
+    fig = go.Figure(
+        go.Bar(
+            x=[count for _, count in pairs],
+            y=[word for word, _ in pairs],
+            orientation="h",
+            marker_color=color,
+            text=[count for _, count in pairs],
+            textposition="auto",
+        )
+    )
+    fig.update_layout(
+        title=title or "Kata Kunci Teratas",
+        xaxis_title="Frekuensi",
+        margin=dict(t=50, b=10, l=10, r=10),
+        height=max(300, 28 * len(pairs) + 80),
+    )
+    return fig
+
+
 def column_state(df, column: str) -> str:
     """Status kolom untuk pesan empty-state: "absen" | "kosong" | "ok".
 

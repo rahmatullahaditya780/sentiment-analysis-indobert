@@ -18,6 +18,7 @@ import streamlit as st
 
 from src.dashboard import (
     input_module,
+    insights_module,
     recommendation_module,
     results_module,
     settings_module,
@@ -28,6 +29,7 @@ from src.dashboard.shopee_connector import HARD_CAP, detect_environment
 from src.dashboard.ui_common import (
     SENTIMENT_HEX,
     analyze_with_progress,
+    cached_frequencies,
     cached_wordcloud,
     resolve_view,
 )
@@ -64,6 +66,15 @@ def page_dashboard() -> None:
     _stat(c3, "Netral", f"{prop['neutral']:.1%}", SENTIMENT_HEX["neutral"])
     _stat(c4, "Negatif", f"{prop['negative']:.1%}", SENTIMENT_HEX["negative"])
     _stat(c5, "Kondisi", cond)
+
+    mm = insights_module.mismatch_summary(view.predictions)
+    if mm["n_rated"] > 0 and mm["n_mismatch"] > 0:
+        st.caption(
+            f"⚠️ **{mm['n_mismatch']:,}** dari {mm['n_rated']:,} ulasan ber-rating "
+            f"({mm['rate']:.1%}) memiliki **rating dan sentimen teks yang bertolak "
+            "belakang** — buka **Detail Ulasan** (toggle ketidaksesuaian) untuk "
+            "menelusurinya."
+        )
 
     left, right = st.columns(2)
     with left, st.container(border=True):
@@ -232,6 +243,19 @@ def page_detail() -> None:
         df = df[df["predicted_label"] == label_map[choice]]
     df = settings_module.filter_by_keyword(df, keyword)
 
+    if insights_module.mismatch_summary(view.predictions)["n_rated"] > 0:
+        only_mismatch = st.toggle(
+            "⚠️ Hanya ketidaksesuaian rating–sentimen",
+            key="detail_mismatch",
+            help=(
+                "Ulasan yang bintang dan isi teksnya bertolak belakang "
+                "(mis. bintang 5 tapi teks negatif) — sinyal yang tidak "
+                "tertangkap rating numerik."
+            ),
+        )
+        if only_mismatch:
+            df = insights_module.detect_mismatch(df)
+
     if df.empty:
         st.caption("Tidak ada ulasan yang cocok dengan saringan/kata kunci ini.")
         return
@@ -279,7 +303,7 @@ def _stars(rating) -> str:
     return "★" * n + "☆" * (5 - n)
 
 
-def _build_detail_table(df: pd.DataFrame) -> pd.DataFrame:
+def build_detail_table(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame()
     out["Ulasan"] = df["review_text"]
     out["Sentimen"] = df["predicted_label"].map(_LABEL_EMOJI)
@@ -288,6 +312,9 @@ def _build_detail_table(df: pd.DataFrame) -> pd.DataFrame:
     out["Kategori"] = df["product_category"]
     out["Tanggal"] = df["date_review"]
     return out.reset_index(drop=True)
+
+
+_build_detail_table = build_detail_table  # alias lama (kompatibilitas)
 
 
 # ── Visualisasi & Word Cloud ──────────────────────────────────────────────────
@@ -299,6 +326,111 @@ def page_visualisasi() -> None:
     if view is None:
         return
     visualization_module.render(st, view)
+
+    # ── Kata kunci teratas per kelas + drill-down ulasan ──────────────────────
+    st.divider()
+    st.subheader("Kata Kunci Teratas per Kelas")
+    st.caption(
+        "Frekuensi kata dominan (setelah penyaringan stopword tampilan) — pilih "
+        "kata untuk menelusuri ulasan yang memuatnya."
+    )
+    pilihan_kelas = st.selectbox(
+        "Kelas sentimen",
+        options=("Positif", "Negatif", "Netral"),
+        key="viz_keyword_class",
+    )
+    label_map = {"Positif": "positive", "Negatif": "negative", "Netral": "neutral"}
+    label = label_map[pilihan_kelas]
+    df = view.predictions
+    texts = df.loc[df["predicted_label"] == label, "review_text"].tolist()
+    freq = cached_frequencies(tuple(texts))
+    kw_fig = visualization_module.build_top_keywords_chart(
+        freq,
+        color=SENTIMENT_HEX[label],
+        title=f"Kata Kunci Teratas — {pilihan_kelas}",
+    )
+    if kw_fig is None:
+        st.info(
+            f"Tidak ada kata tersisa untuk kelas {pilihan_kelas.lower()} "
+            "setelah penyaringan.",
+            icon="🔤",
+        )
+    else:
+        st.plotly_chart(kw_fig, width="stretch")
+        kata_opsi = [w for w, _ in visualization_module.top_keywords(freq)]
+        kata = st.selectbox(
+            "Telusuri ulasan yang memuat kata…",
+            options=["(pilih kata)"] + kata_opsi,
+            key="viz_keyword_drill",
+        )
+        if kata != "(pilih kata)":
+            cocok = settings_module.filter_by_keyword(
+                df[df["predicted_label"] == label], kata
+            )
+            st.caption(
+                f"**{len(cocok):,}** ulasan {pilihan_kelas.lower()} memuat “{kata}”."
+            )
+            st.dataframe(
+                build_detail_table(cocok),
+                width="stretch",
+                hide_index=True,
+                column_config={
+                    "Skor": st.column_config.ProgressColumn(
+                        "Skor", min_value=0.0, max_value=1.0, format="%.2f"
+                    ),
+                },
+            )
+
+    # ── Perbandingan per produk ───────────────────────────────────────────────
+    st.divider()
+    st.subheader("Perbandingan per Produk")
+    ringkasan = insights_module.summarize_by_product(df)
+    if ringkasan is None:
+        st.info(
+            "Perbandingan per produk tidak tersedia — data tidak memiliki kolom "
+            "`product_name` berisi.",
+            icon="📦",
+        )
+    else:
+        prod_fig = visualization_module.build_category_distribution(
+            df, category_column="product_name"
+        )
+        if prod_fig is not None:
+            prod_fig.update_layout(
+                title="Distribusi Sentimen per Produk", xaxis_title="Produk"
+            )
+            st.plotly_chart(prod_fig, width="stretch")
+        st.dataframe(
+            _product_summary_table(ringkasan),
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "Positif": st.column_config.ProgressColumn(
+                    "Positif", min_value=0.0, max_value=1.0, format="percent"
+                ),
+                "Negatif": st.column_config.ProgressColumn(
+                    "Negatif", min_value=0.0, max_value=1.0, format="percent"
+                ),
+            },
+        )
+        st.caption(
+            "Kondisi pemasaran dihitung per produk memakai rule engine Fase 7 "
+            "(tanpa analisis tren — sampel per produk lebih kecil)."
+        )
+
+
+def _product_summary_table(ringkasan: pd.DataFrame) -> pd.DataFrame:
+    """Susun tabel tampilan ringkasan per produk (ikon kondisi + proporsi)."""
+    out = pd.DataFrame()
+    out["Produk"] = ringkasan["product"]
+    out["Ulasan"] = ringkasan["n_reviews"]
+    out["Positif"] = ringkasan["positive"]
+    out["Negatif"] = ringkasan["negative"]
+    out["Kondisi"] = [
+        f"{recommendation_module.condition_style(c)['icon']} {c}"
+        for c in ringkasan["condition"]
+    ]
+    return out
 
 
 # ── Rekomendasi Strategi ──────────────────────────────────────────────────────
@@ -313,6 +445,40 @@ def page_rekomendasi() -> None:
     rec = view.recommendation
     recommendation_module.render(st, rec)
 
+    # ── Bukti ulasan representatif (confidence tertinggi per kelas) ───────────
+    st.divider()
+    st.subheader("Bukti Ulasan Representatif")
+    st.caption(
+        "Ulasan dengan keyakinan model tertinggi — mengakar strategi pada "
+        "kutipan pelanggan nyata."
+    )
+    col_pos, col_neg = st.columns(2)
+    _render_examples(col_pos, view.predictions, "positive", "🟢 Bukti positif terkuat")
+    _render_examples(col_neg, view.predictions, "negative", "🔴 Keluhan terkuat")
+
+    # ── Kondisi pemasaran per produk (ringkas) ────────────────────────────────
+    ringkasan = insights_module.summarize_by_product(view.predictions)
+    if ringkasan is not None and len(ringkasan) > 1:
+        st.divider()
+        st.subheader("Kondisi per Produk")
+        st.dataframe(
+            _product_summary_table(ringkasan),
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "Positif": st.column_config.ProgressColumn(
+                    "Positif", min_value=0.0, max_value=1.0, format="percent"
+                ),
+                "Negatif": st.column_config.ProgressColumn(
+                    "Negatif", min_value=0.0, max_value=1.0, format="percent"
+                ),
+            },
+        )
+        st.caption(
+            "Strategi di atas berlaku tingkat toko; cek produk berkondisi "
+            "lebih rendah untuk prioritas perbaikan."
+        )
+
     st.divider()
     st.subheader("Acuan Klasifikasi 5 Kondisi")
     criteria = condition_criteria()
@@ -323,6 +489,26 @@ def page_rekomendasi() -> None:
             st.markdown(f"> {line}  ◄ **kondisi saat ini**")
         else:
             st.markdown(line)
+
+
+def _render_examples(col, predictions: pd.DataFrame, label: str, judul: str) -> None:
+    """Render n contoh ulasan ber-confidence tertinggi untuk satu kelas."""
+    with col:
+        st.markdown(f"**{judul}**")
+        contoh = insights_module.top_examples(predictions, label=label)
+        if contoh.empty:
+            st.caption("_Tidak ada ulasan pada kelas ini._")
+            return
+        for _, row in contoh.iterrows():
+            with st.container(border=True):
+                st.write(f"“{row['review_text']}”")
+                conf = pd.to_numeric(row.get("confidence_score"), errors="coerce")
+                meta = [] if pd.isna(conf) else [f"confidence {conf:.1%}"]
+                bintang = _stars(row.get("rating"))
+                if bintang:
+                    meta.append(bintang)
+                if meta:
+                    st.caption(" · ".join(meta))
 
 
 # ── Pengaturan ────────────────────────────────────────────────────────────────

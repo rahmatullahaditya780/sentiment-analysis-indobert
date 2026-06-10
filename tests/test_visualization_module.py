@@ -16,8 +16,10 @@ from src.dashboard.visualization_module import (
     WC_WIDTH,
     build_category_distribution,
     build_frequencies,
+    build_top_keywords_chart,
     build_wordcloud_from_frequencies,
     column_state,
+    top_keywords,
 )
 
 
@@ -59,6 +61,29 @@ def test_wordcloud_array_sesuai_dimensi():
     assert image is not None
     assert image.shape[0] == WC_HEIGHT
     assert image.shape[1] == WC_WIDTH
+
+
+def test_top_keywords_urut_menurun_tie_alfabetis():
+    freq = {"bagus": 3, "cepat": 5, "aman": 3}
+    assert top_keywords(freq) == [("cepat", 5), ("aman", 3), ("bagus", 3)]
+
+
+def test_top_keywords_terpotong_top_n():
+    freq = {f"kata{i}": i for i in range(20)}
+    assert len(top_keywords(freq, top_n=5)) == 5
+
+
+def test_keywords_chart_none_saat_kosong():
+    assert build_top_keywords_chart({}, color="#16A34A") is None
+
+
+def test_keywords_chart_horizontal_terbesar_di_atas():
+    fig = build_top_keywords_chart({"bagus": 3, "cepat": 5}, color="#16A34A")
+    bar = fig.data[0]
+    assert bar.orientation == "h"
+    # Urutan naik pada sumbu-Y -> elemen terakhir (paling atas) = terbesar.
+    assert list(bar.y) == ["bagus", "cepat"]
+    assert list(bar.x) == [3, 5]
 
 
 def test_category_distribution_none_tanpa_kolom():

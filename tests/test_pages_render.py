@@ -36,6 +36,9 @@ df = pd.DataFrame({{
     "confidence_score": [0.98, 0.91, 0.66, 0.95],
     "product_category": ["serum", "serum", "sabun", "sabun"],
     "date_review": ["2025-01-10", "2025-02-15", "2025-03-20", "2025-04-25"],
+    # rating baris-2 = 5 + label negatif -> fixture mismatch (Module 7 tereksekusi).
+    "rating": [5, 5, 3, 1],
+    "product_name": ["Serum A", "Serum A", "Sabun B", "Sabun B"],
 }})
 st.session_state["result"] = run_analysis(df)
 pages.{fn}()
