@@ -84,15 +84,12 @@ def render_csv_tab(st) -> pd.DataFrame | None:
 
 
 def render_url_tab(st) -> None:
-    """Placeholder tab URL Auto-Fetch (dibangun penuh pada Module 6).
+    """Tab URL Auto-Fetch — delegasi ke Module 6 (`shopee_connector`).
 
     Jalur ini memakai endpoint JSON internal Shopee via sesi browser ber-login
-    dan **hanya aktif di app lokal/desktop** (lihat FR-8.14). Implementasi fetch
-    + progress + deteksi lingkungan menyusul di langkah Module 6.
+    dan **hanya aktif di app lokal/desktop** (lihat FR-8.14). Deteksi lingkungan
+    & validasi URL ditangani `shopee_connector`; engine fetch menyusul.
     """
-    st.info(
-        "Jalur **URL Auto-Fetch** (pengambilan otomatis dari URL produk Shopee) "
-        "hanya tersedia di aplikasi lokal/desktop dan akan diaktifkan pada tahap "
-        "Module 6. Untuk saat ini gunakan tab **CSV Upload**.",
-        icon="🧪",
-    )
+    from src.dashboard.shopee_connector import render_url_section
+
+    render_url_section(st)
