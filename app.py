@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.dashboard import results_module
+from src.dashboard import recommendation_module, results_module
 from src.dashboard.analysis_pipeline import load_predictor, run_analysis
 from src.dashboard.input_module import render_csv_tab, render_url_tab
 
@@ -59,8 +59,11 @@ def main() -> None:
         st.session_state["result"] = result
 
     if "result" in st.session_state:
+        result = st.session_state["result"]
         st.divider()
-        results_module.render(st, st.session_state["result"])
+        results_module.render(st, result)
+        st.divider()
+        recommendation_module.render(st, result.recommendation)
 
 
 if __name__ == "__main__":
