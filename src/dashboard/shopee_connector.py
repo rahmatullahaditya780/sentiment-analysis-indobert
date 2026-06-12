@@ -440,6 +440,48 @@ def split_quota(total: int, n_urls: int) -> list[int]:
     return [max(1, base + (1 if i < sisa else 0)) for i in range(n_urls)]
 
 
+def product_key(url: str | None) -> str | None:
+    """Kunci unik produk "shopid.itemid" dari URL Shopee; None bila tak valid.
+
+    Dipakai sebagai kunci cache sesi agar produk yang sama (walau URL-nya
+    berbeda slug) tidak di-fetch ulang. Murni & teruji.
+    """
+    check = validate_shopee_url(url)
+    if not check["valid"]:
+        return None
+    return f"{check['shopid']}.{check['itemid']}"
+
+
+def plan_fetches(entries: list[tuple[str, str]], cached_keys, total: int) -> list[dict]:
+    """Susun rencana fetch multi-URL dengan cache sesi. Murni & teruji.
+
+    Tiap entri (url, kategori) menjadi dict {url, category, key, quota, skip}:
+    - `quota` = bagi rata `total` ke SEMUA entri (keputusan pengguna: entri
+      yang sudah tersimpan tetap dihitung sebagai pembagi).
+    - `skip=True` bila produk sudah ada di `cached_keys` ATAU duplikat dari
+      baris sebelumnya (URL produk sama diinput dua kali).
+    """
+    cached_keys = set(cached_keys or ())
+    quotas = split_quota(int(total), len(entries))
+    seen: set[str] = set()
+    plan: list[dict] = []
+    for (url, category), quota in zip(entries, quotas):
+        key = product_key(url)
+        skip = key is not None and (key in cached_keys or key in seen)
+        if key is not None:
+            seen.add(key)
+        plan.append(
+            {
+                "url": url,
+                "category": category,
+                "key": key,
+                "quota": quota,
+                "skip": skip,
+            }
+        )
+    return plan
+
+
 def combine_fetch_results(frames: list) -> pd.DataFrame:
     """Gabungkan hasil fetch multi-produk + dedup antar produk. Murni & teruji.
 
@@ -625,6 +667,34 @@ def render_url_section(st):
         icon="🟢",
     )
 
+    # ── Simpanan sesi: produk yang sudah di-fetch tidak diulang ───────────────
+    cache: dict = st.session_state.setdefault("fetch_cache", {})
+    if cache:
+        with st.container(border=True):
+            st.markdown("**📦 Produk tersimpan sesi ini** — tidak akan di-fetch ulang")
+            for key in list(cache.keys()):
+                item = cache[key]
+                c_info, c_del = st.columns([5, 1])
+                nama = item.get("category") or item.get("url", "")
+                c_info.caption(f"`i.{key}` — {nama} — **{item['count']:,} ulasan**")
+                if c_del.button(
+                    "🗑",
+                    key=f"fetch_cache_del_{key}",
+                    help="Hapus produk ini dari simpanan sesi",
+                ):
+                    cache.pop(key, None)
+                    _sync_cache_to_session(st)
+                    st.rerun()
+            if st.button("Kosongkan semua simpanan", key="fetch_cache_clear"):
+                st.session_state["fetch_cache"] = {}
+                _sync_cache_to_session(st)
+                st.rerun()
+            st.caption(
+                "Simpanan bertahan selama dashboard terbuka. Mengubah kategori "
+                "URL yang sudah tersimpan tidak memicu fetch ulang — hapus "
+                "produknya dulu bila ingin mengambil ulang."
+            )
+
     # ── Daftar produk (multi-URL): baris bisa ditambah sesuai kebutuhan ───────
     n_rows = int(st.session_state.get("shopee_fetch_n_rows", 1))
     col_tambah, col_hapus, _ = st.columns([1, 1, 2])
@@ -651,6 +721,13 @@ def render_url_section(st):
             check = validate_shopee_url(url_i)
             if check["valid"]:
                 entries.append((url_i.strip(), cat_i))
+                key_i = f"{check['shopid']}.{check['itemid']}"
+                if key_i in cache:
+                    st.caption(
+                        f"✓ URL #{i + 1} sudah tersimpan "
+                        f"({cache[key_i]['count']:,} ulasan) — tidak akan "
+                        "diambil ulang."
+                    )
             else:
                 any_invalid = True
                 st.error(f"URL #{i + 1}: {check['message']}")
@@ -682,55 +759,82 @@ def render_url_section(st):
         ),
     )
 
+    plan = plan_fetches(entries, cache.keys(), int(max_reviews)) if entries else []
+    to_fetch = [p for p in plan if not p["skip"]]
     if entries:
-        quotas = split_quota(int(max_reviews), len(entries))
-        if len(entries) == 1:
-            st.caption(f"✅ 1 URL valid — kuota {quotas[0]:,} ulasan.")
-        else:
-            rincian = " + ".join(f"{q:,}" for q in quotas)
+        n_skip = len(plan) - len(to_fetch)
+        if not to_fetch:
             st.caption(
-                f"✅ {len(entries)} URL valid — kuota dibagi rata: {rincian} "
-                f"= {sum(quotas):,} ulasan."
+                "✅ Semua URL sudah tersimpan di sesi — tidak ada yang perlu "
+                "diambil. Tambahkan URL baru atau lanjut ke analisis."
+            )
+        else:
+            rincian = " + ".join(f"{p['quota']:,}" for p in to_fetch)
+            extra = f" ({n_skip} tersimpan, dilewati)" if n_skip else ""
+            st.caption(
+                f"✅ {len(to_fetch)} URL akan diambil — kuota: {rincian} "
+                f"ulasan{extra}."
             )
 
-    ready = bool(entries) and not any_invalid
+    ready = bool(to_fetch) and not any_invalid
     if st.button("2️⃣ Ambil Ulasan", disabled=not ready, type="primary"):
-        quotas = split_quota(int(max_reviews), len(entries))
         ts = int(time.time())
-        frames: list[pd.DataFrame] = []
+        baru = 0
         gagal: list[str] = []
-        for i, ((url_i, cat_i), quota) in enumerate(zip(entries, quotas), start=1):
-            if len(entries) > 1:
-                st.markdown(f"**Produk {i}/{len(entries)}** — kuota {quota:,} ulasan")
+        for i, item in enumerate(plan, start=1):
+            if item["skip"]:
+                st.caption(f"URL #{i} dilewati — sudah tersimpan/duplikat.")
+                continue
+            if len(plan) > 1:
+                st.markdown(
+                    f"**Produk {i}/{len(plan)}** — kuota {item['quota']:,} ulasan"
+                )
             out_path = str(Path(tempfile.gettempdir()) / f"sentara_fetch_{ts}_{i}.csv")
             cmd = build_cdp_fetch_command(
-                url=url_i,
+                url=item["url"],
                 output=out_path,
-                category=cat_i,
-                max_reviews=quota,
+                category=item["category"],
+                max_reviews=item["quota"],
                 delay=float(delay),
             )
-            df_i = _run_fetch_ui(st, cmd=cmd, cap=quota)
+            df_i = _run_fetch_ui(st, cmd=cmd, cap=item["quota"])
             if df_i is not None:
-                frames.append(df_i)
+                cache[item["key"]] = {
+                    "df": df_i,
+                    "url": item["url"],
+                    "category": item["category"],
+                    "count": len(df_i),
+                }
+                baru += 1
             else:
                 gagal.append(f"URL #{i}")
 
-        if frames:
-            combined = combine_fetch_results(frames)
-            st.session_state["url_fetched_df"] = combined
-            st.success(
-                f"Total **{len(combined):,} ulasan** terkumpul dari "
-                f"{len(frames)} produk."
-            )
+        _sync_cache_to_session(st)
+        combined = st.session_state.get("url_fetched_df")
+        if combined is not None:
+            tersimpan = len(cache) - baru
+            pesan = f"Total **{len(combined):,} ulasan** dari {len(cache)} produk"
+            if tersimpan > 0:
+                pesan += f" ({baru} baru diambil, {tersimpan} dari simpanan sesi)"
+            st.success(pesan + ".")
             st.dataframe(combined.head(), width="stretch")
         if gagal:
-            pesan = "Gagal mengambil: " + ", ".join(gagal) + "."
-            if frames:
-                pesan += " Hasil produk lain tetap tersimpan."
-            st.warning(pesan)
+            pesan_gagal = "Gagal mengambil: " + ", ".join(gagal) + "."
+            if cache:
+                pesan_gagal += " Hasil produk lain tetap tersimpan."
+            st.warning(pesan_gagal)
 
     return st.session_state.get("url_fetched_df")
+
+
+def _sync_cache_to_session(st) -> None:
+    """Bangun ulang `url_fetched_df` dari seluruh simpanan sesi (dedup)."""
+    cache = st.session_state.get("fetch_cache", {})
+    combined = combine_fetch_results([item["df"] for item in cache.values()])
+    if combined.empty:
+        st.session_state.pop("url_fetched_df", None)
+    else:
+        st.session_state["url_fetched_df"] = combined
 
 
 def _run_fetch_ui(st, *, cmd: list[str], cap: int) -> pd.DataFrame | None:

@@ -160,6 +160,14 @@ sebelumnya); 154 unit test hijau, boot HTTP 200:
   empty state beralasan (`column_state` absen/kosong/ok) untuk chart
   kategori/tren/word cloud; badge filter global di `resolve_view`; expander
   Troubleshooting di Tentang; tooltip jeda & maks ulasan (FR-8.12).
+- **Multi-URL auto-fetch berkelanjutan:** tab URL mendukung ≤5 baris
+  URL+kategori; anggaran "Maks total ulasan" dibagi rata antar produk
+  (`split_quota`, mis. 1.200 utk 2 URL → 600+600); hasil tiap produk
+  tersimpan di sesi (`fetch_cache` per `shopid.itemid`) sehingga menambah
+  link baru **tidak mengulang fetch** produk lama (`plan_fetches` menandai
+  skip utk produk tersimpan/duplikat; kuota link baru tetap total÷semua
+  link); panel "Produk tersimpan sesi ini" dengan hapus per-produk;
+  gabungan di-dedup `review_id` (`combine_fetch_results`).
 - **WP2 Module 7 — Insight Analitik (`insights_module.py`):** deteksi
   ketidaksesuaian rating↔sentimen (bintang ≥4 + teks negatif / bintang ≤2 +
   teks positif — bukti nilai tambah IndoBERT di atas rating numerik, tampil di

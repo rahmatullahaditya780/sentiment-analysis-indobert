@@ -131,3 +131,58 @@ def test_combine_semua_kosong():
     from src.dashboard.shopee_connector import combine_fetch_results
 
     assert combine_fetch_results([]).empty
+
+
+# ── product_key & plan_fetches (fetch berkelanjutan dengan simpanan sesi) ─────
+def test_product_key_dari_url_valid():
+    from src.dashboard.shopee_connector import product_key
+
+    assert (
+        product_key("https://shopee.co.id/produk-i.188380895.25462161057")
+        == "188380895.25462161057"
+    )
+
+
+def test_product_key_none_bila_tak_valid():
+    from src.dashboard.shopee_connector import product_key
+
+    assert product_key("https://tokopedia.com/x-i.1.2") is None
+    assert product_key("") is None
+    assert product_key(None) is None
+
+
+_URL_A = "https://shopee.co.id/a-i.111.222"
+_URL_B = "https://shopee.co.id/b-i.333.444"
+
+
+def test_plan_tanpa_cache_semua_diambil():
+    from src.dashboard.shopee_connector import plan_fetches
+
+    plan = plan_fetches([(_URL_A, "serum"), (_URL_B, "")], set(), 1200)
+    assert [p["skip"] for p in plan] == [False, False]
+    assert [p["quota"] for p in plan] == [600, 600]
+    assert plan[0]["key"] == "111.222"
+
+
+def test_plan_produk_tersimpan_dilewati_kuota_tetap():
+    from src.dashboard.shopee_connector import plan_fetches
+
+    plan = plan_fetches([(_URL_A, ""), (_URL_B, "")], {"111.222"}, 1200)
+    assert plan[0]["skip"] is True
+    # Kuota link baru tetap total / jumlah SEMUA link (keputusan pengguna).
+    assert plan[1]["skip"] is False
+    assert plan[1]["quota"] == 600
+
+
+def test_plan_duplikat_baris_dilewati():
+    from src.dashboard.shopee_connector import plan_fetches
+
+    plan = plan_fetches([(_URL_A, ""), (_URL_A, "lain")], set(), 1200)
+    assert plan[0]["skip"] is False
+    assert plan[1]["skip"] is True
+
+
+def test_plan_entri_kosong():
+    from src.dashboard.shopee_connector import plan_fetches
+
+    assert plan_fetches([], set(), 1200) == []
