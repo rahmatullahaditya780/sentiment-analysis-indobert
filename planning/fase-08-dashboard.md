@@ -120,11 +120,13 @@ ke keputusan final: **tanpa jalur Import Ekstensi** (2 tier), label metode =
 - [x] Rate limiting (`--delay`) + error/fallback handling (login-wall/0-ulasan/timeout/jaringan/ID) terimplementasi (`classify_fetch_error`).
 - [x] Model loading menggunakan `st.session_state` (performa optimal).
 
-> **Status implementasi (build order langkah 1–9):** seluruh modul kode + 80 unit
-> test lulus, lint/format bersih, boot dashboard hijau. Satu-satunya item yang
-> belum tertutup penuh adalah **fetch nyata ke Shopee** yang memerlukan sesi
-> browser ber-login — perlu dijalankan manual oleh pengguna di desktop sebelum
-> gate Fase 8 ditutup resmi.
+> **Status implementasi (build order langkah 1–9 + peningkatan pasca-gate):**
+> seluruh modul kode + **168 unit test** lulus, lint/format bersih, boot
+> dashboard hijau (HTTP 200). Satu-satunya item yang belum tertutup penuh
+> adalah **fetch nyata ke Shopee** yang memerlukan sesi browser ber-login —
+> perlu dijalankan manual oleh pengguna di desktop sebelum gate Fase 8 ditutup
+> resmi. Skenario uji manual kini mencakup multi-URL: fetch link #1 → tambah
+> link #2 → hanya #2 yang diambil (simpanan sesi) → total gabungan benar.
 
 ## Implementasi Kode
 
@@ -134,7 +136,10 @@ ke keputusan final: **tanpa jalur Import Ekstensi** (2 tier), label metode =
 - `src/dashboard/visualization_module.py` — Module 4 (word cloud, distribution)
 - `src/dashboard/settings_module.py` — Module 5 (filter & threshold)
 - `src/dashboard/shopee_connector.py` — Module 6 (tiered router: `validate_shopee_url`, `detect_environment`, `auto_fetch_reviews`; reuse `src/scraping/scrape_omorfo_api.py` (JSON))
-- `src/dashboard/fetch_worker.py` — entrypoint subprocess JSON fetch (emit progress NDJSON → CSV); mengisolasi `sync_playwright` dari proses Streamlit
+- `src/dashboard/insights_module.py` — Module 7 Insight Analitik pasca-gate (mismatch rating↔sentimen, ringkasan kondisi per produk, contoh ulasan representatif)
+- `src/dashboard/model_info.py` — sumber kebenaran metrik model (baca F1/CV dari `outputs/reports/*.json`, fallback aman)
+- `src/dashboard/cdp_fetch_worker.py` — worker fetch **aktif** (mode CDP: tempel ke Chrome asli, emit progress NDJSON → CSV)
+- `src/dashboard/fetch_worker.py` — worker fetch alternatif (launch Playwright; bukan jalur UI utama) dan `login_worker.py` — subprocess login/sesi; kedua worker mengisolasi `sync_playwright` dari proses Streamlit
 - `src/dashboard/analysis_pipeline.py` — glue one-click (`predict_batch → analyze_trend → classify → map_to_recommendation`), dipakai kedua jalur input; `recompute_from_predictions` (filter tanpa re-inferensi) + shortcut data pra-prediksi
 - `src/dashboard/ui_common.py` — state lintas-halaman (`get_predictor`, `analyze_with_progress`, `resolve_view`)
 - `src/dashboard/pages.py` — 8 fungsi halaman multipage (menyusun ulang komponen modul)
@@ -145,10 +150,10 @@ ke keputusan final: **tanpa jalur Import Ekstensi** (2 tier), label metode =
 > Ekspor **PDF & PNG** dijadwalkan ke **Fase 10** (Deployment & Dokumentasi),
 > bukan bagian FR-8.x.
 
-## Peningkatan Pasca-Gate (Fase 8.5, 2026-06-10)
+## Peningkatan Pasca-Gate (Fase 8.5, 2026-06-10 s/d 2026-06-12)
 
-Tiga paket peningkatan di atas spek awal (semua modul FR-8.x sudah lengkap
-sebelumnya); 154 unit test hijau, boot HTTP 200:
+Empat paket peningkatan di atas spek awal (semua modul FR-8.x sudah lengkap
+sebelumnya); **168 unit test** hijau, boot HTTP 200:
 
 - **WP0 Fondasi:** palet sentimen tunggal (`ui_common.SENTIMENT_HEX` re-export
   `results_module.SENTIMENT_COLORS`, nilai = prototipe); `model_info.py` baca
@@ -178,4 +183,4 @@ sebelumnya); 154 unit test hijau, boot HTTP 200:
 
 ## Gate ke Fase Berikutnya
 
-Lanjut ke Fase 9 hanya jika semua 6 modul dashboard berjalan stabil dan data tampil sesuai ekspektasi. Status: kode + 100 unit test lulus (termasuk 16 test render halaman multipage); tersisa **verifikasi manual fetch nyata Shopee**.
+Lanjut ke Fase 9 hanya jika semua modul dashboard berjalan stabil dan data tampil sesuai ekspektasi. Status: kode + **168 unit test** lulus (termasuk 16 test render halaman multipage dan test Module 7 Insight Analitik + multi-URL fetch); tersisa **verifikasi manual fetch nyata Shopee**.

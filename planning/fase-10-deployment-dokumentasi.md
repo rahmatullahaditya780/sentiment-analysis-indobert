@@ -25,13 +25,24 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 
 ### Matriks Fitur: Versi Cloud vs Lokal/Desktop
 
+> **Sinkronisasi 2026-06-12:** jalur **Import Ekstensi dihapus** dari Fase 8
+> final (input = 2 tier saja); URL Auto-Fetch berjalan dengan **mode CDP**
+> (Chrome asli pengguna + endpoint JSON internal), bukan Playwright headful,
+> dan kini mendukung **multi-URL dengan kuota dibagi rata + simpanan sesi**
+> (`st.session_state` — kompatibel filesystem ephemeral cloud karena memang
+> tidak menulis file).
+
 | Komponen | Versi Cloud | Versi Lokal/Desktop |
 |---|---|---|
 | Tier 1 — CSV Upload | Aktif | Aktif |
-| Tier 2 — Import Ekstensi | Aktif | Aktif |
-| Tier 3 — URL Auto-Fetch | **Dinonaktifkan** (FR-8.14) | Aktif (Playwright headful + login sekali) |
+| Tier 2 — URL Auto-Fetch (mode CDP, multi-URL) | **Dinonaktifkan** (FR-8.14) | Aktif (Chrome asli ber-login + endpoint JSON internal) |
 | Model IndoBERT | Load dari HuggingFace Hub / Google Drive | Load lokal dari `models/` |
 | Platform hosting | Streamlit Cloud / HuggingFace Spaces | Lokal (`python app.py` / `streamlit run`) |
+
+> **Artefak wajib ikut repo saat deploy:** `outputs/reports/evaluation_final.json`
+> dan `cross_validation_report.json` — dibaca `src/dashboard/model_info.py`
+> untuk menampilkan F1/CV di dashboard (ada fallback hardcoded bila absen,
+> tetapi nilai laporan asli lebih disukai).
 
 ### Batasan Streamlit Community Cloud (free) — dasar keputusan deployment
 
@@ -42,7 +53,7 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 | IP datacenter + headless | Persis pola yang diblokir anti-bot Shopee | Jalur scraping hanya dijalankan lokal |
 | Filesystem ephemeral + app sleep | Sesi login persisten tidak bertahan | Hanya upload (Tier 1 & 2) yang cocok untuk cloud |
 
-> **Keputusan deployment:** Versi cloud (Streamlit/HF Spaces) hanya mengaktifkan **Tier 1 (CSV)** + **Tier 2 (Ekstensi)**; jalur URL Auto-Fetch (Tier 3) hanya tersedia di versi lokal/desktop. Detail di `planning/trd-revisi-pengambilan-data-implementasi.md` §C.
+> **Keputusan deployment (diperbarui):** Versi cloud (Streamlit/HF Spaces) hanya mengaktifkan **Tier 1 (CSV Upload)**; jalur URL Auto-Fetch hanya tersedia di versi lokal/desktop. (Tier Import Ekstensi pada rencana lama sudah dihapus dari implementasi final Fase 8.) Detail latar belakang di `planning/trd-revisi-pengambilan-data-implementasi.md` §C.
 
 ## Documentation Requirements
 
@@ -62,7 +73,7 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 | R-01 | Keterbatasan GPU lokal (AMD Radeon Vega 7, bukan NVIDIA) | Training IndoBERT sangat lambat | Tinggi | Gunakan Google Colab (gratis/Pro) untuk training |
 | R-02 | Streamlit Cloud melampaui batas memori (~1 GB) saat memuat IndoBERT (~500 MB) | Dashboard crash saat runtime | Tinggi | Gunakan HuggingFace Spaces; pertimbangkan model quantization / caching model di cloud storage |
 | R-03 | Anti-bot Shopee memblokir scraping (IP datacenter, Chromium headless) | Dataset implementasi tidak terkumpul di cloud | Sedang | Jalankan scraping hanya di lokal (Tier 3); versi cloud hanya Tier 1 & 2; sediakan fallback CSV |
-| R-04 | Selektor DOM Shopee berubah (maintenance / redesign layout) | Scraper gagal mengekstrak data | Sedang | Gunakan `selectors_shopee.json` eksternal agar selektor dapat diperbarui tanpa ubah kode; monitor & update berkala |
+| R-04 | Skema endpoint JSON internal Shopee (`/api/v2/item/get_ratings`) berubah, atau anti-bot diperketat (metode aktual Fase 8 = endpoint JSON via Chrome CDP; DOM scraping hanya fallback) | Auto-fetch gagal mengambil ulasan | Sedang | Worker fetch terisolasi (mudah diperbarui tanpa sentuh UI); klasifikasi error + panduan pengguna + fallback CSV Upload sudah terpasang; `selectors_shopee.json` dipertahankan untuk fallback DOM |
 | R-05 | Class imbalance ekstrem pada unified dataset (selisih > 25%) | Model bias terhadap kelas mayoritas | Sedang | Stratified split + class weight; jika masih ekstrem, augmentasi back-translation untuk kelas minoritas |
 | R-06 | Dataset SmSA atau Kaggle tidak tersedia | Training tidak dapat dilakukan | Rendah | Download & simpan snapshot lokal di awal; dokumentasikan versi |
 | R-07 | Performa model tidak mencapai target (F1 macro < 85%) | Gagal memenuhi requirement evaluasi | Sedang | Focused random search lebih luas; periksa kualitas label (label noise); dokumentasikan hasil meski tak capai target |
@@ -71,7 +82,7 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 
 ## Deliverables Checkpoint 10
 
-- [ ] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces) — **Tier 1–2 di cloud, Tier 1–3 di lokal**.
+- [ ] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces) — **CSV Upload di cloud; CSV + URL Auto-Fetch (CDP, multi-URL) di lokal**.
 - [ ] Repository GitHub selesai dengan dokumentasi lengkap.
 - [ ] `README.md` lengkap dan informatif.
 - [ ] User Guide tersedia (PDF atau Markdown).

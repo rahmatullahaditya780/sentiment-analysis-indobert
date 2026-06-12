@@ -22,9 +22,9 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 4 | Model Training & Fine-Tuning | **Selesai** (F1 macro test 0.8971; CV 0.9016 ± 0.010) |
 | 5 | Model Evaluation | **Gate LULUS** (F1 macro test 0.9031; CV 0.9016 ± 0.010). Model **baseline 3-epoch = final**; re-train 2-epoch sudah diuji & terbukti lebih buruk (overfit gap dicatat sebagai keterbatasan, non-blokir) |
 | 6 | Sentiment Inference Engine | **Selesai** (real-time + batch terverifikasi; **3.739 ulasan OmorfoShop nyata** dianalisis → distribusi 88,5% positif / 10,6% negatif / 0,8% netral = Excellent Performance) |
-| 7 | Rule-Based Marketing Recommendation | Belum mulai |
-| 8 | Dashboard Development | Belum mulai |
-| 9 | Testing & Validation | Belum mulai |
+| 7 | Rule-Based Marketing Recommendation | **Selesai** (rule engine 5 kondisi compound + trend analysis; 24 unit test) |
+| 8 | Dashboard Development | **Siap dicek** — kode selesai: 7 modul (6 modul TRD + Module 7 Insight Analitik pasca-gate) + multi-URL fetch berkelanjutan; **168 unit test** hijau, boot HTTP 200. Tersisa: **verifikasi manual fetch nyata Shopee** (perlu Chrome CDP ber-login di desktop) |
+| 9 | Testing & Validation | Belum mulai (unit testing 168 test sudah jalan duluan selama pengembangan; fokus tersisa: integration, usability, expert validation) |
 | 10 | Deployment & Documentation | Belum mulai |
 
 ## Checklist Gate Global
@@ -51,7 +51,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 5 | Metrik evaluasi (accuracy, F1 macro ≥85%), confusion matrix, learning curve |
 | 6 | Inference engine (real-time & batch), hasil prediksi dataset OmorfoShop |
 | 7 | Rule engine 5 kategori, rekomendasi strategi pemasaran |
-| 8 | Dashboard Streamlit 6 modul (termasuk Settings & Shopee Review Collector berlapis: CSV/ekstensi/URL Auto-Fetch) |
+| 8 | Dashboard Streamlit 7 modul (6 modul TRD — input 2 tier CSV/URL Auto-Fetch mode CDP, jalur ekstensi dihapus — + Module 7 Insight Analitik: mismatch rating↔sentimen, keyword drill-down, perbandingan per produk; multi-URL fetch berkelanjutan dengan kuota dibagi rata & simpanan sesi) |
 | 9 | Testing report, bug fix, validation report dari praktisi OmorfoShop |
 | 10 | Dashboard online, repo GitHub, dokumentasi lengkap |
 

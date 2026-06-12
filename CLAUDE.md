@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **endpoint JSON internal Shopee** (`fetch('/api/v2/item/get_ratings')` dieksekusi dari dalam sesi browser ber-login — lihat catatan di bawah). DOM scraping Playwright (`src/scraping/scrape_omorfo_reviews.py`) diblokir anti-bot Shopee → diturunkan jadi fallback. Modul `src/shopee_api/` (Open Platform API) tetap opsi *future work* (persona seller-toko-sendiri). Lihat `planning/trd-revisi-pengambilan-data-implementasi.md` & catatan revisi 2026-06-10.
 
-Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 1–6 sudah lulus gate (IndoBERT fine-tuned: F1 macro test **0.9031**, CV **0.9016 ± 0.010**; model **baseline 3-epoch** final — augmentasi back-translation & re-train 2-epoch diuji tapi terbukti lebih buruk). Fase 6 selesai: **3.739 ulasan OmorfoShop nyata** (5 produk terlaris) dianalisis → distribusi **88,5% positif / 10,6% negatif / 0,8% netral** (= Excellent Performance). Fase 7 lulus gate (rule engine 5 kondisi compound + trend analysis, 24 unit test). **Fokus saat ini: Fase 8 (Dashboard Streamlit)** — 6 modul + glue pipeline selesai (80 unit test, boot hijau); **satu-satunya item tersisa: verifikasi manual fetch nyata ke Shopee** (perlu sesi browser ber-login di desktop) sebelum gate ditutup resmi.
+Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 1–6 sudah lulus gate (IndoBERT fine-tuned: F1 macro test **0.9031**, CV **0.9016 ± 0.010**; model **baseline 3-epoch** final — augmentasi back-translation & re-train 2-epoch diuji tapi terbukti lebih buruk). Fase 6 selesai: **3.739 ulasan OmorfoShop nyata** (5 produk terlaris) dianalisis → distribusi **88,5% positif / 10,6% negatif / 0,8% netral** (= Excellent Performance). Fase 7 lulus gate (rule engine 5 kondisi compound + trend analysis, 24 unit test). Fase 8 kode selesai + **peningkatan pasca-gate Fase 8.5** (Module 7 Insight Analitik: mismatch rating↔sentimen, keyword drill-down, perbandingan per produk; multi-URL auto-fetch berkelanjutan dengan kuota dibagi rata & simpanan sesi; polish UX & sentralisasi konstanta) — **168 unit test** hijau, boot HTTP 200; **satu-satunya item tersisa: verifikasi manual fetch nyata ke Shopee** (perlu Chrome CDP ber-login di desktop), digabung ke integration test Fase 9. **Fokus berikutnya: Fase 9 (Testing & Validation)** — dokumentasi unit testing, integration end-to-end model nyata, usability testing, expert validation praktisi OmorfoShop.
 
 ## Arsitektur Tingkat Tinggi
 
@@ -20,8 +20,8 @@ Fase 4:  Model Training & Fine-Tuning                ✅ SELESAI (F1 macro 0.897
 Fase 5:  Model Evaluation                            ✅ SELESAI (F1 macro test 0.9031 ≥ 0.85)
 Fase 6:  Sentiment Inference Engine                  ✅ SELESAI (3.739 ulasan OmorfoShop → 88,5% pos / 10,6% neg / 0,8% net)
 Fase 7:  Rule-Based Marketing Recommendation         ✅ SELESAI (5 kondisi compound + trend; 24 unit test)
-Fase 8:  Dashboard Development (Streamlit)           🔄 KODE SELESAI (6 modul, 80 test) — pending verifikasi manual fetch Shopee
-Fase 9:  Testing & Validation                        ⏳ Belum mulai
+Fase 8:  Dashboard Development (Streamlit)           🔄 KODE SELESAI (7 modul, 168 test, +Fase 8.5) — pending verifikasi manual fetch Shopee
+Fase 9:  Testing & Validation                        ⏳ Berikutnya (unit testing 168 test sudah jalan; sisa: integrasi, usability, expert validation)
 Fase 10: Deployment & Documentation                  ⏳ Belum mulai
 ```
 
@@ -220,7 +220,7 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 | `src/modeling/` | Selesai (trainer, hyperparameter_search, cross_validation, augmentation, inference) — Fase 4 lulus gate; Fase 6 inference terverifikasi lokal |
 | `src/evaluation/` | Selesai (metrics, evaluator, visualizer, cross_val_report) — Fase 5 lulus gate (F1 macro 0.9031) |
 | `src/recommendation/` | Selesai (rule_engine 5 kondisi compound, strategy_mapper, trend_analyzer) — Fase 7 lulus gate, 24 unit test |
-| `src/dashboard/` | Selesai (analysis_pipeline glue + input/results/recommendation/visualization/settings module + shopee_connector + fetch_worker) — Fase 8, 6 modul, 80 unit test. Fetch nyata Shopee = verifikasi manual |
+| `src/dashboard/` | Selesai (analysis_pipeline glue + input/results/recommendation/visualization/settings/insights module + model_info + shopee_connector + cdp_fetch_worker/fetch_worker/login_worker) — Fase 8 + 8.5, 7 modul. Multi-URL auto-fetch berkelanjutan (kuota dibagi rata `split_quota`, simpanan sesi `fetch_cache` per shopid.itemid). Fetch nyata Shopee = verifikasi manual |
 | `data/raw/{smsa,prdect_id,kaggle}/` | Ada (3 sumber training mentah) |
 | `data/processed/unified_corpus.csv` + `train/validation/test.csv` | Ada (20.608 baris, split 80/10/10 stratified seed=42) — input Fase 3 |
 | `data/processed/clean_{train,validation,test}.csv` | Ada (16.477/2.059/2.064 baris, hasil cleaning Fase 3) — input Fase 4 training |
