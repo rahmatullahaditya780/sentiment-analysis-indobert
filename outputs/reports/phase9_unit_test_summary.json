@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-06-14T05:23:07+00:00",
+  "total_unit_tests": 199,
+  "tests_per_file": {
+    "test_preprocessing.py": 31,
+    "test_recommendation.py": 27,
+    "test_shopee_connector.py": 25,
+    "test_pages_render.py": 16,
+    "test_settings_module.py": 15,
+    "test_insights_module.py": 13,
+    "test_visualization_module.py": 13,
+    "test_login_flow.py": 12,
+    "test_analysis_pipeline.py": 11,
+    "test_fetch_error_classify.py": 8,
+    "test_fetch_worker.py": 7,
+    "test_input_module.py": 5,
+    "test_results_module.py": 5,
+    "test_cdp_flow.py": 4,
+    "test_model_info.py": 4,
+    "test_recommendation_module.py": 3
+  }
+}

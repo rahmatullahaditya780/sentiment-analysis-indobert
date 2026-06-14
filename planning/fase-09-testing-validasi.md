@@ -29,6 +29,22 @@ Melakukan pengujian sistem secara menyeluruh dan validasi oleh praktisi e-commer
 > (3) usability testing, (4) expert validation, dan (5) item yang tak
 > terjangkau test otomatis — **verifikasi manual fetch nyata Shopee** (juga
 > penutup gate Fase 8).
+>
+> **Progres Fase 9 (per 2026-06-14):**
+> - **(1) Unit testing — SELESAI & terdokumentasi.** Ditambah 31 unit test
+>   khusus `src/preprocessing/` (`tests/test_preprocessing.py`) yang sebelumnya
+>   belum ada → **199 unit test** hijau total (sebelumnya 168). Laporan formal:
+>   [`outputs/reports/phase9_unit_test_report.md`](../outputs/reports/phase9_unit_test_report.md)
+>   + ringkasan terukur [`phase9_unit_test_summary.json`](../outputs/reports/phase9_unit_test_summary.json).
+> - **(2) Integration test end-to-end model nyata — SELESAI** (jalur CSV).
+>   `tests/integration/test_e2e_real_model.py` (16 test, marker `integration`):
+>   CSV mentah OmorfoShop → preprocessing → inferensi IndoBERT nyata → rule
+>   engine → render 8 halaman dashboard → ekspor CSV. Artefak:
+>   [`phase9_integration_report.json`](../outputs/reports/phase9_integration_report.json).
+> - **Tersisa:** (3) usability testing, (4) expert validation, (5) verifikasi
+>   **manual** fetch nyata Shopee jalur CDP (perlu desktop ber-login; jalur
+>   analisis lain sudah tervalidasi otomatis). Tiga item ini butuh keterlibatan
+>   manusia/desktop, di luar jangkauan test otomatis.
 
 ### Skenario UI/Usability — wajib mencakup fitur pasca-gate Fase 8.5
 
@@ -57,8 +73,8 @@ Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1
 
 ## Deliverables Checkpoint 9
 
-- [ ] Unit testing selesai dan terdokumentasi.
-- [ ] Integration testing selesai (alur preprocessing → model → recommendation → dashboard).
+- [x] Unit testing selesai dan terdokumentasi. *(199 test hijau; laporan `outputs/reports/phase9_unit_test_report.md`)*
+- [x] Integration testing selesai (alur preprocessing → model → recommendation → dashboard). *(jalur CSV otomatis, 16 test `tests/integration/`; jalur fetch CDP = verifikasi manual, masih terbuka)*
 - [ ] Usability testing pada pengguna nyata selesai.
 - [ ] Expert validation oleh praktisi OmorfoShop selesai.
 - [ ] Bug fixing selesai berdasarkan temuan testing.
@@ -66,14 +82,20 @@ Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1
 
 ## Implementasi
 
-- Unit test di `tests/` (`pytest`) — **sudah ada 168 test** mencakup
-  `src/preprocessing/`, `src/recommendation/`, dan seluruh `src/dashboard/`;
-  Fase 9 tinggal merangkum hasilnya ke laporan testing (jumlah test per modul,
-  semua hijau) + menambah test bila ditemukan bug.
-- Integration test end-to-end dengan **model nyata** (bukan df pra-label):
-  CSV mentah → inferensi IndoBERT → rule engine → render dashboard → ekspor
-  CSV. Jalur kedua: URL Auto-Fetch (CDP) → analisis (sekaligus menutup
-  verifikasi manual fetch Fase 8; uji skenario multi-URL + simpanan sesi).
+- ✅ Unit test di `tests/` (`pytest`) — **199 test** (sebelumnya 168) mencakup
+  `src/preprocessing/`, `src/recommendation/`, dan seluruh `src/dashboard/`.
+  Ditutup gap cakupan `src/preprocessing/` dengan `tests/test_preprocessing.py`
+  (31 test: cleaning regex + guard FR-3.3 tanpa stemming/stopword + `clean_frame`).
+  Dirangkum di [`outputs/reports/phase9_unit_test_report.md`](../outputs/reports/phase9_unit_test_report.md)
+  (jumlah test per modul, semua hijau).
+- ✅ Integration test end-to-end dengan **model nyata** (bukan df pra-label):
+  CSV mentah → inferensi IndoBERT → rule engine → render dashboard → ekspor CSV
+  — `tests/integration/test_e2e_real_model.py` (16 test, marker `integration`,
+  jalan eksplisit `pytest -m integration`). Artefak run:
+  [`outputs/reports/phase9_integration_report.json`](../outputs/reports/phase9_integration_report.json).
+  *Jalur kedua* URL Auto-Fetch (CDP) → analisis (sekaligus menutup verifikasi
+  manual fetch Fase 8; uji multi-URL + simpanan sesi) **masih perlu dijalankan
+  manual** di desktop ber-login — belum tercakup otomatis.
 - Lakukan sesi usability testing dengan 1–2 pengguna non-teknis (skenario di
   atas, termasuk fitur pasca-gate).
 - Buat kuesioner expert validation dan lakukan dengan seller OmorfoShop.
