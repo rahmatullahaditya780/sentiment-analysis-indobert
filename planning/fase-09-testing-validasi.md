@@ -71,6 +71,17 @@ Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1
 | Kesesuaian Konteks Pasar | Kesesuaian dinamika e-commerce, keselarasan perilaku pelanggan kecantikan | 2 item |
 | Pertanyaan Terbuka | Strategi paling relevan, yang kurang sesuai, saran pengembangan, potensi monitoring berkala | 4 pertanyaan |
 
+> **Instrumen siap pakai (per 2026-06-14):**
+> [`outputs/reports/phase9_expert_validation_questionnaire.md`](../outputs/reports/phase9_expert_validation_questionnaire.md)
+> (identitas validator, bahan yang dinilai, 13 item Likert + 4 pertanyaan terbuka,
+> item insight opsional, rekap & interpretasi skor) + template entri skor
+> [`phase9_expert_validation_scoring_template.csv`](../outputs/reports/phase9_expert_validation_scoring_template.csv).
+> **Catatan rekonsiliasi:** tabel di atas berjumlah 12 item Likert; instrumen
+> menambahkan 1 item "Penilaian Keseluruhan" (No. 13) agar genap **17 item inti**
+> (13 Likert + 4 terbuka) sesuai proposal — **cocokkan No. 13 dengan proposal**.
+> Pelaksanaan dengan seller OmorfoShop & penyusunan `validation_report.pdf` masih
+> menunggu (butuh responden nyata).
+
 ## Deliverables Checkpoint 9
 
 - [x] Unit testing selesai dan terdokumentasi. *(199 test hijau; laporan `outputs/reports/phase9_unit_test_report.md`)*
@@ -98,11 +109,12 @@ Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1
   manual** di desktop ber-login — belum tercakup otomatis.
 - Lakukan sesi usability testing dengan 1–2 pengguna non-teknis (skenario di
   atas, termasuk fitur pasca-gate).
-- Buat kuesioner expert validation dan lakukan dengan seller OmorfoShop.
-  *(Opsional, bila pembimbing setuju)*: tambahkan item kuesioner untuk fitur
-  insight baru — kebermanfaatan deteksi ketidaksesuaian rating–sentimen dan
-  perbandingan kondisi per produk — tanpa mengubah 17 item inti yang sudah
-  ditetapkan di proposal.
+- ✅ Kuesioner expert validation **sudah disusun** (`phase9_expert_validation_questionnaire.md`
+  + template skor `.csv`) — tinggal **dilaksanakan** dengan seller OmorfoShop lalu
+  direkap ke `validation_report.pdf`.
+  *(Opsional, bila pembimbing setuju)*: item kuesioner untuk fitur insight baru
+  (kebermanfaatan deteksi ketidaksesuaian rating–sentimen & perbandingan kondisi
+  per produk) sudah tersedia di Bagian E instrumen — tanpa mengubah 17 item inti.
 
 ## Gate ke Fase Berikutnya
 
