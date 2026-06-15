@@ -59,6 +59,17 @@ usability harus menguji fitur yang ditambahkan setelah spek awal:
 6. *(Lokal/desktop saja)* multi-URL auto-fetch: tambah baris URL, kuota dibagi rata, simpanan sesi (link lama tidak di-fetch ulang), panel hapus per produk.
 7. Empty state & seksi Troubleshooting (Tentang) — apakah pesan cukup menolong tanpa pendamping.
 
+> **Instrumen usability siap pakai (per 2026-06-15):** ketujuh skenario di atas
+> + alur dasar dijabarkan menjadi 10 tugas (T1–T10) di
+> [`phase9_usability_task_scenarios.md`](../outputs/reports/phase9_usability_task_scenarios.md)
+> (naskah dibacakan ke peserta + kriteria sukses). Pencatatan via
+> [`phase9_usability_observation_sheet.md`](../outputs/reports/phase9_usability_observation_sheet.md)
+> (status B/BB/G, waktu, error, temuan + keparahan). Pengukuran kepuasan via
+> [`phase9_usability_sus_questionnaire.md`](../outputs/reports/phase9_usability_sus_questionnaire.md)
+> (SUS 10 item + rumus + interpretasi) & template skor
+> [`phase9_usability_sus_scoring_template.csv`](../outputs/reports/phase9_usability_sus_scoring_template.csv).
+> **Pelaksanaan dengan 1–2 pengguna non-teknis masih menunggu** (butuh peserta nyata).
+
 ## Expert Validation
 
 Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1 = Sangat Tidak Setuju, 5 = Sangat Setuju).
@@ -107,8 +118,10 @@ Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1
   *Jalur kedua* URL Auto-Fetch (CDP) → analisis (sekaligus menutup verifikasi
   manual fetch Fase 8; uji multi-URL + simpanan sesi) **masih perlu dijalankan
   manual** di desktop ber-login — belum tercakup otomatis.
-- Lakukan sesi usability testing dengan 1–2 pengguna non-teknis (skenario di
-  atas, termasuk fitur pasca-gate).
+- ✅ Instrumen usability **sudah disusun** (skenario tugas T1–T10, lembar
+  observasi fasilitator, kuesioner SUS Indonesia + template skor) — tinggal
+  **dilaksanakan** dengan 1–2 pengguna non-teknis (skenario di atas, termasuk
+  fitur pasca-gate), lalu rekap success rate + SUS + temuan → bug fixing.
 - ✅ Kuesioner expert validation **sudah disusun** (`phase9_expert_validation_questionnaire.md`
   + template skor `.csv`) — tinggal **dilaksanakan** dengan seller OmorfoShop lalu
   direkap ke `validation_report.pdf`.
