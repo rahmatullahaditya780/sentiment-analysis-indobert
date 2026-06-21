@@ -1,0 +1,94 @@
+{
+  "seed": 42,
+  "source": [
+    "omorfo_predictions.csv",
+    "omorfo_predictions_minoritas.csv"
+  ],
+  "scenarios": [
+    {
+      "file": "scenario_excellent.csv",
+      "expected_condition": "Excellent Performance",
+      "verified_condition": "Excellent Performance",
+      "match": true,
+      "n_reviews": 500,
+      "counts": {
+        "positive": 425,
+        "negative": 65,
+        "neutral": 10
+      },
+      "proportions": {
+        "positive": 0.85,
+        "negative": 0.13,
+        "neutral": 0.02
+      }
+    },
+    {
+      "file": "scenario_good.csv",
+      "expected_condition": "Good Performance",
+      "verified_condition": "Good Performance",
+      "match": true,
+      "n_reviews": 120,
+      "counts": {
+        "positive": 55,
+        "negative": 34,
+        "neutral": 31
+      },
+      "proportions": {
+        "positive": 0.4583,
+        "negative": 0.2833,
+        "neutral": 0.2583
+      }
+    },
+    {
+      "file": "scenario_moderate.csv",
+      "expected_condition": "Moderate Performance",
+      "verified_condition": "Moderate Performance",
+      "match": true,
+      "n_reviews": 110,
+      "counts": {
+        "positive": 39,
+        "negative": 42,
+        "neutral": 29
+      },
+      "proportions": {
+        "positive": 0.3545,
+        "negative": 0.3818,
+        "neutral": 0.2636
+      }
+    },
+    {
+      "file": "scenario_poor.csv",
+      "expected_condition": "Poor Performance",
+      "verified_condition": "Poor Performance",
+      "match": true,
+      "n_reviews": 450,
+      "counts": {
+        "positive": 104,
+        "negative": 333,
+        "neutral": 13
+      },
+      "proportions": {
+        "positive": 0.2311,
+        "negative": 0.74,
+        "neutral": 0.0289
+      }
+    },
+    {
+      "file": "scenario_mixed.csv",
+      "expected_condition": "Mixed/Unstable",
+      "verified_condition": "Mixed/Unstable",
+      "match": true,
+      "n_reviews": 80,
+      "counts": {
+        "positive": 30,
+        "negative": 18,
+        "neutral": 32
+      },
+      "proportions": {
+        "positive": 0.375,
+        "negative": 0.225,
+        "neutral": 0.4
+      }
+    }
+  ]
+}
