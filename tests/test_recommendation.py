@@ -20,12 +20,14 @@ import pytest
 
 from src.recommendation import recommend
 from src.recommendation.config import (
+    CONDITIONS,
     EXCELLENT,
     GOOD,
     MIXED,
     MODERATE,
     POOR,
     STRATEGY_MAP,
+    STRATEGY_PLAYBOOK,
 )
 from src.recommendation.rule_engine import (
     MarketingConditionClassifier,
@@ -165,6 +167,53 @@ class TestStrategyMapper:
         assert loaded["condition"] == POOR
         assert loaded["strategies"] == STRATEGY_MAP[POOR]
         assert loaded["distribution"]["proportion"]["negative"] == pytest.approx(0.50)
+        # Playbook ikut terserialisasi (kontrak baru).
+        assert "playbook" in loaded
+        assert len(loaded["playbook"]) == len(STRATEGY_PLAYBOOK[POOR])
+        assert loaded["playbook"][0]["judul"] == STRATEGY_PLAYBOOK[POOR][0].judul
+
+
+# ── STRATEGY_PLAYBOOK (strategi terstruktur + terhubung fitur) ────────────────
+class TestStrategyPlaybook:
+    def test_kunci_playbook_sama_dengan_conditions(self):
+        assert set(STRATEGY_PLAYBOOK) == set(CONDITIONS)
+
+    def test_setiap_kondisi_punya_minimal_satu_play(self):
+        for condition in CONDITIONS:
+            assert len(STRATEGY_PLAYBOOK[condition]) >= 1
+
+    def test_setiap_play_punya_semua_field_terisi(self):
+        for condition, plays in STRATEGY_PLAYBOOK.items():
+            for play in plays:
+                assert play.judul.strip(), f"judul kosong di {condition}"
+                assert play.contoh.strip(), f"contoh kosong di {condition}"
+                assert play.fitur.strip(), f"fitur kosong di {condition}"
+                assert isinstance(play.langkah, tuple)
+                assert play.langkah, f"langkah kosong di {condition}"
+                assert all(step.strip() for step in play.langkah)
+
+    def test_strategy_map_diturunkan_dari_judul_playbook(self):
+        for condition in CONDITIONS:
+            assert STRATEGY_MAP[condition] == [
+                play.judul for play in STRATEGY_PLAYBOOK[condition]
+            ]
+
+    def test_play_as_dict_lengkap(self):
+        play = STRATEGY_PLAYBOOK[EXCELLENT][0]
+        d = play.as_dict()
+        assert set(d) == {"judul", "langkah", "contoh", "fitur"}
+        assert isinstance(d["langkah"], list)  # tuple -> list saat serialisasi
+
+    def test_map_to_recommendation_mengisi_playbook(self):
+        clf = MarketingConditionClassifier()
+        result = clf.classify({"positive": 0.60, "negative": 0.15, "neutral": 0.25})
+        rec = map_to_recommendation(result)
+        assert len(rec.playbook) == len(STRATEGY_PLAYBOOK[EXCELLENT])
+        first = rec.playbook[0]
+        assert first["judul"] == STRATEGY_PLAYBOOK[EXCELLENT][0].judul
+        assert first["langkah"] and first["contoh"] and first["fitur"]
+        # `strategies` (judul) tetap sinkron dengan judul playbook.
+        assert rec.strategies == [p["judul"] for p in rec.playbook]
 
 
 # ── trend_analyzer ────────────────────────────────────────────────────────────

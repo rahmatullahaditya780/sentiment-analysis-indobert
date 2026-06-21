@@ -19,6 +19,8 @@ from src.recommendation.config import (
     CONDITIONS,
     RECOMMENDATION_REPORT_JSON,
     STRATEGY_MAP,
+    STRATEGY_PLAYBOOK,
+    MarketingPlay,
 )
 from src.recommendation.rule_engine import (
     ConditionResult,
@@ -67,6 +69,8 @@ def recommend(
 __all__ = [
     "CONDITIONS",
     "STRATEGY_MAP",
+    "STRATEGY_PLAYBOOK",
+    "MarketingPlay",
     "RECOMMENDATION_REPORT_JSON",
     "ConditionResult",
     "MarketingConditionClassifier",

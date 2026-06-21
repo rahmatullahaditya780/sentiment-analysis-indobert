@@ -14,6 +14,7 @@ Nilai mengikuti tabel "Threshold & Kondisi Pemasaran" pada
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 # Label kanonik & folder report dipinjam dari Fase 4 supaya konsisten dengan
@@ -74,34 +75,355 @@ CONDITION_INTERPRETATION: dict[str, str] = {
     MIXED: "Persepsi pelanggan tidak konsisten; perlu monitoring lebih lanjut.",
 }
 
-# ── Rule-based mapping kondisi -> daftar strategi pemasaran ────────────────────
+
+# ── Rule-based mapping kondisi -> playbook strategi pemasaran ──────────────────
+# Tiap strategi bukan sekadar kalimat samar, melainkan *playbook* terstruktur:
+# judul aksi + langkah konkret + contoh penerapan (e-commerce umum) + fitur
+# Sentara pendukung. Tujuannya agar pelaku usaha tahu PERSIS cara menjalankan
+# strategi memakai dashboard ini. `fitur` merujuk nama halaman navigasi nyata
+# (lihat app.py): "Dashboard", "Detail Ulasan", "Visualisasi & Word Cloud",
+# "Rekomendasi Strategi", "Input & Pengambilan Data".
+@dataclass(frozen=True)
+class MarketingPlay:
+    """Satu strategi pemasaran konkret + cara menjalankannya lewat fitur Sentara."""
+
+    judul: str  # nama aksi singkat (jadi judul kartu di dashboard)
+    langkah: tuple[str, ...]  # langkah implementasi konkret (urut)
+    contoh: str  # contoh penerapan, gaya e-commerce umum
+    fitur: str  # fitur/halaman Sentara yang mendukung eksekusi/monitoring
+
+    def as_dict(self) -> dict:
+        return {
+            "judul": self.judul,
+            "langkah": list(self.langkah),
+            "contoh": self.contoh,
+            "fitur": self.fitur,
+        }
+
+
+STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
+    EXCELLENT: (
+        MarketingPlay(
+            judul="Manfaatkan ulasan positif sebagai social proof",
+            langkah=(
+                "Buka halaman Rekomendasi Strategi → Bukti Ulasan Representatif "
+                "dan salin 3–5 kutipan positif ber-confidence tertinggi.",
+                "Tempatkan kutipan pada deskripsi produk, banner toko, dan konten "
+                "media sosial.",
+                "Sematkan kata kunci pujian yang paling sering muncul sebagai "
+                "highlight penjualan.",
+            ),
+            contoh=(
+                "Kutipan 'barang sesuai deskripsi, pengiriman cepat' (confidence "
+                "99%) dijadikan caption foto produk dan testimoni di etalase toko."
+            ),
+            fitur=(
+                "Rekomendasi Strategi → Bukti Ulasan Representatif (positif) + "
+                "Visualisasi & Word Cloud (kelas positif)."
+            ),
+        ),
+        MarketingPlay(
+            judul="Perkuat loyalitas pada produk unggulan",
+            langkah=(
+                "Lihat Kondisi per Produk untuk menemukan produk ber-sentimen "
+                "positif tertinggi.",
+                "Tawarkan bundling, poin, atau membership untuk pembeli ulang "
+                "produk tersebut.",
+                "Prioritaskan stok dan promosi pada produk unggulan ini.",
+            ),
+            contoh=(
+                "Produk dengan 90%+ ulasan positif dipaketkan bersama voucher "
+                "pembelian berikutnya untuk mendorong repeat order."
+            ),
+            fitur="Rekomendasi Strategi → Kondisi per Produk.",
+        ),
+        MarketingPlay(
+            judul="Jalankan program referral berbasis keunggulan yang dipuji",
+            langkah=(
+                "Buka Visualisasi & Word Cloud → Kata Kunci Teratas kelas positif "
+                "untuk tahu keunggulan yang paling sering disebut.",
+                "Angkat keunggulan itu sebagai pesan utama kampanye 'ajak teman'.",
+                "Beri insentif (cashback/diskon) bagi pelanggan yang mereferensikan.",
+            ),
+            contoh=(
+                "Kata 'awet' dan 'murah' mendominasi → tagline referral "
+                "'Rekomendasikan yang awet & hemat, dapat cashback'."
+            ),
+            fitur="Visualisasi & Word Cloud → Kata Kunci Teratas / Word Cloud (positif).",
+        ),
+        MarketingPlay(
+            judul="Pertahankan kualitas dengan pemantauan dini",
+            langkah=(
+                "Jadwalkan auto-fetch ulasan secara berkala di halaman Input & "
+                "Pengambilan Data.",
+                "Pantau apakah kondisi tetap Excellent dan perhatikan peringatan "
+                "Perubahan Tren.",
+                "Tindak lanjuti penurunan proporsi positif sebelum menjadi keluhan "
+                "massal.",
+            ),
+            contoh=(
+                "Setiap bulan fetch ulang ulasan; bila muncul peringatan tren "
+                "positif turun >15%, tinjau perubahan pemasok atau logistik."
+            ),
+            fitur=(
+                "Input & Pengambilan Data (auto-fetch) + peringatan Perubahan Tren "
+                "di panel Rekomendasi."
+            ),
+        ),
+    ),
+    GOOD: (
+        MarketingPlay(
+            judul="Bedah keluhan spesifik dari ulasan negatif",
+            langkah=(
+                "Buka Rekomendasi Strategi → Bukti Ulasan Representatif (keluhan "
+                "terkuat) untuk membaca keluhan paling meyakinkan.",
+                "Buka Visualisasi & Word Cloud kelas negatif untuk menemukan tema "
+                "keluhan yang berulang.",
+                "Daftarkan 3 keluhan teratas sebagai backlog perbaikan.",
+            ),
+            contoh=(
+                "Word cloud negatif menonjolkan 'lama' dan 'pengiriman' → akar "
+                "masalah ada di logistik, bukan kualitas produk."
+            ),
+            fitur=(
+                "Rekomendasi Strategi → Bukti Ulasan (negatif) + Visualisasi & "
+                "Word Cloud (negatif)."
+            ),
+        ),
+        MarketingPlay(
+            judul="Perbaiki titik lemah lalu komunikasikan perbaikannya",
+            langkah=(
+                "Tetapkan target perbaikan pada keluhan teratas (mis. SLA "
+                "pengiriman, QC kemasan).",
+                "Setelah diperbaiki, umumkan ke pelanggan via deskripsi produk atau "
+                "pengumuman toko.",
+                "Pantau ulang lewat fetch berikutnya untuk memverifikasi keluhan "
+                "menurun.",
+            ),
+            contoh=(
+                "Keluhan kemasan penyok → ganti bubble wrap; tulis 'kini dikemas "
+                "ekstra aman' di deskripsi, lalu cek ulasan bulan berikutnya."
+            ),
+            fitur=(
+                "Detail Ulasan (filter keluhan) + Input & Pengambilan Data (fetch "
+                "ulang untuk verifikasi)."
+            ),
+        ),
+        MarketingPlay(
+            judul="Naikkan rasio positif dengan menonjolkan keunggulan",
+            langkah=(
+                "Identifikasi keunggulan yang dipuji dari Word Cloud / Kata Kunci "
+                "kelas positif.",
+                "Perjelas keunggulan tersebut di judul dan foto produk agar "
+                "ekspektasi pembeli tepat.",
+                "Sertakan kutipan positif untuk meyakinkan calon pembeli yang ragu.",
+            ),
+            contoh=(
+                "Banyak pujian 'sesuai foto' → tambahkan label 'real product, "
+                "sesuai foto' pada thumbnail untuk menarik pembeli ragu."
+            ),
+            fitur="Visualisasi & Word Cloud → Kata Kunci / Word Cloud (positif).",
+        ),
+    ),
+    MODERATE: (
+        MarketingPlay(
+            judul="Temukan akar masalah utama via analisis kata",
+            langkah=(
+                "Buka Visualisasi & Word Cloud → Word Cloud & Kata Kunci kelas "
+                "negatif untuk memetakan masalah dominan.",
+                "Kelompokkan keluhan ke kategori (produk / pengiriman / layanan).",
+                "Urutkan berdasarkan frekuensi untuk menentukan prioritas perbaikan.",
+            ),
+            contoh=(
+                "Kata 'rusak', 'beda', dan 'lambat' sama besar → tiga lini masalah "
+                "ditangani paralel sesuai frekuensinya."
+            ),
+            fitur="Visualisasi & Word Cloud → Word Cloud & Kata Kunci Teratas (negatif).",
+        ),
+        MarketingPlay(
+            judul="Tingkatkan kualitas produk & layanan secara terukur",
+            langkah=(
+                "Tetapkan KPI perbaikan (mis. rasio negatif < 30%) sebagai target.",
+                "Perbaiki proses pada lini masalah teratas.",
+                "Bandingkan kondisi antar produk untuk fokus pada yang terburuk.",
+            ),
+            contoh=(
+                "SKU dengan negatif tertinggi dipisahkan; perbaikan QC difokuskan "
+                "pada produk itu lebih dulu."
+            ),
+            fitur=(
+                "Rekomendasi Strategi / Visualisasi → Kondisi per Produk + "
+                "Pengaturan → Filter per produk."
+            ),
+        ),
+        MarketingPlay(
+            judul="Susun komunikasi yang lebih transparan",
+            langkah=(
+                "Tuliskan ekspektasi realistis (estimasi kirim, varian warna) di "
+                "deskripsi produk.",
+                "Tanggapi ulasan negatif secara terbuka dengan solusi konkret.",
+                "Hindari klaim berlebihan yang memicu kekecewaan.",
+            ),
+            contoh=(
+                "Cantumkan 'estimasi tiba 3–5 hari' agar keluhan 'lama' berkurang "
+                "karena ekspektasi pembeli sudah selaras."
+            ),
+            fitur="Detail Ulasan (baca konteks keluhan untuk menyusun balasan).",
+        ),
+        MarketingPlay(
+            judul="Cek keluhan tersembunyi lewat ketidaksesuaian rating–sentimen",
+            langkah=(
+                "Buka Dashboard / Detail Ulasan dan tinjau ulasan rating tinggi "
+                "tetapi bersentimen negatif.",
+                "Identifikasi keluhan yang luput dari skor bintang.",
+                "Tindak lanjuti karena ini sinyal ketidakpuasan yang tak tampak di "
+                "rata-rata rating.",
+            ),
+            contoh=(
+                "Pelanggan beri bintang 5 tapi menulis 'produk bagus, sayang dusnya "
+                "penyok' → masalah kemasan tetap perlu dibenahi."
+            ),
+            fitur="Dashboard / Detail Ulasan → Ketidaksesuaian Rating ↔ Sentimen.",
+        ),
+    ),
+    POOR: (
+        MarketingPlay(
+            judul="Triase keluhan paling mendesak",
+            langkah=(
+                "Buka Bukti Ulasan Representatif (keluhan terkuat) dan Word Cloud "
+                "negatif untuk masalah paling tajam.",
+                "Pisahkan masalah fatal (rusak, tidak sesuai, penipuan) dari yang "
+                "minor.",
+                "Tangani masalah fatal lebih dulu sebagai prioritas darurat.",
+            ),
+            contoh=(
+                "Dominasi kata 'rusak' dan 'tidak sesuai' → hentikan sementara "
+                "penjualan SKU bermasalah sampai QC beres."
+            ),
+            fitur=(
+                "Rekomendasi Strategi → Bukti Ulasan (negatif) + Visualisasi & "
+                "Word Cloud (negatif)."
+            ),
+        ),
+        MarketingPlay(
+            judul="Evaluasi harga, kualitas, dan kemasan",
+            langkah=(
+                "Periksa kata kunci negatif terkait 'mahal', 'murahan', 'kemasan', "
+                "'rusak'.",
+                "Bandingkan value produk dengan harga dan kompetitor.",
+                "Perbaiki kemasan/QC sebelum melanjutkan promosi berbayar.",
+            ),
+            contoh=(
+                "Kata 'mahal' dan 'mengecewakan' menonjol → tinjau ulang harga atau "
+                "tingkatkan kualitas agar sepadan."
+            ),
+            fitur="Visualisasi & Word Cloud → Kata Kunci Teratas (negatif).",
+        ),
+        MarketingPlay(
+            judul="Lakukan recovery pelanggan secara terbuka",
+            langkah=(
+                "Akui masalah utama lewat pengumuman toko dan balasan ulasan.",
+                "Tawarkan solusi konkret (refund, ganti, garansi) bagi pelanggan "
+                "terdampak.",
+                "Komunikasikan langkah perbaikan yang sudah atau akan dilakukan.",
+            ),
+            contoh=(
+                "Publikasikan permintaan maaf + program ganti barang untuk pembeli "
+                "yang menerima produk cacat pada periode bermasalah."
+            ),
+            fitur="Detail Ulasan (identifikasi ulasan terdampak untuk ditindaklanjuti).",
+        ),
+        MarketingPlay(
+            judul="Hentikan kerugian: fokus pada produk terparah",
+            langkah=(
+                "Buka Kondisi per Produk untuk menemukan SKU berkondisi Poor.",
+                "Pause atau perbaiki produk terparah agar tidak menyeret reputasi "
+                "toko.",
+                "Alihkan anggaran promosi ke produk yang masih sehat.",
+            ),
+            contoh=(
+                "Dua SKU berkondisi Poor dinonaktifkan sementara; anggaran iklan "
+                "dialihkan ke produk ber-sentimen positif."
+            ),
+            fitur=(
+                "Rekomendasi Strategi / Visualisasi → Kondisi per Produk + "
+                "Pengaturan → Filter per produk."
+            ),
+        ),
+    ),
+    MIXED: (
+        MarketingPlay(
+            judul="Selaraskan ekspektasi lewat edukasi produk",
+            langkah=(
+                "Periksa ketidaksesuaian rating–sentimen untuk melihat kesenjangan "
+                "ekspektasi vs realita.",
+                "Buat konten edukasi (cara pakai, spesifikasi, FAQ) yang menjawab "
+                "kebingungan.",
+                "Tampilkan informasi penting sebelum pembelian untuk menekan ulasan "
+                "netral/bingung.",
+            ),
+            contoh=(
+                "Banyak ulasan netral 'masih bingung pakainya' → tambahkan panduan "
+                "pemakaian bergambar di galeri produk."
+            ),
+            fitur="Dashboard / Detail Ulasan → Ketidaksesuaian Rating ↔ Sentimen.",
+        ),
+        MarketingPlay(
+            judul="Perkuat deskripsi agar persepsi konsisten",
+            langkah=(
+                "Identifikasi istilah ambigu dari Word Cloud kelas netral.",
+                "Perjelas spesifikasi, ukuran, varian, dan isi paket di deskripsi.",
+                "Hilangkan klaim yang menimbulkan tafsir ganda.",
+            ),
+            contoh=(
+                "Netral seputar 'ukuran' → cantumkan tabel dimensi dan perbandingan "
+                "agar pembeli tidak ragu."
+            ),
+            fitur="Visualisasi & Word Cloud → Word Cloud / Kata Kunci (netral).",
+        ),
+        MarketingPlay(
+            judul="Pantau sentimen secara berkala",
+            langkah=(
+                "Jadwalkan auto-fetch berulang dan amati panel Perubahan Tren.",
+                "Catat periode saat proporsi berubah signifikan dan kaitkan dengan "
+                "peristiwa (promo, ganti pemasok).",
+                "Tetapkan ambang peringatan untuk tindak lanjut cepat.",
+            ),
+            contoh=(
+                "Tren positif anjlok di bulan tertentu bertepatan dengan ganti "
+                "kurir → kembalikan kurir lama atau perbaiki SLA."
+            ),
+            fitur=(
+                "Input & Pengambilan Data (auto-fetch) + panel Perubahan Tren "
+                "(Rekomendasi)."
+            ),
+        ),
+        MarketingPlay(
+            judul="Investigasi penyebab ketidakstabilan",
+            langkah=(
+                "Tinjau apakah Mixed dipicu netral tinggi atau perubahan tren "
+                "(lihat keterangan kondisi).",
+                "Bandingkan kondisi antar produk untuk melihat apakah masalah "
+                "menyeluruh atau spesifik.",
+                "Telusuri ulasan netral terbaru untuk menemukan akar penyebabnya.",
+            ),
+            contoh=(
+                "Mixed karena netral 38% → ternyata satu produk baru membanjiri "
+                "ulasan ambigu; fokuskan edukasi pada produk itu."
+            ),
+            fitur=(
+                "Rekomendasi Strategi (keterangan kondisi) → Kondisi per Produk + "
+                "Detail Ulasan."
+            ),
+        ),
+    ),
+}
+
+# Mapping ringkas kondisi -> daftar judul strategi (kontrak lama: list[str]).
+# Diturunkan dari STRATEGY_PLAYBOOK agar judul tidak terduplikasi & selalu sinkron.
 STRATEGY_MAP: dict[str, list[str]] = {
-    EXCELLENT: [
-        "Pertahankan kualitas & branding.",
-        "Tingkatkan loyalitas pelanggan.",
-        "Manfaatkan ulasan positif sebagai social proof.",
-        "Pertimbangkan program referral.",
-    ],
-    GOOD: [
-        "Identifikasi aspek yang masih kurang dari ulasan negatif.",
-        "Perbaiki titik kelemahan spesifik.",
-        "Tingkatkan komunikasi keunggulan produk.",
-    ],
-    MODERATE: [
-        "Analisis aspek (word cloud negatif) untuk identifikasi masalah utama.",
-        "Tingkatkan kualitas produk dan layanan.",
-        "Susun kampanye komunikasi yang lebih transparan.",
-    ],
-    POOR: [
-        "Prioritaskan peningkatan kualitas produk dan layanan secara urgent.",
-        "Evaluasi pricing dan packaging.",
-        "Pertimbangkan kampanye permintaan maaf publik.",
-    ],
-    MIXED: [
-        "Tingkatkan edukasi produk.",
-        "Perkuat deskripsi produk agar ekspektasi lebih terarah.",
-        "Lakukan monitoring sentimen secara berkala.",
-    ],
+    condition: [play.judul for play in plays]
+    for condition, plays in STRATEGY_PLAYBOOK.items()
 }
 
 

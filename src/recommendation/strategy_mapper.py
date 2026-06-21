@@ -20,6 +20,7 @@ from src.recommendation.config import (
     CONDITION_INTERPRETATION,
     RECOMMENDATION_REPORT_JSON,
     STRATEGY_MAP,
+    STRATEGY_PLAYBOOK,
     ensure_output_dirs,
 )
 from src.recommendation.rule_engine import ConditionResult
@@ -36,6 +37,7 @@ class MarketingRecommendation:
     distribution: dict
     reason: str = ""
     trend_shift: bool = False
+    playbook: list[dict] = field(default_factory=list)
     meta: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
@@ -46,6 +48,7 @@ class MarketingRecommendation:
             "strategies": list(self.strategies),
             "reason": self.reason,
             "trend_shift": self.trend_shift,
+            "playbook": [dict(play) for play in self.playbook],
             "distribution": self.distribution,
             "meta": dict(self.meta),
         }
@@ -74,6 +77,9 @@ def map_to_recommendation(
         interpretation=CONDITION_INTERPRETATION.get(result.condition, ""),
         business_insight=_build_business_insight(result),
         strategies=list(STRATEGY_MAP.get(result.condition, [])),
+        playbook=[
+            play.as_dict() for play in STRATEGY_PLAYBOOK.get(result.condition, ())
+        ],
         distribution=result.distribution.as_dict(),
         reason=result.reason,
         trend_shift=result.trend_shift,

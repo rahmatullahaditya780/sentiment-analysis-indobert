@@ -26,13 +26,25 @@ Mengubah hasil analisis sentimen menjadi rekomendasi strategi pemasaran yang tra
 
 ## Rule-Based Mapping ke Strategi Pemasaran
 
-| Kondisi | Strategi yang Direkomendasikan |
-|---|---|
-| Excellent Performance | Pertahankan kualitas & branding; tingkatkan loyalitas; manfaatkan ulasan positif sebagai social proof; pertimbangkan program referral. |
-| Good Performance | Identifikasi aspek yang masih kurang dari ulasan negatif; perbaiki titik kelemahan spesifik; tingkatkan komunikasi keunggulan produk. |
-| Moderate Performance | Analisis aspek (word cloud negatif) untuk identifikasi masalah utama; tingkatkan kualitas produk dan layanan; susun kampanye komunikasi yang lebih transparan. |
-| Poor Performance | Prioritaskan peningkatan kualitas produk dan layanan secara urgent; evaluasi pricing dan packaging; pertimbangkan kampanye permintaan maaf publik. |
-| Mixed/Unstable | Tingkatkan edukasi produk; perkuat deskripsi produk agar ekspektasi lebih terarah; lakukan monitoring sentimen secara berkala. |
+> **Peningkatan pasca-gate (playbook terhubung-fitur).** Strategi tidak lagi
+> berupa satu kalimat samar, melainkan *playbook* terstruktur per kondisi:
+> **judul aksi → langkah konkret → contoh penerapan (e-commerce umum) → fitur
+> Sentara pendukung**. Tujuannya agar pelaku usaha tahu persis cara menjalankan
+> tiap strategi memakai dashboard. Sumber kebenaran tunggal:
+> `STRATEGY_PLAYBOOK` di `src/recommendation/config.py`; `STRATEGY_MAP` (daftar
+> judul) diturunkan otomatis darinya agar kontrak lama (list[str], JSON) tetap utuh.
+
+| Kondisi | Fokus & contoh strategi (judul) | Fitur Sentara yang dirujuk |
+|---|---|---|
+| Excellent Performance | Social proof dari ulasan positif; loyalitas produk unggulan; referral berbasis keunggulan; pemantauan dini. | Bukti Ulasan Representatif, Kondisi per Produk, Kata Kunci/Word Cloud, auto-fetch + peringatan tren. |
+| Good Performance | Bedah keluhan spesifik; perbaiki lalu komunikasikan & verifikasi; tonjolkan keunggulan. | Bukti Ulasan (negatif), Word Cloud negatif, Detail Ulasan, fetch ulang. |
+| Moderate Performance | Akar masalah via analisis kata; perbaikan terukur per produk; komunikasi transparan; cek keluhan tersembunyi. | Word Cloud/Kata Kunci negatif, Kondisi per Produk + filter, mismatch rating↔sentimen. |
+| Poor Performance | Triase keluhan mendesak; evaluasi harga/kualitas/kemasan; recovery terbuka; fokus/hentikan SKU terparah. | Bukti Ulasan + Word Cloud negatif, Kata Kunci negatif, Detail Ulasan, Kondisi per Produk. |
+| Mixed/Unstable | Selaraskan ekspektasi via mismatch; perkuat deskripsi dari kata netral; pantau berkala; investigasi pemicu. | Mismatch rating↔sentimen, Word Cloud netral, auto-fetch + tren, Kondisi per Produk. |
+
+Tiap baris di atas berisi 3–4 *play*; rincian langkah & contoh penuh ada di
+`STRATEGY_PLAYBOOK` dan dirender sebagai **kartu yang bisa dibuka (expander)** pada
+panel Rekomendasi dashboard (Fase 8).
 
 ## Deliverables Checkpoint 7
 
@@ -42,6 +54,7 @@ Mengubah hasil analisis sentimen menjadi rekomendasi strategi pemasaran yang tra
 - [x] Recommendation engine selesai.
 - [x] Business insight dan marketing strategy tersedia untuk setiap kondisi.
 - [x] Trend analysis berjalan jika data punya kolom `date_review`.
+- [x] **Playbook strategi terhubung-fitur** (peningkatan pasca-gate): tiap strategi = judul + langkah konkret + contoh penerapan + fitur Sentara pendukung; dirender sebagai kartu expander di dashboard.
 
 ### Hasil pada data nyata OmorfoShop (3.739 ulasan, Fase 6)
 
@@ -64,10 +77,11 @@ awal riwayat toko bersampel kecil (n=1–2) menghasilkan swing proporsi palsu
 ## Implementasi Kode
 
 - `src/recommendation/rule_engine.py` — `MarketingConditionClassifier` (evaluasi 5 kondisi compound)
-- `src/recommendation/strategy_mapper.py` — Mapping kondisi → daftar strategi pemasaran
+- `src/recommendation/config.py` — `MarketingPlay` + `STRATEGY_PLAYBOOK` (playbook terstruktur); `STRATEGY_MAP` diturunkan dari judul play
+- `src/recommendation/strategy_mapper.py` — Mapping kondisi → playbook strategi + business insight (`MarketingRecommendation.playbook`)
 - `src/recommendation/trend_analyzer.py` — Analisis tren sentimen berbasis `date_review`
 - Input: hasil batch prediction (DataFrame dengan `predicted_label`, opsional `date_review`)
-- Output: kondisi pemasaran, strategi, business insight (string/dict)
+- Output: kondisi pemasaran, strategi (judul + langkah + contoh + fitur), business insight (string/dict)
 
 ## Gate ke Fase Berikutnya
 

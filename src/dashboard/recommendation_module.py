@@ -57,8 +57,33 @@ def render(st, recommendation) -> None:
     st.write(recommendation.business_insight)
 
     st.markdown("**Strategi yang Direkomendasikan**")
-    if recommendation.strategies:
+    st.caption(
+        "Klik tiap strategi untuk melihat langkah konkret, contoh penerapan, dan "
+        "fitur Sentara yang mendukungnya."
+    )
+    playbook = getattr(recommendation, "playbook", None)
+    if playbook:
+        for play in playbook:
+            _render_play(st, play)
+    elif recommendation.strategies:
+        # Fallback: objek lama tanpa playbook -> bullet judul seperti semula.
         for strategy in recommendation.strategies:
             st.markdown(f"- {strategy}")
     else:
         st.caption("Tidak ada strategi spesifik untuk kondisi ini.")
+
+
+def _render_play(st, play: dict) -> None:
+    """Render satu strategi sebagai kartu expander (langkah + contoh + fitur)."""
+    with st.expander(f"💡 {play.get('judul', 'Strategi')}"):
+        langkah = play.get("langkah") or []
+        if langkah:
+            st.markdown("**Langkah:**")
+            for i, step in enumerate(langkah, start=1):
+                st.markdown(f"{i}. {step}")
+        contoh = play.get("contoh")
+        if contoh:
+            st.info(f"**Contoh:** {contoh}", icon="🧩")
+        fitur = play.get("fitur")
+        if fitur:
+            st.caption(f"🔗 Fitur Sentara: {fitur}")
