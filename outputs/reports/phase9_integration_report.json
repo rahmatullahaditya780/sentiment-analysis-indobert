@@ -1,17 +1,17 @@
 {
   "phase": "9 — Integration Testing (FR-9.2)",
-  "generated_at": "2026-06-14T05:28:33+00:00",
+  "generated_at": "2026-06-22T17:07:43+00:00",
   "model_dir": "D:\\Documents\\SKRIPSI\\sistem\\models\\best_model",
   "sample_source": "D:\\Documents\\SKRIPSI\\sistem\\data\\implementation\\omorfo_reviews.csv",
   "n_reviews": 26,
   "inference_skipped": false,
-  "total_prediction_time_s": 2.4287,
-  "avg_prediction_time_s": 0.093413,
+  "total_prediction_time_s": 2.8016,
+  "avg_prediction_time_s": 0.107755,
   "labels_observed": [
     "negative",
     "positive"
   ],
-  "condition": "Mixed/Unstable",
+  "condition": "Beragam / Tidak Stabil",
   "distribution": {
     "n_reviews": 26,
     "proportion": {
@@ -25,10 +25,9 @@
       "neutral": 0
     }
   },
-  "strategies_count": 3,
+  "strategies_count": 4,
   "pages_rendered": [
-    "page_dashboard",
-    "page_input",
+    "page_beranda",
     "page_detail",
     "page_visualisasi",
     "page_rekomendasi",

@@ -4,8 +4,8 @@ Fase 7 — Unit test rule-based marketing recommendation.
 Cakupan:
 - compute_distribution: DataFrame, dict bersarang, dict proporsi flat,
   dict count flat, kolom hilang, & data kosong.
-- MarketingConditionClassifier: kelima kondisi compound + override Mixed
-  (netral & trend) + fallback celah antar-tier.
+- MarketingConditionClassifier: keempat kondisi compound + override Mixed
+  (netral & trend) + fallback celah antar-tier (termasuk band Moderate lama).
 - strategy_mapper: pemetaan strategi + business insight + tulis JSON.
 - trend_analyzer: kolom tanggal hilang, guard sampel kecil, deteksi shift.
 - recommend(): orkestrasi end-to-end.
@@ -24,7 +24,6 @@ from src.recommendation.config import (
     EXCELLENT,
     GOOD,
     MIXED,
-    MODERATE,
     POOR,
     STRATEGY_MAP,
     STRATEGY_PLAYBOOK,
@@ -107,9 +106,10 @@ class TestClassifier:
         res = clf.classify({"positive": 0.45, "negative": 0.25, "neutral": 0.30})
         assert res.condition == GOOD
 
-    def test_moderate(self, clf):
+    def test_moderate_band_jatuh_ke_mixed(self, clf):
+        # Band "Moderate" lama (pos 30–39% & neg 30–40%) kini -> Beragam/Tidak Stabil.
         res = clf.classify({"positive": 0.35, "negative": 0.35, "neutral": 0.30})
-        assert res.condition == MODERATE
+        assert res.condition == MIXED
 
     def test_poor(self, clf):
         res = clf.classify({"positive": 0.25, "negative": 0.50, "neutral": 0.25})
@@ -131,10 +131,10 @@ class TestClassifier:
         assert "Tren" in res.reason
 
     def test_fallback_gap_between_tiers(self, clf):
-        # pos 0.55 / neg 0.30 / neu 0.15: tak memenuhi tier manapun -> Mixed.
+        # pos 0.55 / neg 0.30 / neu 0.15: tak memenuhi kriteria manapun -> Mixed.
         res = clf.classify({"positive": 0.55, "negative": 0.30, "neutral": 0.15})
         assert res.condition == MIXED
-        assert "tier" in res.reason.lower()
+        assert "kriteria" in res.reason.lower()
 
     def test_accepts_distribution_object(self, clf):
         dist = SentimentDistribution(positive=0.6, negative=0.15, neutral=0.25)

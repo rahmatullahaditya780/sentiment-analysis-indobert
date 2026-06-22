@@ -28,30 +28,31 @@ def main() -> None:
         st.caption("Analisis Sentimen Ulasan E-Commerce — IndoBERT")
         st.divider()
 
-    nav = st.navigation(
-        {
-            "Menu": [
-                st.Page(
-                    pages.page_dashboard, title="Dashboard", icon="🏠", default=True
-                ),
-                st.Page(pages.page_input, title="Input & Pengambilan Data", icon="📥"),
-            ],
-            "Hasil Analisis": [
-                st.Page(pages.page_detail, title="Detail Ulasan", icon="📋"),
-                st.Page(
-                    pages.page_visualisasi, title="Visualisasi & Word Cloud", icon="☁️"
-                ),
-                st.Page(
-                    pages.page_rekomendasi, title="Rekomendasi Strategi", icon="💡"
-                ),
-            ],
-            "Lainnya": [
-                st.Page(pages.page_pengaturan, title="Pengaturan", icon="⚙️"),
-                st.Page(pages.page_ekspor, title="Ekspor Laporan", icon="⬇️"),
-                st.Page(pages.page_tentang, title="Tentang & Bantuan", icon="ℹ️"),
-            ],
-        }
-    )
+    # Navigasi progresif: sebelum ada hasil, hanya Beranda (mode input) yang
+    # tampil; menu hasil & lainnya baru muncul setelah analisis dijalankan.
+    beranda = st.Page(pages.page_beranda, title="Beranda", icon="🏠", default=True)
+    if st.session_state.get("result") is None:
+        nav = st.navigation([beranda])
+    else:
+        nav = st.navigation(
+            {
+                "Hasil Analisis": [
+                    beranda,
+                    st.Page(pages.page_detail, title="Daftar Ulasan", icon="📋"),
+                    st.Page(
+                        pages.page_visualisasi,
+                        title="Kata yang Sering Muncul",
+                        icon="☁️",
+                    ),
+                    st.Page(pages.page_rekomendasi, title="Saran Pemasaran", icon="💡"),
+                ],
+                "Lainnya": [
+                    st.Page(pages.page_pengaturan, title="Pengaturan", icon="⚙️"),
+                    st.Page(pages.page_ekspor, title="Ekspor", icon="⬇️"),
+                    st.Page(pages.page_tentang, title="Tentang & Bantuan", icon="ℹ️"),
+                ],
+            }
+        )
     nav.run()
 
 

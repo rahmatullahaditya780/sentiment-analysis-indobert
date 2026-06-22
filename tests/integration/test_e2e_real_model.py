@@ -46,8 +46,7 @@ RAW_REVIEWS_CSV = PROJECT_ROOT / "data" / "implementation" / "omorfo_reviews.csv
 REPORT_JSON = REPORTS_DIR / "phase9_integration_report.json"
 
 PAGE_FUNCS = [
-    "page_dashboard",
-    "page_input",
+    "page_beranda",
     "page_detail",
     "page_visualisasi",
     "page_rekomendasi",

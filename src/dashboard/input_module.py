@@ -56,18 +56,20 @@ def read_uploaded_csv(raw: bytes, *, text_column: str = TEXT_COLUMN) -> pd.DataF
     return df
 
 
-def render_csv_tab(st) -> pd.DataFrame | None:
+def render_csv_tab(st, *, key: str = "csv_uploader") -> pd.DataFrame | None:
     """Render tab CSV Upload; kembalikan DataFrame mentah atau None.
 
     `st` adalah modul streamlit (di-inject agar modul ini tak meng-import
-    streamlit di tingkat atas dan tetap ringan untuk unit test).
+    streamlit di tingkat atas dan tetap ringan untuk unit test). `key` membedakan
+    widget uploader (mis. panel "Tambah data" memakai key berbeda agar tak
+    berbagi state berkas dengan unggahan awal).
     """
     st.markdown(
-        "Unggah berkas **CSV** ulasan untuk analisis batch. Wajib memuat kolom "
-        f"`{TEXT_COLUMN}`. Kolom opsional yang dimanfaatkan: `product_category` "
-        "(filter & distribusi) dan `date_review` (analisis tren)."
+        "Unggah berkas **CSV** ulasan pelanggan. Wajib ada kolom `review_text` "
+        "(isi ulasan). Kolom opsional yang dimanfaatkan: `product_category` "
+        "(saringan & grafik per kategori) dan `date_review` (grafik tren waktu)."
     )
-    uploaded = st.file_uploader("Pilih berkas CSV", type=["csv"], key="csv_uploader")
+    uploaded = st.file_uploader("Pilih berkas CSV", type=["csv"], key=key)
     if uploaded is None:
         st.caption(f"Belum ada berkas. Acuan format: `{TEMPLATE_PATH}`.")
         return None

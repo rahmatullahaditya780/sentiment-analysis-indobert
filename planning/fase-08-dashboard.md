@@ -10,7 +10,7 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 | FR-8.2 | Dashboard harus menyediakan **input berlapis** sebagai metode utama: (a) Upload CSV, (b) Input **URL produk Shopee** untuk pengambilan otomatis via **browser ber-login (mode lokal/desktop)**. |
 | FR-8.3 | Dashboard harus mendukung upload file CSV untuk analisis batch. |
 | FR-8.4 | Dashboard harus menampilkan visualisasi distribusi sentimen (pie chart dan bar chart). |
-| FR-8.5 | Dashboard harus menampilkan rekomendasi strategi pemasaran berbasis rule-based mapping (5 kondisi). |
+| FR-8.5 | Dashboard harus menampilkan rekomendasi strategi pemasaran berbasis rule-based mapping (4 kondisi). |
 | FR-8.6 | Dashboard harus menampilkan word cloud untuk kata dominan per kategori sentimen. |
 | FR-8.7 | Dashboard harus menampilkan trend sentimen dari waktu ke waktu jika data memiliki kolom `date_review`. |
 | FR-8.8 | Dashboard harus menyediakan Settings & Configuration (filter kategori produk, rentang waktu, confidence threshold). |
@@ -41,7 +41,7 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 ### Module 3 — Marketing Recommendation Panel
 | Komponen | Deskripsi |
 |---|---|
-| Kondisi Pemasaran | Kondisi saat ini (Excellent/Good/Moderate/Poor/Mixed) beserta kriteria yang terpenuhi |
+| Kondisi Pemasaran | Kondisi saat ini (Sangat Baik/Baik/Perlu Perbaikan/Beragam–Tidak Stabil) beserta kriteria yang terpenuhi |
 | Rekomendasi Strategi | Daftar strategi pemasaran spesifik berdasarkan rule-based mapping |
 | Business Insight | Interpretasi distribusi sentimen dalam bahasa yang mudah dipahami praktisi |
 
@@ -86,6 +86,14 @@ Membangun dashboard interaktif berbasis Streamlit yang mengintegrasikan semua ko
 
 ### Struktur Multipage (selaras `Design/Sentara_Prototype.html`)
 
+> **Revisi Fase 9 (2026-06-23, pasca usability/expert):** Dashboard + Input
+> disatukan menjadi satu halaman **Beranda** adaptif (mode input → mode ringkasan
+> setelah analisis), grup **"Menu" dihilangkan** (tersisa "Hasil Analisis" &
+> "Lainnya"), ditambah tombol **Reset** & **Tambah data**, judul menu diubah ke
+> bahasa awam (Daftar Ulasan / Kata yang Sering Muncul / Saran Pemasaran), dan
+> kondisi ditampilkan dengan label Indonesia (4 kondisi). Tabel di bawah adalah
+> struktur **Fase 8 awal** (8 halaman) — disimpan sebagai jejak desain.
+
 UI/UX mengikuti prototipe pada fidelity **sedang** (struktur + palet + komponen;
 bukan pixel-perfect — navbar/avatar & shadow persis dihindari karena butuh CSS
 injeksi rapuh). Navigasi 8 halaman:
@@ -96,7 +104,7 @@ injeksi rapuh). Navigasi 8 halaman:
 | Menu | Input & Pengambilan Data | 2 tab input + kartu preprocessing & metrik model |
 | Hasil Analisis | Detail Ulasan | Segmented filter + tabel (ProgressColumn skor + bintang) |
 | Hasil Analisis | Visualisasi & Word Cloud | Word cloud per kelas + distribusi per kategori |
-| Hasil Analisis | Rekomendasi Strategi | Panel 5 kondisi + tabel acuan threshold |
+| Hasil Analisis | Rekomendasi Strategi | Panel 4 kondisi + tabel acuan threshold |
 | Lainnya | Pengaturan | Filter kategori/tanggal/confidence (berlaku global) |
 | Lainnya | Ekspor Laporan | Unduh CSV berlabel (**PDF/PNG → Fase 10**) |
 | Lainnya | Tentang & Bantuan | Profil sistem, cara pakai, info skripsi |
@@ -111,7 +119,7 @@ ke keputusan final: **tanpa jalur Import Ekstensi** (2 tier), label metode =
 - [x] Dashboard dapat dijalankan lokal dengan `streamlit run app.py`. *(boot headless terverifikasi: health HTTP 200)*
 - [x] Module 1 — Input Interface berlapis berjalan (CSV Upload + URL Auto-Fetch).
 - [x] Module 2 — Sentiment Analysis Results berjalan (pie, bar, trend chart).
-- [x] Module 3 — Marketing Recommendation Panel berjalan (5 kondisi pemasaran).
+- [x] Module 3 — Marketing Recommendation Panel berjalan (4 kondisi pemasaran).
 - [x] Module 4 — Visualization berjalan (word cloud per kelas sentimen).
 - [x] Module 5 — Settings & Configuration berjalan (filter & threshold).
 - [x] Module 6 — Shopee Review Collector berlapis berjalan (router CSV/URL Auto-Fetch).

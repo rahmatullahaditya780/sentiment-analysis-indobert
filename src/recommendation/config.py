@@ -4,7 +4,7 @@ Fase 7 — Konfigurasi rule-based marketing recommendation.
 Modul ringan (tanpa dependency berat) berisi:
 - Re-export label kanonik (positive/negative/neutral) dari Fase 4 agar tidak ada
   drift dengan output inferensi Fase 6.
-- Nama 5 kondisi pemasaran (compound conditions) & ambang batasnya.
+- Nama 4 kondisi pemasaran (compound conditions) & ambang batasnya.
 - Pemetaan kondisi -> daftar strategi pemasaran (lihat planning/fase-07-*.md).
 - Lokasi output standar Fase 7 (marketing_recommendation.json).
 
@@ -34,24 +34,25 @@ POSITIVE = "positive"
 NEGATIVE = "negative"
 NEUTRAL = "neutral"
 
-# ── Nama 5 kondisi pemasaran ──────────────────────────────────────────────────
-EXCELLENT = "Excellent Performance"
-GOOD = "Good Performance"
-MODERATE = "Moderate Performance"
-POOR = "Poor Performance"
-MIXED = "Mixed/Unstable"
+# ── Nama 4 kondisi pemasaran (label Bahasa Indonesia, ramah pengguna awam) ─────
+# Kondisi "Moderate" dihapus atas masukan validasi praktisi (terlalu rumit
+# dipahami); band-nya kini jatuh ke fallback "Beragam / Tidak Stabil". Threshold
+# kondisi lain TIDAK diubah. Lihat catatan revisi 2026-06-23.
+EXCELLENT = "Sangat Baik"
+GOOD = "Baik"
+POOR = "Perlu Perbaikan"
+MIXED = "Beragam / Tidak Stabil"
 
-CONDITIONS: tuple[str, ...] = (EXCELLENT, GOOD, MODERATE, POOR, MIXED)
+CONDITIONS: tuple[str, ...] = (EXCELLENT, GOOD, POOR, MIXED)
 
 # ── Ambang batas compound (proporsi 0..1) ─────────────────────────────────────
-# Tiap kondisi performa memakai kriteria gabungan positif AND negatif.
-# Mixed/Unstable adalah kondisi override: netral > 35% ATAU trend berubah.
-# Catatan: nilai berikut sesuai tabel rencana; ada celah di antara tier
-# (mis. pos 45% & neg 15%) yang sengaja jatuh ke fallback Mixed/Unstable.
+# Tiap kondisi performa memakai kriteria gabungan positif DAN negatif.
+# "Beragam / Tidak Stabil" adalah kondisi override: netral > 35% ATAU trend berubah.
+# Catatan: ada celah di antara tier (mis. pos 45% & neg 15%, atau band Moderate
+# lama pos 30–39% & neg 30–40%) yang sengaja jatuh ke fallback "Beragam / Tidak Stabil".
 THRESHOLDS: dict[str, dict[str, float]] = {
     EXCELLENT: {"pos_min": 0.50, "neg_max": 0.20},
     GOOD: {"pos_min": 0.40, "pos_max": 0.499, "neg_min": 0.20, "neg_max": 0.30},
-    MODERATE: {"pos_min": 0.30, "pos_max": 0.399, "neg_min": 0.30, "neg_max": 0.40},
     POOR: {"pos_max": 0.299, "neg_min": 0.401},
 }
 
@@ -70,7 +71,6 @@ CONDITION_INTERPRETATION: dict[str, str] = {
         "Produk/layanan dikomunikasikan dengan sangat baik; kepuasan pelanggan tinggi."
     ),
     GOOD: "Produk dapat diterima, namun ada ruang untuk perbaikan.",
-    MODERATE: "Keseimbangan antara kepuasan dan ketidakpuasan pelanggan.",
     POOR: "Produk/layanan menghadapi masalah signifikan; perlu perhatian urgent.",
     MIXED: "Persepsi pelanggan tidak konsisten; perlu monitoring lebih lanjut.",
 }
@@ -81,8 +81,8 @@ CONDITION_INTERPRETATION: dict[str, str] = {
 # judul aksi + langkah konkret + contoh penerapan (e-commerce umum) + fitur
 # Sentara pendukung. Tujuannya agar pelaku usaha tahu PERSIS cara menjalankan
 # strategi memakai dashboard ini. `fitur` merujuk nama halaman navigasi nyata
-# (lihat app.py): "Dashboard", "Detail Ulasan", "Visualisasi & Word Cloud",
-# "Rekomendasi Strategi", "Input & Pengambilan Data".
+# (lihat app.py): "Beranda", "Daftar Ulasan", "Kata yang Sering Muncul",
+# "Saran Pemasaran".
 @dataclass(frozen=True)
 class MarketingPlay:
     """Satu strategi pemasaran konkret + cara menjalankannya lewat fitur Sentara."""
@@ -106,7 +106,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
         MarketingPlay(
             judul="Manfaatkan ulasan positif sebagai social proof",
             langkah=(
-                "Buka halaman Rekomendasi Strategi → Bukti Ulasan Representatif "
+                "Buka halaman Saran Pemasaran → Bukti Ulasan Representatif "
                 "dan salin 3–5 kutipan positif ber-confidence tertinggi.",
                 "Tempatkan kutipan pada deskripsi produk, banner toko, dan konten "
                 "media sosial.",
@@ -118,8 +118,8 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "99%) dijadikan caption foto produk dan testimoni di etalase toko."
             ),
             fitur=(
-                "Rekomendasi Strategi → Bukti Ulasan Representatif (positif) + "
-                "Visualisasi & Word Cloud (kelas positif)."
+                "Saran Pemasaran → Bukti Ulasan Representatif (positif) + "
+                "Kata yang Sering Muncul (kelas positif)."
             ),
         ),
         MarketingPlay(
@@ -135,12 +135,12 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Produk dengan 90%+ ulasan positif dipaketkan bersama voucher "
                 "pembelian berikutnya untuk mendorong repeat order."
             ),
-            fitur="Rekomendasi Strategi → Kondisi per Produk.",
+            fitur="Saran Pemasaran → Kondisi per Produk.",
         ),
         MarketingPlay(
             judul="Jalankan program referral berbasis keunggulan yang dipuji",
             langkah=(
-                "Buka Visualisasi & Word Cloud → Kata Kunci Teratas kelas positif "
+                "Buka Kata yang Sering Muncul → Kata Kunci Teratas kelas positif "
                 "untuk tahu keunggulan yang paling sering disebut.",
                 "Angkat keunggulan itu sebagai pesan utama kampanye 'ajak teman'.",
                 "Beri insentif (cashback/diskon) bagi pelanggan yang mereferensikan.",
@@ -149,14 +149,13 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Kata 'awet' dan 'murah' mendominasi → tagline referral "
                 "'Rekomendasikan yang awet & hemat, dapat cashback'."
             ),
-            fitur="Visualisasi & Word Cloud → Kata Kunci Teratas / Word Cloud (positif).",
+            fitur="Kata yang Sering Muncul → Kata Kunci Teratas / Word Cloud (positif).",
         ),
         MarketingPlay(
             judul="Pertahankan kualitas dengan pemantauan dini",
             langkah=(
-                "Jadwalkan auto-fetch ulasan secara berkala di halaman Input & "
-                "Pengambilan Data.",
-                "Pantau apakah kondisi tetap Excellent dan perhatikan peringatan "
+                "Jadwalkan auto-fetch ulasan secara berkala di halaman Beranda.",
+                "Pantau apakah kondisi tetap Sangat Baik dan perhatikan peringatan "
                 "Perubahan Tren.",
                 "Tindak lanjuti penurunan proporsi positif sebelum menjadi keluhan "
                 "massal.",
@@ -166,7 +165,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "positif turun >15%, tinjau perubahan pemasok atau logistik."
             ),
             fitur=(
-                "Input & Pengambilan Data (auto-fetch) + peringatan Perubahan Tren "
+                "Beranda (auto-fetch) + peringatan Perubahan Tren "
                 "di panel Rekomendasi."
             ),
         ),
@@ -175,9 +174,9 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
         MarketingPlay(
             judul="Bedah keluhan spesifik dari ulasan negatif",
             langkah=(
-                "Buka Rekomendasi Strategi → Bukti Ulasan Representatif (keluhan "
+                "Buka Saran Pemasaran → Bukti Ulasan Representatif (keluhan "
                 "terkuat) untuk membaca keluhan paling meyakinkan.",
-                "Buka Visualisasi & Word Cloud kelas negatif untuk menemukan tema "
+                "Buka Kata yang Sering Muncul kelas negatif untuk menemukan tema "
                 "keluhan yang berulang.",
                 "Daftarkan 3 keluhan teratas sebagai backlog perbaikan.",
             ),
@@ -186,8 +185,8 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "masalah ada di logistik, bukan kualitas produk."
             ),
             fitur=(
-                "Rekomendasi Strategi → Bukti Ulasan (negatif) + Visualisasi & "
-                "Word Cloud (negatif)."
+                "Saran Pemasaran → Bukti Ulasan (negatif) + "
+                "Kata yang Sering Muncul (negatif)."
             ),
         ),
         MarketingPlay(
@@ -205,7 +204,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "ekstra aman' di deskripsi, lalu cek ulasan bulan berikutnya."
             ),
             fitur=(
-                "Detail Ulasan (filter keluhan) + Input & Pengambilan Data (fetch "
+                "Daftar Ulasan (filter keluhan) + Beranda (fetch "
                 "ulang untuk verifikasi)."
             ),
         ),
@@ -222,68 +221,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Banyak pujian 'sesuai foto' → tambahkan label 'real product, "
                 "sesuai foto' pada thumbnail untuk menarik pembeli ragu."
             ),
-            fitur="Visualisasi & Word Cloud → Kata Kunci / Word Cloud (positif).",
-        ),
-    ),
-    MODERATE: (
-        MarketingPlay(
-            judul="Temukan akar masalah utama via analisis kata",
-            langkah=(
-                "Buka Visualisasi & Word Cloud → Word Cloud & Kata Kunci kelas "
-                "negatif untuk memetakan masalah dominan.",
-                "Kelompokkan keluhan ke kategori (produk / pengiriman / layanan).",
-                "Urutkan berdasarkan frekuensi untuk menentukan prioritas perbaikan.",
-            ),
-            contoh=(
-                "Kata 'rusak', 'beda', dan 'lambat' sama besar → tiga lini masalah "
-                "ditangani paralel sesuai frekuensinya."
-            ),
-            fitur="Visualisasi & Word Cloud → Word Cloud & Kata Kunci Teratas (negatif).",
-        ),
-        MarketingPlay(
-            judul="Tingkatkan kualitas produk & layanan secara terukur",
-            langkah=(
-                "Tetapkan KPI perbaikan (mis. rasio negatif < 30%) sebagai target.",
-                "Perbaiki proses pada lini masalah teratas.",
-                "Bandingkan kondisi antar produk untuk fokus pada yang terburuk.",
-            ),
-            contoh=(
-                "SKU dengan negatif tertinggi dipisahkan; perbaikan QC difokuskan "
-                "pada produk itu lebih dulu."
-            ),
-            fitur=(
-                "Rekomendasi Strategi / Visualisasi → Kondisi per Produk + "
-                "Pengaturan → Filter per produk."
-            ),
-        ),
-        MarketingPlay(
-            judul="Susun komunikasi yang lebih transparan",
-            langkah=(
-                "Tuliskan ekspektasi realistis (estimasi kirim, varian warna) di "
-                "deskripsi produk.",
-                "Tanggapi ulasan negatif secara terbuka dengan solusi konkret.",
-                "Hindari klaim berlebihan yang memicu kekecewaan.",
-            ),
-            contoh=(
-                "Cantumkan 'estimasi tiba 3–5 hari' agar keluhan 'lama' berkurang "
-                "karena ekspektasi pembeli sudah selaras."
-            ),
-            fitur="Detail Ulasan (baca konteks keluhan untuk menyusun balasan).",
-        ),
-        MarketingPlay(
-            judul="Cek keluhan tersembunyi lewat ketidaksesuaian rating–sentimen",
-            langkah=(
-                "Buka Dashboard / Detail Ulasan dan tinjau ulasan rating tinggi "
-                "tetapi bersentimen negatif.",
-                "Identifikasi keluhan yang luput dari skor bintang.",
-                "Tindak lanjuti karena ini sinyal ketidakpuasan yang tak tampak di "
-                "rata-rata rating.",
-            ),
-            contoh=(
-                "Pelanggan beri bintang 5 tapi menulis 'produk bagus, sayang dusnya "
-                "penyok' → masalah kemasan tetap perlu dibenahi."
-            ),
-            fitur="Dashboard / Detail Ulasan → Ketidaksesuaian Rating ↔ Sentimen.",
+            fitur="Kata yang Sering Muncul → Kata Kunci / Word Cloud (positif).",
         ),
     ),
     POOR: (
@@ -301,8 +239,8 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "penjualan SKU bermasalah sampai QC beres."
             ),
             fitur=(
-                "Rekomendasi Strategi → Bukti Ulasan (negatif) + Visualisasi & "
-                "Word Cloud (negatif)."
+                "Saran Pemasaran → Bukti Ulasan (negatif) + "
+                "Kata yang Sering Muncul (negatif)."
             ),
         ),
         MarketingPlay(
@@ -317,7 +255,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Kata 'mahal' dan 'mengecewakan' menonjol → tinjau ulang harga atau "
                 "tingkatkan kualitas agar sepadan."
             ),
-            fitur="Visualisasi & Word Cloud → Kata Kunci Teratas (negatif).",
+            fitur="Kata yang Sering Muncul → Kata Kunci Teratas (negatif).",
         ),
         MarketingPlay(
             judul="Lakukan recovery pelanggan secara terbuka",
@@ -331,7 +269,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Publikasikan permintaan maaf + program ganti barang untuk pembeli "
                 "yang menerima produk cacat pada periode bermasalah."
             ),
-            fitur="Detail Ulasan (identifikasi ulasan terdampak untuk ditindaklanjuti).",
+            fitur="Daftar Ulasan (identifikasi ulasan terdampak untuk ditindaklanjuti).",
         ),
         MarketingPlay(
             judul="Hentikan kerugian: fokus pada produk terparah",
@@ -346,7 +284,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "dialihkan ke produk ber-sentimen positif."
             ),
             fitur=(
-                "Rekomendasi Strategi / Visualisasi → Kondisi per Produk + "
+                "Saran Pemasaran / Kata yang Sering Muncul → Kondisi per Produk + "
                 "Pengaturan → Filter per produk."
             ),
         ),
@@ -366,7 +304,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Banyak ulasan netral 'masih bingung pakainya' → tambahkan panduan "
                 "pemakaian bergambar di galeri produk."
             ),
-            fitur="Dashboard / Detail Ulasan → Ketidaksesuaian Rating ↔ Sentimen.",
+            fitur="Beranda / Daftar Ulasan → Ketidaksesuaian Rating ↔ Sentimen.",
         ),
         MarketingPlay(
             judul="Perkuat deskripsi agar persepsi konsisten",
@@ -379,7 +317,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Netral seputar 'ukuran' → cantumkan tabel dimensi dan perbandingan "
                 "agar pembeli tidak ragu."
             ),
-            fitur="Visualisasi & Word Cloud → Word Cloud / Kata Kunci (netral).",
+            fitur="Kata yang Sering Muncul → Word Cloud / Kata Kunci (netral).",
         ),
         MarketingPlay(
             judul="Pantau sentimen secara berkala",
@@ -393,10 +331,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Tren positif anjlok di bulan tertentu bertepatan dengan ganti "
                 "kurir → kembalikan kurir lama atau perbaiki SLA."
             ),
-            fitur=(
-                "Input & Pengambilan Data (auto-fetch) + panel Perubahan Tren "
-                "(Rekomendasi)."
-            ),
+            fitur=("Beranda (auto-fetch) + panel Perubahan Tren " "(Rekomendasi)."),
         ),
         MarketingPlay(
             judul="Investigasi penyebab ketidakstabilan",
@@ -412,8 +347,8 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "ulasan ambigu; fokuskan edukasi pada produk itu."
             ),
             fitur=(
-                "Rekomendasi Strategi (keterangan kondisi) → Kondisi per Produk + "
-                "Detail Ulasan."
+                "Saran Pemasaran (keterangan kondisi) → Kondisi per Produk + "
+                "Daftar Ulasan."
             ),
         ),
     ),
@@ -433,16 +368,15 @@ def _pct(value: float) -> int:
 
 
 def condition_criteria() -> dict[str, str]:
-    """Teks kriteria 5 kondisi untuk tampilan, digenerate dari THRESHOLDS.
+    """Teks kriteria 4 kondisi untuk tampilan, digenerate dari THRESHOLDS.
 
     Satu-satunya sumber angka adalah THRESHOLDS & NEUTRAL_MIXED_THRESHOLD —
     dashboard tidak boleh menduplikasi nilai ambang sebagai string lepas.
     Kata-kata mengikuti tabel `planning/fase-07-marketing-recommendation.md`.
     """
-    exc, good, mod, poor = (
+    exc, good, poor = (
         THRESHOLDS[EXCELLENT],
         THRESHOLDS[GOOD],
-        THRESHOLDS[MODERATE],
         THRESHOLDS[POOR],
     )
     return {
@@ -452,10 +386,6 @@ def condition_criteria() -> dict[str, str]:
         GOOD: (
             f"Positif {_pct(good['pos_min'])}–{_pct(good['pos_max'])}% "
             f"DAN Negatif {_pct(good['neg_min'])}–{_pct(good['neg_max'])}%"
-        ),
-        MODERATE: (
-            f"Positif {_pct(mod['pos_min'])}–{_pct(mod['pos_max'])}% "
-            f"DAN Negatif {_pct(mod['neg_min'])}–{_pct(mod['neg_max'])}%"
         ),
         POOR: (
             f"Positif < {_pct(poor['pos_max']) + 1}% "

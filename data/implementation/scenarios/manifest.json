@@ -7,8 +7,8 @@
   "scenarios": [
     {
       "file": "scenario_excellent.csv",
-      "expected_condition": "Excellent Performance",
-      "verified_condition": "Excellent Performance",
+      "expected_condition": "Sangat Baik",
+      "verified_condition": "Sangat Baik",
       "match": true,
       "n_reviews": 500,
       "counts": {
@@ -24,8 +24,8 @@
     },
     {
       "file": "scenario_good.csv",
-      "expected_condition": "Good Performance",
-      "verified_condition": "Good Performance",
+      "expected_condition": "Baik",
+      "verified_condition": "Baik",
       "match": true,
       "n_reviews": 120,
       "counts": {
@@ -40,26 +40,9 @@
       }
     },
     {
-      "file": "scenario_moderate.csv",
-      "expected_condition": "Moderate Performance",
-      "verified_condition": "Moderate Performance",
-      "match": true,
-      "n_reviews": 110,
-      "counts": {
-        "positive": 39,
-        "negative": 42,
-        "neutral": 29
-      },
-      "proportions": {
-        "positive": 0.3545,
-        "negative": 0.3818,
-        "neutral": 0.2636
-      }
-    },
-    {
       "file": "scenario_poor.csv",
-      "expected_condition": "Poor Performance",
-      "verified_condition": "Poor Performance",
+      "expected_condition": "Perlu Perbaikan",
+      "verified_condition": "Perlu Perbaikan",
       "match": true,
       "n_reviews": 450,
       "counts": {
@@ -75,8 +58,8 @@
     },
     {
       "file": "scenario_mixed.csv",
-      "expected_condition": "Mixed/Unstable",
-      "verified_condition": "Mixed/Unstable",
+      "expected_condition": "Beragam / Tidak Stabil",
+      "verified_condition": "Beragam / Tidak Stabil",
       "match": true,
       "n_reviews": 80,
       "counts": {

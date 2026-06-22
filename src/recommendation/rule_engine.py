@@ -2,9 +2,9 @@
 Fase 7 — Rule engine: klasifikasi kondisi pemasaran (FR-7.1, FR-7.2).
 
 `MarketingConditionClassifier` mengubah distribusi sentimen (hasil batch
-prediction Fase 6) menjadi satu dari 5 kondisi pemasaran melalui aturan
-compound yang transparan (positif AND negatif), dengan Mixed/Unstable sebagai
-kondisi override (netral > 35% ATAU trend berubah signifikan).
+prediction Fase 6) menjadi satu dari 4 kondisi pemasaran melalui aturan
+compound yang transparan (positif DAN negatif), dengan "Beragam / Tidak Stabil"
+sebagai kondisi override (netral > 35% ATAU trend berubah signifikan).
 
 Input fleksibel:
 - DataFrame hasil `predict_batch` (punya kolom `predicted_label`), atau
@@ -25,7 +25,6 @@ from src.recommendation.config import (
     EXCELLENT,
     GOOD,
     MIXED,
-    MODERATE,
     NEGATIVE,
     NEUTRAL,
     NEUTRAL_MIXED_THRESHOLD,
@@ -151,7 +150,7 @@ class MarketingConditionClassifier:
     >>> clf = MarketingConditionClassifier()
     >>> res = clf.classify({"positive": 0.885, "negative": 0.106, "neutral": 0.008})
     >>> res.condition
-    'Excellent Performance'
+    'Sangat Baik'
     """
 
     def classify(
@@ -183,31 +182,27 @@ class MarketingConditionClassifier:
             )
             return ConditionResult(MIXED, dist, reason, trend_shift)
 
-        # 2) Tier performa compound (positif AND negatif).
+        # 2) Tier performa compound (positif DAN negatif).
         if self._match(EXCELLENT, pos, neg):
             return ConditionResult(
-                EXCELLENT, dist, f"Positif {pos:.1%} ≥ 50% AND negatif {neg:.1%} ≤ 20%"
+                EXCELLENT, dist, f"Positif {pos:.1%} ≥ 50% DAN negatif {neg:.1%} ≤ 20%"
             )
         if self._match(GOOD, pos, neg):
             return ConditionResult(
-                GOOD, dist, f"Positif {pos:.1%} (40–49%) AND negatif {neg:.1%} (20–30%)"
-            )
-        if self._match(MODERATE, pos, neg):
-            return ConditionResult(
-                MODERATE,
-                dist,
-                f"Positif {pos:.1%} (30–39%) AND negatif {neg:.1%} (30–40%)",
+                GOOD, dist, f"Positif {pos:.1%} (40–49%) DAN negatif {neg:.1%} (20–30%)"
             )
         if self._match(POOR, pos, neg):
             return ConditionResult(
-                POOR, dist, f"Positif {pos:.1%} < 30% AND negatif {neg:.1%} > 40%"
+                POOR, dist, f"Positif {pos:.1%} < 30% DAN negatif {neg:.1%} > 40%"
             )
 
-        # 3) Fallback: kombinasi di luar semua tier -> persepsi tidak konsisten.
+        # 3) Fallback: kombinasi di luar semua kriteria -> persepsi tidak konsisten
+        #    (termasuk band "Moderate" lama: pos 30–39% & neg 30–40%).
         return ConditionResult(
             MIXED,
             dist,
-            f"Distribusi (pos {pos:.1%}/neg {neg:.1%}) tidak memenuhi tier manapun",
+            f"Sentimen beragam (positif {pos:.1%} / negatif {neg:.1%}) — "
+            "tidak memenuhi kriteria kondisi mana pun",
             trend_shift,
         )
 

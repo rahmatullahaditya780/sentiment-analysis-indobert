@@ -318,9 +318,9 @@ def render(st, result) -> None:
                 )
             elif not cached_frequencies(tuple(texts)):
                 st.caption(
-                    f"_{len(texts):,} ulasan kelas ini hanya mengandung "
-                    "stopword/kata pendek (<3 huruf) — tidak ada kata tersisa "
-                    "untuk word cloud._"
+                    f"_{len(texts):,} ulasan jenis ini hanya berisi kata umum & "
+                    "kata pendek (<3 huruf) — tidak ada kata yang bisa "
+                    "ditampilkan._"
                 )
             else:
                 image = cached_wordcloud(tuple(texts), SENTIMENT_COLORS[label])

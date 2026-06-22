@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Proyek menggunakan **IndoBERT** (`indolem/indobert-base-uncased`) sebagai model ML inti. Data training menggabungkan tiga sumber publik: SmSA (IndoNLU), PRDECT-ID (snapshot), dan Review Product Shopee (Kaggle, mdhimaspamungkas). Data implementasi diambil dari OmorfoShop Official Store via **endpoint JSON internal Shopee** (`fetch('/api/v2/item/get_ratings')` dieksekusi dari dalam sesi browser ber-login — lihat catatan di bawah). DOM scraping Playwright (`src/scraping/scrape_omorfo_reviews.py`) diblokir anti-bot Shopee → diturunkan jadi fallback. Modul `src/shopee_api/` (Open Platform API) tetap opsi *future work* (persona seller-toko-sendiri). Lihat `planning/trd-revisi-pengambilan-data-implementasi.md` & catatan revisi 2026-06-10.
 
-Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 1–6 sudah lulus gate (IndoBERT fine-tuned: F1 macro test **0.9031**, CV **0.9016 ± 0.010**; model **baseline 3-epoch** final — augmentasi back-translation & re-train 2-epoch diuji tapi terbukti lebih buruk). Fase 6 selesai: **3.739 ulasan OmorfoShop nyata** (5 produk terlaris) dianalisis → distribusi **88,5% positif / 10,6% negatif / 0,8% netral** (= Excellent Performance). Fase 7 lulus gate (rule engine 5 kondisi compound + trend analysis, 24 unit test). Fase 8 kode selesai + **peningkatan pasca-gate Fase 8.5** (Module 7 Insight Analitik: mismatch rating↔sentimen, keyword drill-down, perbandingan per produk; multi-URL auto-fetch berkelanjutan dengan kuota dibagi rata & simpanan sesi; polish UX & sentralisasi konstanta), boot HTTP 200. **Fase 9 (Testing & Validation) BERJALAN:** unit testing **selesai & terdokumentasi** — **199 unit test** hijau (ditambah 31 test `src/preprocessing/` yang sebelumnya tak ada; laporan `outputs/reports/phase9_unit_test_report.md`); integration test end-to-end **model IndoBERT nyata selesai** (jalur CSV: 16 test `tests/integration/`, marker `integration`, jalan via `pytest -m integration`; artefak `outputs/reports/phase9_integration_report.json`). **Tersisa di Fase 9:** usability testing, expert validation praktisi OmorfoShop, dan verifikasi **manual** fetch nyata Shopee jalur CDP (perlu Chrome ber-login di desktop).
+Proyek mengikuti sistem pengembangan berbasis **10 fase dengan gate ketat**. Fase 1–6 sudah lulus gate (IndoBERT fine-tuned: F1 macro test **0.9031**, CV **0.9016 ± 0.010**; model **baseline 3-epoch** final — augmentasi back-translation & re-train 2-epoch diuji tapi terbukti lebih buruk). Fase 6 selesai: **3.739 ulasan OmorfoShop nyata** (5 produk terlaris) dianalisis → distribusi **88,5% positif / 10,6% negatif / 0,8% netral** (= kondisi "Sangat Baik"). Fase 7 lulus gate (rule engine 4 kondisi compound + trend analysis, 24 unit test). Fase 8 kode selesai + **peningkatan pasca-gate Fase 8.5** (Module 7 Insight Analitik: mismatch rating↔sentimen, keyword drill-down, perbandingan per produk; multi-URL auto-fetch berkelanjutan dengan kuota dibagi rata & simpanan sesi; polish UX & sentralisasi konstanta), boot HTTP 200. **Fase 9 (Testing & Validation) BERJALAN:** unit testing **selesai & terdokumentasi** — **199 unit test** hijau (ditambah 31 test `src/preprocessing/` yang sebelumnya tak ada; laporan `outputs/reports/phase9_unit_test_report.md`); integration test end-to-end **model IndoBERT nyata selesai** (jalur CSV: 16 test `tests/integration/`, marker `integration`, jalan via `pytest -m integration`; artefak `outputs/reports/phase9_integration_report.json`). **Tersisa di Fase 9:** usability testing, expert validation praktisi OmorfoShop, dan verifikasi **manual** fetch nyata Shopee jalur CDP (perlu Chrome ber-login di desktop).
 
 ## Arsitektur Tingkat Tinggi
 
@@ -19,7 +19,7 @@ Fase 3:  Data Preprocessing                          ✅ SELESAI
 Fase 4:  Model Training & Fine-Tuning                ✅ SELESAI (F1 macro 0.8971; CV 0.9016 ± 0.010)
 Fase 5:  Model Evaluation                            ✅ SELESAI (F1 macro test 0.9031 ≥ 0.85)
 Fase 6:  Sentiment Inference Engine                  ✅ SELESAI (3.739 ulasan OmorfoShop → 88,5% pos / 10,6% neg / 0,8% net)
-Fase 7:  Rule-Based Marketing Recommendation         ✅ SELESAI (5 kondisi compound + trend; 24 unit test)
+Fase 7:  Rule-Based Marketing Recommendation         ✅ SELESAI (4 kondisi compound + trend; 24 unit test)
 Fase 8:  Dashboard Development (Streamlit)           🔄 KODE SELESAI (7 modul, +Fase 8.5) — pending verifikasi manual fetch Shopee
 Fase 9:  Testing & Validation                        🔄 BERJALAN (unit 199 test ✅ + integrasi E2E model nyata ✅; sisa: usability, expert validation, fetch CDP manual)
 Fase 10: Deployment & Documentation                  ⏳ Belum mulai
@@ -47,7 +47,7 @@ project_root/
 │   ├── preprocessing/   # Pipeline preprocessing teks (case fold → clean → tokenize)
 │   ├── modeling/        # Fine-tuning IndoBERT & focused random search
 │   ├── evaluation/      # Metrik evaluasi & 5-fold cross-validation
-│   ├── recommendation/  # Rule-based mapping engine (5 kondisi pemasaran)
+│   ├── recommendation/  # Rule-based mapping engine (4 kondisi pemasaran)
 │   ├── dashboard/       # Komponen Streamlit (modul-modul UI)
 │   └── utils/           # Helper functions bersama
 │
@@ -95,7 +95,7 @@ USER INPUT
          ↓
   SENTIMENT CLASSIFICATION: Positif / Negatif / Netral + Confidence Score
          ↓
-  RULE-BASED MAPPING ENGINE (5 kondisi: Excellent/Good/Moderate/Poor/Mixed)
+  RULE-BASED MAPPING ENGINE (4 kondisi: Sangat Baik/Baik/Perlu Perbaikan/Beragam-Tidak Stabil)
          ↓
   DASHBOARD VISUALIZATION (Streamlit: Charts + Word Cloud + Recommendation Panel)
 ```
@@ -139,15 +139,19 @@ Status gate saat ini ada di `planning/01-roadmap-proyek.md`.
 
 Focused random search: 5–8 kombinasi pada 30% training set → validasi dengan 5-fold cross-validation pada full training set.
 
-## Rule-Based Mapping (Fase 7) — 5 Kondisi Pemasaran
+## Rule-Based Mapping (Fase 7) — 4 Kondisi Pemasaran
+
+> Kondisi **"Moderate" dihapus** (5→4) atas masukan validasi praktisi 2026-06-23
+> (terlalu rumit dipahami); label kondisi diubah ke Bahasa Indonesia yang mudah.
+> **Threshold tidak diubah** — band Moderate lama (Positif 30–39% & Negatif
+> 30–40%) kini jatuh ke fallback "Beragam / Tidak Stabil". Lihat catatan revisi.
 
 | Kondisi | Kriteria (Compound) |
 |---|---|
-| Excellent Performance | Positif ≥ 50% AND Negatif ≤ 20% |
-| Good Performance | Positif 40–49% AND Negatif 20–30% |
-| Moderate Performance | Positif 30–39% AND Negatif 30–40% |
-| Poor Performance | Positif < 30% AND Negatif > 40% |
-| Mixed/Unstable | Netral > 35% ATAU trend berubah signifikan |
+| Sangat Baik | Positif ≥ 50% DAN Negatif ≤ 20% |
+| Baik | Positif 40–49% DAN Negatif 20–30% |
+| Perlu Perbaikan | Positif < 30% DAN Negatif > 40% |
+| Beragam / Tidak Stabil | Netral > 35% ATAU trend berubah signifikan (atau di luar tier mana pun) |
 
 ## Alur Kerja Pengembangan
 
@@ -219,7 +223,7 @@ SHOPEE_REDIRECT_URL=http://localhost:8501
 | `src/preprocessing/` | Selesai (cleaner regex, tokenizer_wrapper IndoBERT, PreprocessingPipeline) — Fase 3 lulus gate |
 | `src/modeling/` | Selesai (trainer, hyperparameter_search, cross_validation, augmentation, inference) — Fase 4 lulus gate; Fase 6 inference terverifikasi lokal |
 | `src/evaluation/` | Selesai (metrics, evaluator, visualizer, cross_val_report) — Fase 5 lulus gate (F1 macro 0.9031) |
-| `src/recommendation/` | Selesai (rule_engine 5 kondisi compound, strategy_mapper, trend_analyzer) — Fase 7 lulus gate. **Peningkatan pasca-gate:** strategi kini berupa **playbook terhubung-fitur** (`STRATEGY_PLAYBOOK` di `config.py`: tiap strategi = judul + langkah konkret + contoh penerapan + fitur Sentara pendukung; `STRATEGY_MAP` diturunkan dari judul, dirender sebagai kartu expander di panel Rekomendasi) |
+| `src/recommendation/` | Selesai (rule_engine 4 kondisi compound, strategy_mapper, trend_analyzer) — Fase 7 lulus gate. **Peningkatan pasca-gate:** strategi kini berupa **playbook terhubung-fitur** (`STRATEGY_PLAYBOOK` di `config.py`: tiap strategi = judul + langkah konkret + contoh penerapan + fitur Sentara pendukung; `STRATEGY_MAP` diturunkan dari judul, dirender sebagai kartu expander di panel Rekomendasi) |
 | `src/dashboard/` | Selesai (analysis_pipeline glue + input/results/recommendation/visualization/settings/insights module + model_info + shopee_connector + cdp_fetch_worker/fetch_worker/login_worker) — Fase 8 + 8.5, 7 modul. Multi-URL auto-fetch berkelanjutan (kuota dibagi rata `split_quota`, simpanan sesi `fetch_cache` per shopid.itemid). Fetch nyata Shopee = verifikasi manual |
 | `data/raw/{smsa,prdect_id,kaggle}/` | Ada (3 sumber training mentah) |
 | `data/processed/unified_corpus.csv` + `train/validation/test.csv` | Ada (20.608 baris, split 80/10/10 stratified seed=42) — input Fase 3 |

@@ -13,8 +13,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 PAGE_FUNCS = [
-    "page_dashboard",
-    "page_input",
+    "page_beranda",
     "page_detail",
     "page_visualisasi",
     "page_rekomendasi",

@@ -16,13 +16,16 @@ Mengubah hasil analisis sentimen menjadi rekomendasi strategi pemasaran yang tra
 
 > Menggunakan **kriteria gabungan** (positif AND negatif) — bukan hanya persentase positif saja.
 
-| Kondisi | Kriteria (Compound) | Interpretasi |
+> **Revisi 2026-06-23 (pasca-validasi praktisi):** kondisi **"Moderate" dihapus**
+> (5→4) karena dinilai terlalu rumit; label diubah ke Bahasa Indonesia. Threshold
+> kondisi lain TIDAK diubah — band Moderate lama jatuh ke "Beragam / Tidak Stabil".
+
+| Kondisi (label) | Kriteria (Compound) | Interpretasi |
 |---|---|---|
-| **Excellent Performance** | Positif ≥ 50% AND Negatif ≤ 20% | Produk/layanan dikomunikasikan dengan sangat baik; kepuasan pelanggan tinggi |
-| **Good Performance** | Positif 40–49% AND Negatif 20–30% | Produk dapat diterima, namun ada ruang untuk perbaikan |
-| **Moderate Performance** | Positif 30–39% AND Negatif 30–40% | Keseimbangan antara kepuasan dan ketidakpuasan pelanggan |
-| **Poor Performance** | Positif < 30% AND Negatif > 40% | Produk/layanan menghadapi masalah signifikan; perlu perhatian urgent |
-| **Mixed/Unstable** | Netral > 35% ATAU Trend berubah signifikan | Persepsi pelanggan tidak konsisten; perlu monitoring lebih lanjut |
+| **Sangat Baik** | Positif ≥ 50% DAN Negatif ≤ 20% | Produk/layanan dikomunikasikan dengan sangat baik; kepuasan pelanggan tinggi |
+| **Baik** | Positif 40–49% DAN Negatif 20–30% | Produk dapat diterima, namun ada ruang untuk perbaikan |
+| **Perlu Perbaikan** | Positif < 30% DAN Negatif > 40% | Produk/layanan menghadapi masalah signifikan; perlu perhatian urgent |
+| **Beragam / Tidak Stabil** | Netral > 35% ATAU Trend berubah signifikan (atau di luar tier mana pun) | Persepsi pelanggan tidak konsisten; perlu monitoring lebih lanjut |
 
 ## Rule-Based Mapping ke Strategi Pemasaran
 
@@ -76,7 +79,7 @@ awal riwayat toko bersampel kecil (n=1–2) menghasilkan swing proporsi palsu
 
 ## Implementasi Kode
 
-- `src/recommendation/rule_engine.py` — `MarketingConditionClassifier` (evaluasi 5 kondisi compound)
+- `src/recommendation/rule_engine.py` — `MarketingConditionClassifier` (evaluasi 4 kondisi compound)
 - `src/recommendation/config.py` — `MarketingPlay` + `STRATEGY_PLAYBOOK` (playbook terstruktur); `STRATEGY_MAP` diturunkan dari judul play
 - `src/recommendation/strategy_mapper.py` — Mapping kondisi → playbook strategi + business insight (`MarketingRecommendation.playbook`)
 - `src/recommendation/trend_analyzer.py` — Analisis tren sentimen berbasis `date_review`
@@ -85,4 +88,4 @@ awal riwayat toko bersampel kecil (n=1–2) menghasilkan swing proporsi palsu
 
 ## Gate ke Fase Berikutnya
 
-Lanjut ke Fase 8 hanya jika rule engine dengan 5 kondisi compound sudah stabil dan diuji pada berbagai skenario distribusi sentimen.
+Lanjut ke Fase 8 hanya jika rule engine dengan 4 kondisi compound sudah stabil dan diuji pada berbagai skenario distribusi sentimen.

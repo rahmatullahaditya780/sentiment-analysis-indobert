@@ -11,13 +11,12 @@ Helper `condition_style` bersifat murni (tanpa Streamlit) agar dapat diuji.
 
 from __future__ import annotations
 
-from src.recommendation.config import EXCELLENT, GOOD, MIXED, MODERATE, POOR
+from src.recommendation.config import EXCELLENT, GOOD, MIXED, POOR
 
 # Pemetaan kondisi -> gaya tampilan (warna selaras semafor performa + ikon).
 _CONDITION_STYLE = {
     EXCELLENT: {"color": "#2E9E5B", "icon": "🟢", "status": "success"},
     GOOD: {"color": "#3B82C4", "icon": "🔵", "status": "info"},
-    MODERATE: {"color": "#E8A13A", "icon": "🟠", "status": "warning"},
     POOR: {"color": "#D64545", "icon": "🔴", "status": "error"},
     MIXED: {"color": "#9AA0A6", "icon": "⚪", "status": "warning"},
 }
@@ -33,7 +32,7 @@ def render(st, recommendation) -> None:
     """Render panel rekomendasi pemasaran dari `MarketingRecommendation`."""
     style = condition_style(recommendation.condition)
 
-    st.subheader("Rekomendasi Strategi Pemasaran")
+    st.subheader("Saran Pemasaran untuk Toko Anda")
 
     # Kartu kondisi: ikon + nama kondisi + kriteria yang terpenuhi (reason).
     st.markdown(
@@ -53,12 +52,12 @@ def render(st, recommendation) -> None:
             icon="📈",
         )
 
-    st.markdown("**Business Insight**")
+    st.markdown("**Apa Artinya?**")
     st.write(recommendation.business_insight)
 
-    st.markdown("**Strategi yang Direkomendasikan**")
+    st.markdown("**Langkah yang Disarankan**")
     st.caption(
-        "Klik tiap strategi untuk melihat langkah konkret, contoh penerapan, dan "
+        "Klik tiap saran untuk melihat langkah konkret, contoh penerapan, dan "
         "fitur Sentara yang mendukungnya."
     )
     playbook = getattr(recommendation, "playbook", None)

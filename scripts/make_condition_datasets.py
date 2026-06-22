@@ -1,8 +1,8 @@
 """
-Buat dataset uji 5 kondisi pemasaran (Fase 7) dari data nyata OmorfoShop.
+Buat dataset uji 4 kondisi pemasaran (Fase 7) dari data nyata OmorfoShop.
 
 Data implementasi nyata sangat positif (≈88,5% pos) sehingga secara natural hanya
-memicu kondisi **Excellent**. Untuk menguji kelima kondisi rule engine, skrip ini
+memicu kondisi **Sangat Baik**. Untuk menguji keempat kondisi rule engine, skrip ini
 menyusun subset BERLABEL dari kolam prediksi Fase 6 yang sengaja menyentuh ambang
 tiap kondisi (lihat tabel SPECS di bawah).
 
@@ -12,7 +12,7 @@ Sumber (hasil inferensi Fase 6, sudah berlabel `predicted_label`):
 Gabungan unik (dedup review_id): positif ≈3.335 / negatif ≈407 / netral ≈32.
 
 Kendala: netral hanya ≈32 ulasan di seluruh data nyata → kondisi yang butuh netral
-tinggi (Good, Moderate, Mixed-via-netral) berukuran kecil (≤ ~120 baris).
+tinggi (Baik, Beragam-via-netral) berukuran kecil (≤ ~120 baris).
 
 Output: data/implementation/scenarios/scenario_<kondisi>.csv (berlabel, TANPA
 `date_review` agar kondisi murni ditentukan distribusi) + manifest.json.
@@ -37,7 +37,6 @@ from src.recommendation.config import (  # noqa: E402
     EXCELLENT,
     GOOD,
     MIXED,
-    MODERATE,
     NEGATIVE,
     NEUTRAL,
     POOR,
@@ -74,11 +73,6 @@ SPECS: list[dict] = [
         "name": "good",
         "expected": GOOD,
         "counts": {POSITIVE: 55, NEGATIVE: 34, NEUTRAL: 31},  # 45.8/28.3/25.8 → n=120
-    },
-    {
-        "name": "moderate",
-        "expected": MODERATE,
-        "counts": {POSITIVE: 39, NEGATIVE: 42, NEUTRAL: 29},  # 35.5/38.2/26.4 → n=110
     },
     {
         "name": "poor",

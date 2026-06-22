@@ -33,12 +33,7 @@ from src.dashboard.ui_common import (
     cached_wordcloud,
     resolve_view,
 )
-from src.recommendation.config import (
-    CONDITIONS,
-    EXCELLENT,
-    MIXED,
-    condition_criteria,
-)
+from src.recommendation.config import CONDITIONS, condition_criteria
 
 _LABEL_EMOJI = {
     "positive": "🟢 Positif",
@@ -47,14 +42,178 @@ _LABEL_EMOJI = {
 }
 
 
-# ── Dashboard ─────────────────────────────────────────────────────────────────
-def page_dashboard() -> None:
-    st.title("Ringkasan Analisis Sentimen")
-    st.caption("Ikhtisar distribusi sentimen, tren, dan kata dominan.")
+# ── Beranda (Input + Ringkasan menyatu) ───────────────────────────────────────
+def page_beranda() -> None:
+    """Halaman utama adaptif.
 
+    - Belum ada hasil  -> **mode input** (unggah CSV / ambil URL + Mulai Analisis).
+    - Sudah ada hasil   -> **mode ringkasan** (verdict awam + stat + grafik) dengan
+      tombol "Tambah data" & "Analisis baru".
+    """
+    if st.session_state.get("result") is None:
+        _render_input_mode()
+    else:
+        _render_dashboard_mode()
+
+
+def _input_tabs(*, csv_key: str = "csv_uploader"):
+    """Render 2 tab input (CSV / URL) -> DataFrame mentah atau None."""
+    env = detect_environment()
+    if env["is_cloud"]:
+        st.info(
+            "Terdeteksi berjalan di **server (cloud)** — pengambilan dari URL "
+            "dimatikan. Silakan unggah berkas CSV.",
+            icon="☁️",
+        )
+    else:
+        st.caption("💻 Mode lokal — pengambilan ulasan dari URL produk tersedia.")
+
+    tab_csv, tab_url = st.tabs(["📁 Unggah CSV", "🔗 Ambil dari URL (lokal)"])
+    with tab_csv:
+        df_csv = input_module.render_csv_tab(st, key=csv_key)
+    with tab_url:
+        df_url = input_module.render_url_tab(st)
+    return df_csv if df_csv is not None else df_url
+
+
+def _run_and_store(df_raw, *, append: bool) -> None:
+    """Analisis `df_raw` (opsional gabung data lama) lalu simpan hasil ke sesi."""
+    if append and st.session_state.get("raw_data") is not None:
+        combined = pd.concat([st.session_state["raw_data"], df_raw], ignore_index=True)
+        if "review_id" in combined.columns:
+            combined = combined.drop_duplicates(
+                subset="review_id", keep="last"
+            ).reset_index(drop=True)
+        df_raw = combined
+
+    result = analyze_with_progress(df_raw)
+    st.session_state["result"] = result
+    st.session_state["raw_data"] = df_raw
+    # Bersihkan state turunan halaman hasil agar selaras data baru.
+    for stale_key in (
+        "filters",
+        "detail_search",
+        "detail_page",
+        "detail_mismatch",
+        "show_add_data",
+    ):
+        st.session_state.pop(stale_key, None)
+
+
+def _render_input_mode() -> None:
+    st.title("Analisis Sentimen Ulasan Pelanggan")
+    st.caption(
+        "Ubah banyak ulasan menjadi ringkasan kepuasan pelanggan dan saran "
+        "pemasaran — otomatis."
+    )
+    with st.container(border=True):
+        st.markdown(
+            "**Cara pakai — 3 langkah:**\n\n"
+            "1. **Masukkan ulasan** — unggah berkas CSV, atau ambil dari URL "
+            "produk (mode lokal).\n"
+            "2. Klik tombol **🔍 Mulai Analisis**.\n"
+            "3. Ringkasan hasil dan menu lainnya **muncul otomatis** di halaman ini."
+        )
+
+    df_raw = _input_tabs()
+    if df_raw is not None and st.button("🔍 Mulai Analisis", type="primary"):
+        try:
+            _run_and_store(df_raw, append=False)
+        except ValueError as exc:
+            st.error(str(exc))
+        else:
+            st.rerun()
+
+    with st.expander("ℹ️ Detail teknis (opsional)"):
+        st.markdown(
+            "**Pemrosesan teks otomatis:** huruf dikecilkan, URL/emoji/tanda baca "
+            "dibersihkan (tanpa stemming/penghapusan kata umum), lalu diterjemahkan "
+            "ke token untuk model."
+        )
+        st.markdown("**Model:** IndoBERT (indolem/indobert-base-uncased), 3 kelas.")
+        m = load_model_metrics()
+        st.markdown(
+            f"- Akurasi seimbang (Macro F1): **{fmt_id(m['f1_macro'])}** "
+            f"(target ≥ {fmt_id(m['target_f1'], 2)})\n"
+            f"- Uji silang 5-lipat: **{fmt_id(m['cv_mean'])} "
+            f"± {fmt_id(m['cv_std'], 3)}**"
+        )
+
+
+def _render_dashboard_mode() -> None:
+    st.title("Ringkasan Hasil Analisis")
+    c1, c2, _ = st.columns([1, 1, 3])
+    if c1.button(
+        "➕ Tambah data",
+        help="Gabungkan ulasan lain ke analisis ini, lalu hitung ulang.",
+    ):
+        st.session_state["show_add_data"] = not st.session_state.get(
+            "show_add_data", False
+        )
+    if c2.button("🔄 Analisis baru", help="Hapus hasil sekarang dan mulai dari awal."):
+        for key in (
+            "result",
+            "raw_data",
+            "filters",
+            "detail_search",
+            "detail_page",
+            "detail_mismatch",
+            "show_add_data",
+            "fetch_cache",
+        ):
+            st.session_state.pop(key, None)
+        st.rerun()
+
+    if st.session_state.get("show_add_data"):
+        with st.container(border=True):
+            st.markdown(
+                "**➕ Tambah data ke analisis ini** — ulasan baru digabung dengan "
+                "yang sudah ada (duplikat otomatis dibuang)."
+            )
+            df_new = _input_tabs(csv_key="csv_uploader_add")
+            if df_new is not None and st.button(
+                "Gabungkan & analisis ulang", type="primary"
+            ):
+                try:
+                    _run_and_store(df_new, append=True)
+                except ValueError as exc:
+                    st.error(str(exc))
+                else:
+                    st.rerun()
+
+    _render_dashboard_body()
+
+
+def _render_verdict(view) -> None:
+    """Kalimat ringkasan bahasa awam di paling atas (paham hasil tanpa grafik)."""
+    prop = view.distribution["proportion"]
+    cond = view.recommendation.condition
+    pos, neg = prop["positive"], prop["negative"]
+    if pos >= 0.5:
+        mood = "Mayoritas pelanggan **puas**"
+    elif neg > pos:
+        mood = "Cukup banyak pelanggan **kecewa**"
+    else:
+        mood = "Tanggapan pelanggan **beragam**"
+    msg = (
+        f"{mood} — **{pos:.1%}** ulasan positif dari **{view.n_reviews:,}** "
+        f"ulasan. Kondisi toko: **{cond}**."
+    )
+    style = recommendation_module.condition_style(cond)
+    icon = style.get("icon", "📊")
+    status = style.get("status", "info")
+    box = {"success": st.success, "error": st.error, "warning": st.warning}.get(
+        status, st.info
+    )
+    box(msg, icon=icon)
+
+
+def _render_dashboard_body() -> None:
     view = resolve_view()
     if view is None:
         return
+
+    _render_verdict(view)
 
     dist = view.distribution
     prop = dist["proportion"]
@@ -70,10 +229,9 @@ def page_dashboard() -> None:
     mm = insights_module.mismatch_summary(view.predictions)
     if mm["n_rated"] > 0 and mm["n_mismatch"] > 0:
         st.caption(
-            f"⚠️ **{mm['n_mismatch']:,}** dari {mm['n_rated']:,} ulasan ber-rating "
-            f"({mm['rate']:.1%}) memiliki **rating dan sentimen teks yang bertolak "
-            "belakang** — buka **Detail Ulasan** (toggle ketidaksesuaian) untuk "
-            "menelusurinya."
+            f"⚠️ **{mm['n_mismatch']:,}** dari {mm['n_rated']:,} ulasan ber-bintang "
+            f"({mm['rate']:.1%}) **diberi bintang tinggi tapi isinya keluhan** "
+            "(atau sebaliknya) — buka **Daftar Ulasan** untuk menelusurinya."
         )
 
     left, right = st.columns(2)
@@ -85,28 +243,28 @@ def page_dashboard() -> None:
         if trend_fig is not None:
             st.plotly_chart(trend_fig, width="stretch")
         else:
-            st.markdown("**Tren Sentimen**")
+            st.markdown("**Tren Sentimen dari Waktu ke Waktu**")
             date_state = visualization_module.column_state(
                 view.predictions, "date_review"
             )
             if date_state == "absen":
                 st.caption(
-                    "Tidak tersedia — data tidak memiliki kolom `date_review`. "
-                    "Tambahkan tanggal ulasan pada CSV untuk melihat tren."
+                    "Belum tersedia — data tidak memuat tanggal ulasan. "
+                    "Tambahkan kolom tanggal pada CSV untuk melihat tren."
                 )
             elif date_state == "kosong":
                 st.caption(
-                    "Tidak tersedia — kolom `date_review` ada namun seluruh "
+                    "Belum tersedia — kolom tanggal ulasan ada, namun semua "
                     "nilainya kosong/tidak valid."
                 )
             else:
                 st.caption(
-                    "Tidak tersedia — data tanggal belum cukup membentuk "
-                    "minimal dua periode tren."
+                    "Belum tersedia — data tanggal belum cukup membentuk "
+                    "minimal dua periode untuk dibandingkan."
                 )
 
     with st.container(border=True):
-        st.markdown("**Kata Dominan (semua ulasan)**")
+        st.markdown("**Kata yang Paling Sering Muncul (semua ulasan)**")
         img = cached_wordcloud(
             tuple(view.predictions["review_text"].tolist()), "#FF4B4B"
         )
@@ -114,12 +272,12 @@ def page_dashboard() -> None:
             st.image(img, width="stretch")
         else:
             st.caption(
-                "_Tidak ada kata tersisa setelah penyaringan stopword/kata "
-                "pendek — word cloud tidak dapat dibuat._"
+                "_Tidak ada kata tersisa setelah kata umum & kata pendek "
+                "diabaikan — gambar kata tidak dapat dibuat._"
             )
     st.caption(
-        "Buka **Visualisasi & Word Cloud** untuk word cloud per kelas, atau "
-        "**Rekomendasi Strategi** untuk saran pemasaran."
+        "Buka **Kata yang Sering Muncul** untuk rincian per jenis sentimen, atau "
+        "**Saran Pemasaran** untuk rekomendasi tindakan."
     )
 
 
@@ -133,91 +291,13 @@ def _stat(col, label: str, value: str, color: str | None = None) -> None:
         )
 
 
-# ── Input & Pengambilan Data ──────────────────────────────────────────────────
-def page_input() -> None:
-    st.title("Input & Pengambilan Data Ulasan")
-    st.caption(
-        "Modul input berlapis — pilih jalur sesuai lingkungan, lalu jalankan "
-        "IndoBERT untuk klasifikasi sentimen."
-    )
-
-    env = detect_environment()
-    if env["is_cloud"]:
-        st.info(
-            "Lingkungan **cloud** terdeteksi — jalur URL Auto-Fetch dinonaktifkan "
-            "(FR-8.14). Gunakan CSV Upload.",
-            icon="☁️",
-        )
-    else:
-        st.success(
-            "Lingkungan **lokal/desktop** terdeteksi — semua jalur input aktif.",
-            icon="💻",
-        )
-
-    left, right = st.columns([2, 1])
-    with left:
-        tab_csv, tab_url = st.tabs(
-            ["📁 CSV Upload (Cloud & Lokal)", "🔗 URL Auto-Fetch (Lokal saja)"]
-        )
-        with tab_csv:
-            df_csv = input_module.render_csv_tab(st)
-        with tab_url:
-            df_url = input_module.render_url_tab(st)
-        df_raw = df_csv if df_csv is not None else df_url
-
-        if df_raw is not None and st.button("🔍 Analisis Sentimen", type="primary"):
-            try:
-                result = analyze_with_progress(df_raw)
-            except ValueError as exc:
-                st.error(str(exc))
-            else:
-                st.session_state["result"] = result
-                # Reset filter & state widget halaman hasil untuk data baru.
-                for stale_key in (
-                    "filters",
-                    "detail_search",
-                    "detail_page",
-                    "detail_mismatch",
-                ):
-                    st.session_state.pop(stale_key, None)
-                if result.inference_skipped:
-                    st.success(
-                        f"Data sudah berlabel — inferensi dilewati untuk "
-                        f"{result.n_reviews:,} ulasan.",
-                        icon="⚡",
-                    )
-                else:
-                    st.success(
-                        f"Selesai menganalisis {result.n_reviews:,} ulasan. Buka "
-                        "**Dashboard** atau **Detail Ulasan**.",
-                        icon="✅",
-                    )
-
-    with right:
-        with st.container(border=True):
-            st.markdown("**Preprocessing Teks (otomatis)**")
-            st.markdown(
-                "- Case folding (huruf kecil)\n"
-                "- Text cleaning regex (URL, emoji, tanda baca)\n"
-                "- **Tanpa** stemming & stopword removal\n"
-                "- Tokenisasi IndoBERT, `max_length=128`"
-            )
-        with st.container(border=True):
-            st.markdown("**Model IndoBERT**")
-            st.caption("indolem/indobert-base-uncased · fine-tuned 3 kelas")
-            m = load_model_metrics()
-            st.markdown(
-                f"- Macro F1 (test): **{fmt_id(m['f1_macro'])}** "
-                f"(target ≥ {fmt_id(m['target_f1'], 2)})\n"
-                f"- Cross-validation: **{fmt_id(m['cv_mean'])} "
-                f"± {fmt_id(m['cv_std'], 3)}**"
-            )
-
-
 # ── Detail Ulasan ─────────────────────────────────────────────────────────────
 def page_detail() -> None:
-    st.title("Detail Ulasan & Hasil Klasifikasi")
-    st.caption("Setiap ulasan diberi label sentimen + skor keyakinan model.")
+    st.title("Daftar Ulasan")
+    st.caption(
+        "Setiap ulasan diberi label sentimen (positif/negatif/netral) beserta "
+        "tingkat keyakinan model."
+    )
 
     view = resolve_view()
     if view is None:
@@ -245,12 +325,12 @@ def page_detail() -> None:
 
     if insights_module.mismatch_summary(view.predictions)["n_rated"] > 0:
         only_mismatch = st.toggle(
-            "⚠️ Hanya ketidaksesuaian rating–sentimen",
+            "⚠️ Hanya tampilkan bintang vs isi yang bertolak belakang",
             key="detail_mismatch",
             help=(
-                "Ulasan yang bintang dan isi teksnya bertolak belakang "
-                "(mis. bintang 5 tapi teks negatif) — sinyal yang tidak "
-                "tertangkap rating numerik."
+                "Ulasan yang nilai bintang dan isi tulisannya berlawanan "
+                "(mis. bintang 5 tapi isinya keluhan) — keluhan yang tidak "
+                "terlihat dari bintang saja."
             ),
         )
         if only_mismatch:
@@ -282,8 +362,8 @@ def page_detail() -> None:
             width="stretch",
             hide_index=True,
             column_config={
-                "Skor": st.column_config.ProgressColumn(
-                    "Skor", min_value=0.0, max_value=1.0, format="%.2f"
+                "Keyakinan": st.column_config.ProgressColumn(
+                    "Keyakinan", min_value=0.0, max_value=1.0, format="%.2f"
                 ),
             },
         )
@@ -307,7 +387,7 @@ def build_detail_table(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame()
     out["Ulasan"] = df["review_text"]
     out["Sentimen"] = df["predicted_label"].map(_LABEL_EMOJI)
-    out["Skor"] = pd.to_numeric(df["confidence_score"], errors="coerce")
+    out["Keyakinan"] = pd.to_numeric(df["confidence_score"], errors="coerce")
     out["Rating"] = df["rating"].map(_stars)
     out["Kategori"] = df["product_category"]
     out["Tanggal"] = df["date_review"]
@@ -319,8 +399,11 @@ _build_detail_table = build_detail_table  # alias lama (kompatibilitas)
 
 # ── Visualisasi & Word Cloud ──────────────────────────────────────────────────
 def page_visualisasi() -> None:
-    st.title("Visualisasi & Word Cloud per Kelas")
-    st.caption("Kata dominan per kategori sentimen + distribusi per kategori produk.")
+    st.title("Kata yang Sering Muncul")
+    st.caption(
+        "Kata yang paling sering dipakai pelanggan di tiap jenis sentimen, "
+        "serta perbandingan antar produk."
+    )
 
     view = resolve_view()
     if view is None:
@@ -329,15 +412,16 @@ def page_visualisasi() -> None:
 
     # ── Kata kunci teratas per kelas + drill-down ulasan ──────────────────────
     st.divider()
-    st.subheader("Kata Kunci Teratas per Kelas")
+    st.subheader("Kata Kunci Teratas per Jenis Sentimen")
     st.caption(
-        "Frekuensi kata dominan (setelah penyaringan stopword tampilan) — pilih "
-        "kata untuk menelusuri ulasan yang memuatnya."
+        "Kata yang paling sering muncul (kata umum & kata pendek diabaikan) — "
+        "pilih satu kata untuk membaca ulasan yang memuatnya."
     )
     pilihan_kelas = st.selectbox(
-        "Kelas sentimen",
+        "Jenis sentimen",
         options=("Positif", "Negatif", "Netral"),
         key="viz_keyword_class",
+        help="Lihat kata-kata khas pada ulasan positif, negatif, atau netral.",
     )
     label_map = {"Positif": "positive", "Negatif": "negative", "Netral": "neutral"}
     label = label_map[pilihan_kelas]
@@ -351,8 +435,8 @@ def page_visualisasi() -> None:
     )
     if kw_fig is None:
         st.info(
-            f"Tidak ada kata tersisa untuk kelas {pilihan_kelas.lower()} "
-            "setelah penyaringan.",
+            f"Tidak ada kata tersisa untuk ulasan {pilihan_kelas.lower()} "
+            "setelah kata umum & kata pendek diabaikan.",
             icon="🔤",
         )
     else:
@@ -375,8 +459,8 @@ def page_visualisasi() -> None:
                 width="stretch",
                 hide_index=True,
                 column_config={
-                    "Skor": st.column_config.ProgressColumn(
-                        "Skor", min_value=0.0, max_value=1.0, format="%.2f"
+                    "Keyakinan": st.column_config.ProgressColumn(
+                        "Keyakinan", min_value=0.0, max_value=1.0, format="%.2f"
                     ),
                 },
             )
@@ -414,8 +498,8 @@ def page_visualisasi() -> None:
             },
         )
         st.caption(
-            "Kondisi pemasaran dihitung per produk memakai rule engine Fase 7 "
-            "(tanpa analisis tren — sampel per produk lebih kecil)."
+            "Kondisi tiap produk dihitung dari proporsi sentimennya "
+            "(tanpa analisis tren karena jumlah ulasan per produk lebih sedikit)."
         )
 
 
@@ -435,8 +519,11 @@ def _product_summary_table(ringkasan: pd.DataFrame) -> pd.DataFrame:
 
 # ── Rekomendasi Strategi ──────────────────────────────────────────────────────
 def page_rekomendasi() -> None:
-    st.title("Rekomendasi Strategi Pemasaran (Rule-Based)")
-    st.caption("Kondisi ditentukan dari rasio sentimen terhadap threshold compound.")
+    st.title("Saran Pemasaran")
+    st.caption(
+        "Saran tindakan otomatis berdasarkan seberapa banyak pelanggan puas "
+        "atau kecewa."
+    )
 
     view = resolve_view()
     if view is None:
@@ -497,13 +584,13 @@ def _render_examples(col, predictions: pd.DataFrame, label: str, judul: str) -> 
         st.markdown(f"**{judul}**")
         contoh = insights_module.top_examples(predictions, label=label)
         if contoh.empty:
-            st.caption("_Tidak ada ulasan pada kelas ini._")
+            st.caption("_Tidak ada ulasan pada jenis ini._")
             return
         for _, row in contoh.iterrows():
             with st.container(border=True):
                 st.write(f"“{row['review_text']}”")
                 conf = pd.to_numeric(row.get("confidence_score"), errors="coerce")
-                meta = [] if pd.isna(conf) else [f"confidence {conf:.1%}"]
+                meta = [] if pd.isna(conf) else [f"keyakinan {conf:.1%}"]
                 bintang = _stars(row.get("rating"))
                 if bintang:
                     meta.append(bintang)
@@ -513,41 +600,47 @@ def _render_examples(col, predictions: pd.DataFrame, label: str, judul: str) -> 
 
 # ── Pengaturan ────────────────────────────────────────────────────────────────
 def page_pengaturan() -> None:
-    st.title("Pengaturan & Konfigurasi")
-    st.caption("Filter berlaku ke seluruh halaman hasil (tanpa inferensi ulang).")
+    st.title("Pengaturan & Saringan")
+    st.caption("Saringan di sini berlaku ke semua halaman hasil (tanpa hitung ulang).")
 
     base = st.session_state.get("result")
     if base is None:
         st.info(
-            "Belum ada analisis. Buka **Input & Pengambilan Data** lebih dulu.",
+            "Belum ada analisis. Buka **Beranda** lebih dulu, lalu klik "
+            "**Mulai Analisis**.",
             icon="📥",
         )
         return
 
-    st.subheader("Filter Data")
+    st.subheader("Saring Ulasan")
     filters = settings_module.render_filters(st, base.predictions)
     st.session_state["filters"] = filters
 
     filtered = settings_module.apply_filters(base.predictions, **filters)
     st.caption(
-        f"**{len(filtered):,}** dari {len(base.predictions):,} ulasan lolos filter."
+        f"**{len(filtered):,}** dari {len(base.predictions):,} ulasan ditampilkan."
     )
+    if st.button("🔄 Reset saringan", help="Kembalikan semua saringan ke semula."):
+        for key in (*settings_module.FILTER_WIDGET_KEYS, "filters"):
+            st.session_state.pop(key, None)
+        st.rerun()
 
     st.divider()
-    st.subheader("Ambang Rule-Based (acuan, read-only)")
-    criteria = condition_criteria()
-    hard_cap_id = f"{HARD_CAP:,}".replace(",", ".")  # 1200 -> "1.200"
-    st.markdown(
-        f"- **{EXCELLENT}** — {criteria[EXCELLENT]}\n"
-        f"- **{MIXED}** — {criteria[MIXED]}\n"
-        f"- Maks. ulasan per produk (URL Auto-Fetch): **{hard_cap_id}**"
-    )
+    with st.expander("ℹ️ Bagaimana sistem menilai kondisi toko?"):
+        criteria = condition_criteria()
+        st.markdown(
+            "\n".join(f"- **{cond}** — {criteria[cond]}" for cond in CONDITIONS)
+        )
+        hard_cap_id = f"{HARD_CAP:,}".replace(",", ".")  # 1200 -> "1.200"
+        st.caption(
+            f"Maksimum ulasan yang diambil per produk dari URL: **{hard_cap_id}**."
+        )
 
 
 # ── Ekspor Laporan ────────────────────────────────────────────────────────────
 def page_ekspor() -> None:
-    st.title("Ekspor & Unduh Hasil Analisis")
-    st.caption("Unduh data ulasan berlabel; ekspor PDF/PNG menyusul pada Fase 10.")
+    st.title("Ekspor & Unduh Hasil")
+    st.caption("Unduh hasil analisis sebagai berkas CSV (bisa dibuka di Excel).")
 
     view = resolve_view()
     if view is None:
@@ -571,11 +664,11 @@ def page_ekspor() -> None:
             f"- Positif / Netral / Negatif: "
             f"**{prop['positive']:.1%} / {prop['neutral']:.1%} / "
             f"{prop['negative']:.1%}**\n"
-            f"- Kondisi pemasaran: **{view.recommendation.condition}**\n"
-            f"- Macro F1-Score model: **{fmt_id(load_model_metrics()['f1_macro'])}**"
+            f"- Kondisi toko: **{view.recommendation.condition}**\n"
+            f"- Akurasi model (Macro F1): **{fmt_id(load_model_metrics()['f1_macro'])}**"
         )
     st.info(
-        "Ekspor PDF & PNG dijadwalkan pada Fase 10 (Deployment & Dokumentasi).",
+        "Ekspor ke PDF & gambar akan ditambahkan pada versi berikutnya.",
         icon="🗓️",
     )
 
@@ -588,23 +681,23 @@ def page_tentang() -> None:
     with st.container(border=True):
         st.markdown("**Tentang Sentara**")
         st.write(
-            "Sentara mengklasifikasikan ulasan produk e-commerce menjadi tiga "
-            "kelas (Positif/Negatif/Netral) memakai IndoBERT "
-            "(indolem/indobert-base-uncased) yang di-fine-tune dari gabungan tiga "
-            "dataset publik — SmSA, PRDECT-ID, dan Review Product Shopee (Kaggle) — "
-            "total 20.608 ulasan. Model diterapkan pada 3.739 ulasan OmorfoShop "
-            "Official Store yang dikumpulkan via **endpoint JSON internal Shopee** "
-            "dari sesi browser ber-login. Input dashboard berlapis: upload CSV "
-            "atau auto-fetch URL produk (mode lokal)."
+            "Sentara membaca ulasan produk pelanggan dan mengelompokkannya menjadi "
+            "tiga jenis: **Positif**, **Negatif**, dan **Netral**. Dari komposisi "
+            "itu, sistem menilai kondisi toko dan memberi **saran pemasaran**. "
+            "Mesin penilainya adalah IndoBERT (model bahasa Indonesia) yang dilatih "
+            "dari 20.608 ulasan publik, lalu diuji pada 3.739 ulasan nyata "
+            "OmorfoShop Official Store di Shopee."
         )
 
     with st.container(border=True):
-        st.markdown("**Cara Pakai (4 langkah)**")
+        st.markdown("**Cara Pakai (3 langkah)**")
         st.markdown(
-            "1. **Pilih jalur input** — CSV Upload atau URL Auto-Fetch (lokal).\n"
-            "2. **Jalankan IndoBERT** — klik Analisis Sentimen.\n"
-            "3. **Lihat hasil** — Dashboard, Detail, Visualisasi, Rekomendasi.\n"
-            "4. **Saring & ekspor** — Pengaturan lalu unduh CSV."
+            "1. Di **Beranda**, masukkan ulasan — unggah CSV atau ambil dari URL "
+            "produk (mode lokal).\n"
+            "2. Klik **🔍 Mulai Analisis**.\n"
+            "3. Ringkasan & menu hasil **muncul otomatis** — lihat **Daftar Ulasan**, "
+            "**Kata yang Sering Muncul**, dan **Saran Pemasaran**. Saring di "
+            "**Pengaturan**, unduh di **Ekspor**."
         )
 
     col1, col2 = st.columns(2)
@@ -639,14 +732,24 @@ def page_tentang() -> None:
             "**Ambil Ulasan** lagi. Bila tetap gagal, perbesar jeda "
             "antar-permintaan.\n\n"
             "**Halaman hasil kosong padahal sudah analisis**\n"
-            "Kemungkinan filter di **Pengaturan** menyaring habis data — "
-            "longgarkan kategori/tanggal/ambang confidence.\n\n"
-            "**Analisis terasa lambat di laptop tanpa GPU**\n"
-            "Inferensi IndoBERT berjalan di CPU. Untuk data yang sudah pernah "
-            "dianalisis, unggah CSV berlabel (memiliki kolom `predicted_label` "
-            "dan `confidence_score`) — inferensi otomatis dilewati.\n\n"
-            "**Apa arti skor confidence?**\n"
-            "Probabilitas softmax kelas terpilih (0–1). Semakin tinggi, "
-            "semakin yakin model terhadap label tersebut; gunakan filter "
-            "ambang confidence di **Pengaturan** untuk analisis konservatif."
+            "Kemungkinan saringan di **Pengaturan** menyaring habis data — "
+            "longgarkan kategori/periode/tingkat keyakinan, atau klik "
+            "**Reset saringan**.\n\n"
+            "**Analisis terasa lambat di laptop tanpa kartu grafis (GPU)**\n"
+            "Wajar — model berjalan di prosesor biasa. Untuk data yang sudah "
+            "pernah dianalisis, unggah kembali CSV hasil ekspor (sudah berlabel) "
+            "agar analisis dilewati dan langsung tampil."
+        )
+
+    with st.expander("📖 Glosarium — istilah singkat"):
+        st.markdown(
+            "- **Sentimen** — nada perasaan ulasan: positif, negatif, atau netral.\n"
+            "- **Keyakinan** — seberapa yakin sistem terhadap label sebuah ulasan "
+            "(0–100%). Makin tinggi makin meyakinkan.\n"
+            "- **Kondisi toko** — ringkasan performa dari komposisi sentimen "
+            "(Sangat Baik / Baik / Perlu Perbaikan / Beragam–Tidak Stabil).\n"
+            "- **Tren** — perubahan proporsi sentimen dari waktu ke waktu (butuh "
+            "kolom tanggal ulasan).\n"
+            "- **Bintang vs isi bertolak belakang** — ulasan yang nilai bintangnya "
+            "tinggi tetapi isinya keluhan (atau sebaliknya)."
         )

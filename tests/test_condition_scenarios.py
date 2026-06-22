@@ -1,5 +1,5 @@
 """
-Uji dataset skenario 5 kondisi pemasaran (data/implementation/scenarios/).
+Uji dataset skenario 4 kondisi pemasaran (data/implementation/scenarios/).
 
 Memastikan tiap berkas skenario berlabel memetakan ke kondisi rule engine yang
 diharapkan — murni rule engine Fase 7 (tanpa model IndoBERT), jadi cepat & dapat
@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 
 from src.recommendation import recommend
-from src.recommendation.config import EXCELLENT, GOOD, MIXED, MODERATE, POOR
+from src.recommendation.config import EXCELLENT, GOOD, MIXED, POOR
 
 SCENARIOS_DIR = (
     Path(__file__).resolve().parents[1] / "data" / "implementation" / "scenarios"
@@ -23,7 +23,6 @@ SCENARIOS_DIR = (
 CASES = [
     ("scenario_excellent.csv", EXCELLENT),
     ("scenario_good.csv", GOOD),
-    ("scenario_moderate.csv", MODERATE),
     ("scenario_poor.csv", POOR),
     ("scenario_mixed.csv", MIXED),
 ]

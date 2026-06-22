@@ -85,8 +85,8 @@ def resolve_view() -> AnalysisResult | None:
     base: AnalysisResult | None = st.session_state.get("result")
     if base is None:
         st.info(
-            "Belum ada analisis. Buka halaman **Input & Pengambilan Data** untuk "
-            "mengunggah CSV atau mengambil ulasan.",
+            "Belum ada analisis. Buka **Beranda** untuk mengunggah CSV atau "
+            "mengambil ulasan, lalu klik **Mulai Analisis**.",
             icon="📥",
         )
         return None

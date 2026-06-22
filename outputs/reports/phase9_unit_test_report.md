@@ -45,7 +45,7 @@ model** (cloud/CI; bobot model di-gitignore).
 
 | File | Jml | Fokus uji |
 |---|---|---|
-| `test_recommendation.py` | 27 | `compute_distribution` (dari DataFrame/dict); klasifikasi **5 kondisi compound** (Excellent/Good/Moderate/Poor/Mixed) + fallback antar-tier; override Mixed via netral tinggi & trend shift; `strategy_mapper` (strategi + insight + simpan JSON); `trend_analyzer` (guard sampel kecil, deteksi shift nyata); orkestrasi `recommend()` end-to-end; `condition_criteria()` turunan `THRESHOLDS` |
+| `test_recommendation.py` | 27 | `compute_distribution` (dari DataFrame/dict); klasifikasi **4 kondisi compound** (Sangat Baik/Baik/Perlu Perbaikan/Beragam–Tidak Stabil; "Moderate" dihapus pasca-validasi) + fallback antar-tier; override Mixed via netral tinggi & trend shift; `strategy_mapper` (strategi + insight + simpan JSON); `trend_analyzer` (guard sampel kecil, deteksi shift nyata); orkestrasi `recommend()` end-to-end; `condition_criteria()` turunan `THRESHOLDS` |
 
 ### Fase 8 — Dashboard (141 test)
 

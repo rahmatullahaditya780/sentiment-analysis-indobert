@@ -109,11 +109,45 @@ def _date_bounds(predictions: pd.DataFrame):
     return dates.min().date(), dates.max().date()
 
 
-def render_filters(st, predictions: pd.DataFrame) -> dict:
-    """Render kontrol filter (kategori/tanggal/confidence); kembalikan pilihan.
+# Nama bulan Bahasa Indonesia untuk label periode (lebih ramah dari "Jan 2025").
+_BULAN_ID = {
+    1: "Januari",
+    2: "Februari",
+    3: "Maret",
+    4: "April",
+    5: "Mei",
+    6: "Juni",
+    7: "Juli",
+    8: "Agustus",
+    9: "September",
+    10: "Oktober",
+    11: "November",
+    12: "Desember",
+}
 
-    Hanya menampilkan kontrol yang relevan dengan kolom data yang tersedia.
-    Dipakai di body halaman Pengaturan (multipage).
+# Kunci widget filter (dipakai tombol "Reset saringan" untuk mengosongkan state).
+FILTER_WIDGET_KEYS = ("flt_kategori", "flt_periode", "flt_rentang", "flt_keyakinan")
+
+
+def _available_months(predictions: pd.DataFrame) -> list[tuple[str, tuple]]:
+    """Daftar bulan tersedia -> [(label "Mei 2025", (tgl_awal, tgl_akhir)), ...]."""
+    if DATE_COLUMN not in predictions.columns:
+        return []
+    dates = pd.to_datetime(predictions[DATE_COLUMN], errors="coerce").dropna()
+    if dates.empty:
+        return []
+    out: list[tuple[str, tuple]] = []
+    for period in sorted(dates.dt.to_period("M").unique()):
+        label = f"{_BULAN_ID[period.month]} {period.year}"
+        out.append((label, (period.start_time.date(), period.end_time.date())))
+    return out
+
+
+def render_filters(st, predictions: pd.DataFrame) -> dict:
+    """Render kontrol saringan (kategori/periode/keyakinan); kembalikan pilihan.
+
+    Bahasa sengaja awam (tanpa istilah teknis). Hanya menampilkan kontrol yang
+    relevan dengan kolom data yang tersedia. Dipakai di halaman Pengaturan.
     """
     categories = _available_categories(predictions)
     selected_categories = (
@@ -121,33 +155,52 @@ def render_filters(st, predictions: pd.DataFrame) -> dict:
             "Kategori produk",
             options=categories,
             default=[],
-            help="Kosongkan untuk menyertakan semua kategori.",
+            key="flt_kategori",
+            help="Biarkan kosong untuk menampilkan semua kategori.",
         )
         if categories
         else []
     )
 
     date_range = None
-    bounds = _date_bounds(predictions)
-    if bounds is not None:
-        lo, hi = bounds
-        picked = st.date_input(
-            "Rentang tanggal ulasan",
-            value=(lo, hi),
-            min_value=lo,
-            max_value=hi,
+    months = _available_months(predictions)
+    if months:
+        labels = ["Semua waktu"] + [m[0] for m in months] + ["Rentang tanggal khusus…"]
+        pilihan = st.selectbox(
+            "Periode waktu",
+            options=labels,
+            key="flt_periode",
+            help="Pilih satu bulan, atau tentukan rentang tanggal sendiri.",
         )
-        if isinstance(picked, (tuple, list)) and len(picked) == 2:
-            date_range = (picked[0], picked[1])
+        if pilihan == "Rentang tanggal khusus…":
+            bounds = _date_bounds(predictions)
+            if bounds is not None:
+                lo, hi = bounds
+                picked = st.date_input(
+                    "Dari tanggal — sampai tanggal",
+                    value=(lo, hi),
+                    min_value=lo,
+                    max_value=hi,
+                    key="flt_rentang",
+                )
+                if isinstance(picked, (tuple, list)) and len(picked) == 2:
+                    date_range = (picked[0], picked[1])
+        elif pilihan != "Semua waktu":
+            date_range = dict(months)[pilihan]
 
-    min_confidence = st.slider(
-        "Confidence threshold minimum",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.0,
-        step=0.05,
-        help="Hanya ulasan dengan confidence ≥ ambang yang dianalisis.",
-    )
+    with st.expander("⚙️ Saringan lanjutan (opsional)"):
+        min_confidence = st.slider(
+            "Tingkat keyakinan minimum model",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.0,
+            step=0.05,
+            key="flt_keyakinan",
+            help=(
+                "Hanya tampilkan ulasan yang diprediksi model dengan keyakinan "
+                "minimal sebesar ini. Biarkan 0 untuk menampilkan semua."
+            ),
+        )
 
     return {
         "categories": selected_categories,

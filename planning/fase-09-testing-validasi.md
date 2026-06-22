@@ -9,7 +9,7 @@ Melakukan pengujian sistem secara menyeluruh dan validasi oleh praktisi e-commer
 | FR-9.1 | Sistem harus lolos unit testing pada setiap fungsi/module (preprocessing, inference, rule-based, dashboard). |
 | FR-9.2 | Sistem harus lolos integration testing untuk memastikan aliran data antar module berjalan dengan benar. |
 | FR-9.3 | Sistem harus lolos UI testing / usability testing pada pengguna nyata (non-teknis). |
-| FR-9.4 | Sistem harus menjalani expert validation oleh 1–2 praktisi e-commerce (seller OmorfoShop). |
+| FR-9.4 | Sistem harus menjalani expert validation oleh 1–2 praktisi e-commerce (seller Shopee). |
 
 ## Testing Scope
 
