@@ -56,7 +56,7 @@ THRESHOLDS: dict[str, dict[str, float]] = {
     POOR: {"pos_max": 0.299, "neg_min": 0.401},
 }
 
-# Mixed/Unstable
+# Beragam / Tidak Stabil (kondisi override)
 NEUTRAL_MIXED_THRESHOLD = 0.35  # netral > 35% -> persepsi tidak konsisten
 # Ambang perubahan tren signifikan (selisih proporsi positif antar periode).
 # TODO Fase 7: kalibrasi pada data OmorfoShop ber-`date_review`.
@@ -104,17 +104,17 @@ class MarketingPlay:
 STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
     EXCELLENT: (
         MarketingPlay(
-            judul="Manfaatkan ulasan positif sebagai social proof",
+            judul="Manfaatkan ulasan positif sebagai bukti kepuasan pelanggan",
             langkah=(
                 "Buka halaman Saran Pemasaran → Bukti Ulasan Representatif "
-                "dan salin 3–5 kutipan positif ber-confidence tertinggi.",
+                "dan salin 3–5 kutipan positif dengan keyakinan tertinggi.",
                 "Tempatkan kutipan pada deskripsi produk, banner toko, dan konten "
                 "media sosial.",
-                "Sematkan kata kunci pujian yang paling sering muncul sebagai "
-                "highlight penjualan.",
+                "Sematkan kata pujian yang paling sering muncul sebagai "
+                "poin jualan utama.",
             ),
             contoh=(
-                "Kutipan 'barang sesuai deskripsi, pengiriman cepat' (confidence "
+                "Kutipan 'barang sesuai deskripsi, pengiriman cepat' (keyakinan "
                 "99%) dijadikan caption foto produk dan testimoni di etalase toko."
             ),
             fitur=(
@@ -127,45 +127,45 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
             langkah=(
                 "Lihat Kondisi per Produk untuk menemukan produk ber-sentimen "
                 "positif tertinggi.",
-                "Tawarkan bundling, poin, atau membership untuk pembeli ulang "
-                "produk tersebut.",
+                "Tawarkan paket hemat, poin, atau program pelanggan setia untuk "
+                "pembelian ulang produk tersebut.",
                 "Prioritaskan stok dan promosi pada produk unggulan ini.",
             ),
             contoh=(
                 "Produk dengan 90%+ ulasan positif dipaketkan bersama voucher "
-                "pembelian berikutnya untuk mendorong repeat order."
+                "pembelian berikutnya untuk mendorong pembelian ulang."
             ),
             fitur="Saran Pemasaran → Kondisi per Produk.",
         ),
         MarketingPlay(
-            judul="Jalankan program referral berbasis keunggulan yang dipuji",
+            judul="Jalankan program 'ajak teman' berbasis keunggulan yang dipuji",
             langkah=(
                 "Buka Kata yang Sering Muncul → Kata Kunci Teratas kelas positif "
                 "untuk tahu keunggulan yang paling sering disebut.",
                 "Angkat keunggulan itu sebagai pesan utama kampanye 'ajak teman'.",
-                "Beri insentif (cashback/diskon) bagi pelanggan yang mereferensikan.",
+                "Beri insentif (cashback/diskon) bagi pelanggan yang mengajak teman.",
             ),
             contoh=(
-                "Kata 'awet' dan 'murah' mendominasi → tagline referral "
+                "Kata 'awet' dan 'murah' mendominasi → slogan "
                 "'Rekomendasikan yang awet & hemat, dapat cashback'."
             ),
-            fitur="Kata yang Sering Muncul → Kata Kunci Teratas / Word Cloud (positif).",
+            fitur="Kata yang Sering Muncul → Kata Kunci Teratas / gambar kata (positif).",
         ),
         MarketingPlay(
             judul="Pertahankan kualitas dengan pemantauan dini",
             langkah=(
-                "Jadwalkan auto-fetch ulasan secara berkala di halaman Beranda.",
+                "Jadwalkan pengambilan ulasan secara berkala di halaman Beranda.",
                 "Pantau apakah kondisi tetap Sangat Baik dan perhatikan peringatan "
                 "Perubahan Tren.",
                 "Tindak lanjuti penurunan proporsi positif sebelum menjadi keluhan "
                 "massal.",
             ),
             contoh=(
-                "Setiap bulan fetch ulang ulasan; bila muncul peringatan tren "
-                "positif turun >15%, tinjau perubahan pemasok atau logistik."
+                "Setiap bulan ambil ulang ulasan; bila muncul peringatan tren "
+                "positif turun >15%, tinjau perubahan pemasok atau pengiriman."
             ),
             fitur=(
-                "Beranda (auto-fetch) + peringatan Perubahan Tren "
+                "Beranda (pengambilan ulasan berkala) + peringatan Perubahan Tren "
                 "di panel Rekomendasi."
             ),
         ),
@@ -178,11 +178,11 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "terkuat) untuk membaca keluhan paling meyakinkan.",
                 "Buka Kata yang Sering Muncul kelas negatif untuk menemukan tema "
                 "keluhan yang berulang.",
-                "Daftarkan 3 keluhan teratas sebagai backlog perbaikan.",
+                "Daftarkan 3 keluhan teratas sebagai daftar perbaikan.",
             ),
             contoh=(
-                "Word cloud negatif menonjolkan 'lama' dan 'pengiriman' → akar "
-                "masalah ada di logistik, bukan kualitas produk."
+                "Gambar kata negatif menonjolkan 'lama' dan 'pengiriman' → akar "
+                "masalah ada di pengiriman, bukan kualitas produk."
             ),
             fitur=(
                 "Saran Pemasaran → Bukti Ulasan (negatif) + "
@@ -192,51 +192,51 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
         MarketingPlay(
             judul="Perbaiki titik lemah lalu komunikasikan perbaikannya",
             langkah=(
-                "Tetapkan target perbaikan pada keluhan teratas (mis. SLA "
-                "pengiriman, QC kemasan).",
+                "Tetapkan target perbaikan pada keluhan teratas (mis. standar "
+                "waktu pengiriman, pemeriksaan kualitas kemasan).",
                 "Setelah diperbaiki, umumkan ke pelanggan via deskripsi produk atau "
                 "pengumuman toko.",
-                "Pantau ulang lewat fetch berikutnya untuk memverifikasi keluhan "
-                "menurun.",
+                "Pantau ulang lewat pengambilan ulasan berikutnya untuk "
+                "memverifikasi keluhan menurun.",
             ),
             contoh=(
                 "Keluhan kemasan penyok → ganti bubble wrap; tulis 'kini dikemas "
                 "ekstra aman' di deskripsi, lalu cek ulasan bulan berikutnya."
             ),
             fitur=(
-                "Daftar Ulasan (filter keluhan) + Beranda (fetch "
+                "Daftar Ulasan (saring keluhan) + Beranda (ambil "
                 "ulang untuk verifikasi)."
             ),
         ),
         MarketingPlay(
             judul="Naikkan rasio positif dengan menonjolkan keunggulan",
             langkah=(
-                "Identifikasi keunggulan yang dipuji dari Word Cloud / Kata Kunci "
+                "Identifikasi keunggulan yang dipuji dari gambar kata / Kata Kunci "
                 "kelas positif.",
                 "Perjelas keunggulan tersebut di judul dan foto produk agar "
                 "ekspektasi pembeli tepat.",
                 "Sertakan kutipan positif untuk meyakinkan calon pembeli yang ragu.",
             ),
             contoh=(
-                "Banyak pujian 'sesuai foto' → tambahkan label 'real product, "
-                "sesuai foto' pada thumbnail untuk menarik pembeli ragu."
+                "Banyak pujian 'sesuai foto' → tambahkan label 'produk asli, "
+                "sesuai foto' pada gambar utama untuk menarik pembeli ragu."
             ),
-            fitur="Kata yang Sering Muncul → Kata Kunci / Word Cloud (positif).",
+            fitur="Kata yang Sering Muncul → Kata Kunci / gambar kata (positif).",
         ),
     ),
     POOR: (
         MarketingPlay(
-            judul="Triase keluhan paling mendesak",
+            judul="Pilah keluhan paling mendesak",
             langkah=(
-                "Buka Bukti Ulasan Representatif (keluhan terkuat) dan Word Cloud "
+                "Buka Bukti Ulasan Representatif (keluhan terkuat) dan gambar kata "
                 "negatif untuk masalah paling tajam.",
                 "Pisahkan masalah fatal (rusak, tidak sesuai, penipuan) dari yang "
-                "minor.",
+                "ringan.",
                 "Tangani masalah fatal lebih dulu sebagai prioritas darurat.",
             ),
             contoh=(
                 "Dominasi kata 'rusak' dan 'tidak sesuai' → hentikan sementara "
-                "penjualan SKU bermasalah sampai QC beres."
+                "penjualan produk bermasalah sampai pemeriksaan kualitas beres."
             ),
             fitur=(
                 "Saran Pemasaran → Bukti Ulasan (negatif) + "
@@ -248,8 +248,8 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
             langkah=(
                 "Periksa kata kunci negatif terkait 'mahal', 'murahan', 'kemasan', "
                 "'rusak'.",
-                "Bandingkan value produk dengan harga dan kompetitor.",
-                "Perbaiki kemasan/QC sebelum melanjutkan promosi berbayar.",
+                "Bandingkan kesepadanan nilai produk dengan harga dan pesaing.",
+                "Perbaiki kemasan/kualitas sebelum melanjutkan iklan berbayar.",
             ),
             contoh=(
                 "Kata 'mahal' dan 'mengecewakan' menonjol → tinjau ulang harga atau "
@@ -258,11 +258,11 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
             fitur="Kata yang Sering Muncul → Kata Kunci Teratas (negatif).",
         ),
         MarketingPlay(
-            judul="Lakukan recovery pelanggan secara terbuka",
+            judul="Lakukan pemulihan kepercayaan pelanggan secara terbuka",
             langkah=(
                 "Akui masalah utama lewat pengumuman toko dan balasan ulasan.",
-                "Tawarkan solusi konkret (refund, ganti, garansi) bagi pelanggan "
-                "terdampak.",
+                "Tawarkan solusi konkret (pengembalian dana, ganti barang, garansi) "
+                "bagi pelanggan terdampak.",
                 "Komunikasikan langkah perbaikan yang sudah atau akan dilakukan.",
             ),
             contoh=(
@@ -274,14 +274,15 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
         MarketingPlay(
             judul="Hentikan kerugian: fokus pada produk terparah",
             langkah=(
-                "Buka Kondisi per Produk untuk menemukan SKU berkondisi Poor.",
-                "Pause atau perbaiki produk terparah agar tidak menyeret reputasi "
-                "toko.",
+                "Buka Kondisi per Produk untuk menemukan produk berkondisi "
+                "Perlu Perbaikan.",
+                "Hentikan sementara atau perbaiki produk terparah agar tidak "
+                "menyeret reputasi toko.",
                 "Alihkan anggaran promosi ke produk yang masih sehat.",
             ),
             contoh=(
-                "Dua SKU berkondisi Poor dinonaktifkan sementara; anggaran iklan "
-                "dialihkan ke produk ber-sentimen positif."
+                "Dua produk berkondisi Perlu Perbaikan dinonaktifkan sementara; "
+                "anggaran iklan dialihkan ke produk dengan sentimen positif."
             ),
             fitur=(
                 "Saran Pemasaran / Kata yang Sering Muncul → Kondisi per Produk + "
@@ -294,9 +295,9 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
             judul="Selaraskan ekspektasi lewat edukasi produk",
             langkah=(
                 "Periksa ketidaksesuaian rating–sentimen untuk melihat kesenjangan "
-                "ekspektasi vs realita.",
-                "Buat konten edukasi (cara pakai, spesifikasi, FAQ) yang menjawab "
-                "kebingungan.",
+                "antara harapan dan kenyataan.",
+                "Buat konten edukasi (cara pakai, spesifikasi, tanya-jawab) yang "
+                "menjawab kebingungan.",
                 "Tampilkan informasi penting sebelum pembelian untuk menekan ulasan "
                 "netral/bingung.",
             ),
@@ -309,7 +310,7 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
         MarketingPlay(
             judul="Perkuat deskripsi agar persepsi konsisten",
             langkah=(
-                "Identifikasi istilah ambigu dari Word Cloud kelas netral.",
+                "Identifikasi istilah ambigu dari gambar kata kelas netral.",
                 "Perjelas spesifikasi, ukuran, varian, dan isi paket di deskripsi.",
                 "Hilangkan klaim yang menimbulkan tafsir ganda.",
             ),
@@ -317,34 +318,38 @@ STRATEGY_PLAYBOOK: dict[str, tuple[MarketingPlay, ...]] = {
                 "Netral seputar 'ukuran' → cantumkan tabel dimensi dan perbandingan "
                 "agar pembeli tidak ragu."
             ),
-            fitur="Kata yang Sering Muncul → Word Cloud / Kata Kunci (netral).",
+            fitur="Kata yang Sering Muncul → gambar kata / Kata Kunci (netral).",
         ),
         MarketingPlay(
             judul="Pantau sentimen secara berkala",
             langkah=(
-                "Jadwalkan auto-fetch berulang dan amati panel Perubahan Tren.",
+                "Jadwalkan pengambilan ulasan berulang dan amati panel Perubahan "
+                "Tren.",
                 "Catat periode saat proporsi berubah signifikan dan kaitkan dengan "
                 "peristiwa (promo, ganti pemasok).",
                 "Tetapkan ambang peringatan untuk tindak lanjut cepat.",
             ),
             contoh=(
                 "Tren positif anjlok di bulan tertentu bertepatan dengan ganti "
-                "kurir → kembalikan kurir lama atau perbaiki SLA."
+                "kurir → kembalikan kurir lama atau perbaiki standar waktu pengiriman."
             ),
-            fitur=("Beranda (auto-fetch) + panel Perubahan Tren " "(Rekomendasi)."),
+            fitur=(
+                "Beranda (pengambilan ulasan berkala) + panel Perubahan Tren "
+                "(Rekomendasi)."
+            ),
         ),
         MarketingPlay(
             judul="Investigasi penyebab ketidakstabilan",
             langkah=(
-                "Tinjau apakah Mixed dipicu netral tinggi atau perubahan tren "
-                "(lihat keterangan kondisi).",
+                "Tinjau apakah kondisi Beragam/Tidak Stabil dipicu netral tinggi "
+                "atau perubahan tren (lihat keterangan kondisi).",
                 "Bandingkan kondisi antar produk untuk melihat apakah masalah "
                 "menyeluruh atau spesifik.",
                 "Telusuri ulasan netral terbaru untuk menemukan akar penyebabnya.",
             ),
             contoh=(
-                "Mixed karena netral 38% → ternyata satu produk baru membanjiri "
-                "ulasan ambigu; fokuskan edukasi pada produk itu."
+                "Kondisi Beragam karena netral 38% → ternyata satu produk baru "
+                "membanjiri ulasan ambigu; fokuskan edukasi pada produk itu."
             ),
             fitur=(
                 "Saran Pemasaran (keterangan kondisi) → Kondisi per Produk + "
