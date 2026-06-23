@@ -23,8 +23,8 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 5 | Model Evaluation | **Gate LULUS** (F1 macro test 0.9031; CV 0.9016 ± 0.010). Model **baseline 3-epoch = final**; re-train 2-epoch sudah diuji & terbukti lebih buruk (overfit gap dicatat sebagai keterbatasan, non-blokir) |
 | 6 | Sentiment Inference Engine | **Selesai** (real-time + batch terverifikasi; **3.739 ulasan OmorfoShop nyata** dianalisis → distribusi 88,5% positif / 10,6% negatif / 0,8% netral = kondisi "Sangat Baik") |
 | 7 | Rule-Based Marketing Recommendation | **Selesai** (rule engine 4 kondisi compound + trend analysis; 24 unit test) |
-| 8 | Dashboard Development | **Siap dicek** — kode selesai: 7 modul (6 modul TRD + Module 7 Insight Analitik pasca-gate) + multi-URL fetch berkelanjutan; **168 unit test** hijau, boot HTTP 200. Tersisa: **verifikasi manual fetch nyata Shopee** (perlu Chrome CDP ber-login di desktop) |
-| 9 | Testing & Validation | **Berjalan** — unit testing **SELESAI & terdokumentasi** (199 test hijau, +31 test preprocessing baru; laporan `outputs/reports/phase9_unit_test_report.md`); integration test end-to-end **model nyata SELESAI** (jalur CSV, 16 test `tests/integration/`, artefak `phase9_integration_report.json`). Tersisa: usability testing, expert validation, verifikasi manual fetch CDP Shopee |
+| 8 | Dashboard Development | **Gate LULUS** — kode selesai + verifikasi manual fetch CDP nyata oleh pengguna (tanpa masalah). Dirombak di Fase 9: Dashboard+Input menyatu jadi **Beranda** adaptif, kondisi pemasaran 4 (label Indonesia), UI/UX ramah awam |
+| 9 | Testing & Validation | **Gate LULUS** — unit 207 + integrasi 15 (model nyata, termasuk fetch CDP) hijau; **usability** (2 peserta, SUS 55,0; `phase9_usability_report.md`); **expert validation** (seller Forta Beauty Shopee, 4,15 "Layak"; `phase9_validation_report.md`); **bug fixing** selesai (5→4 kondisi + Beranda + UI/UX awam, commit `aebaf7c`). Gate ke Fase 10 terbuka |
 | 10 | Deployment & Documentation | Belum mulai |
 
 ## Checklist Gate Global

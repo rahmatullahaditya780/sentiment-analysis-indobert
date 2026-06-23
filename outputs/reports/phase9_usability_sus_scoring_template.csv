@@ -1,14 +1,14 @@
 item,jenis,rumus_kontribusi,P1_jawaban_1_5,P1_kontribusi_0_4,P2_jawaban_1_5,P2_kontribusi_0_4
-1,ganjil,(jawaban - 1),,,,
-2,genap,(5 - jawaban),,,,
-3,ganjil,(jawaban - 1),,,,
-4,genap,(5 - jawaban),,,,
-5,ganjil,(jawaban - 1),,,,
-6,genap,(5 - jawaban),,,,
-7,ganjil,(jawaban - 1),,,,
-8,genap,(5 - jawaban),,,,
-9,ganjil,(jawaban - 1),,,,
-10,genap,(5 - jawaban),,,,
-JUMLAH_KONTRIBUSI,,jumlah kolom kontribusi (0-40),,,,
-SKOR_SUS,,jumlah_kontribusi x 2.5 (0-100),,,,
-RATA2_SUS_ANTAR_PESERTA,,(SUS_P1 + SUS_P2) / jumlah peserta,,,,
+1,ganjil,(jawaban - 1),4,3,3,2
+2,genap,(5 - jawaban),2,3,5,0
+3,ganjil,(jawaban - 1),4,3,3,2
+4,genap,(5 - jawaban),4,1,4,1
+5,ganjil,(jawaban - 1),4,3,4,3
+6,genap,(5 - jawaban),2,3,2,3
+7,ganjil,(jawaban - 1),4,3,3,2
+8,genap,(5 - jawaban),2,3,3,2
+9,ganjil,(jawaban - 1),4,3,3,2
+10,genap,(5 - jawaban),5,0,3,2
+JUMLAH_KONTRIBUSI,,jumlah kolom kontribusi (0-40),,25,,19
+SKOR_SUS,,jumlah_kontribusi x 2.5 (0-100),,62.5,,47.5
+RATA2_SUS_ANTAR_PESERTA,,(SUS_P1 + SUS_P2) / 2 = 55.0,,,,

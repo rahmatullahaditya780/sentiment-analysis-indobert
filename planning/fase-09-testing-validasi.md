@@ -68,7 +68,7 @@ usability harus menguji fitur yang ditambahkan setelah spek awal:
 > [`phase9_usability_sus_questionnaire.md`](../outputs/reports/phase9_usability_sus_questionnaire.md)
 > (SUS 10 item + rumus + interpretasi) & template skor
 > [`phase9_usability_sus_scoring_template.csv`](../outputs/reports/phase9_usability_sus_scoring_template.csv).
-> **Pelaksanaan dengan 1–2 pengguna non-teknis masih menunggu** (butuh peserta nyata).
+> **Pelaksanaan SELESAI (2 peserta)** — hasil di `phase9_usability_report.md`.
 
 ## Expert Validation
 
@@ -90,17 +90,17 @@ Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1
 > **Catatan rekonsiliasi:** tabel di atas berjumlah 12 item Likert; instrumen
 > menambahkan 1 item "Penilaian Keseluruhan" (No. 13) agar genap **17 item inti**
 > (13 Likert + 4 terbuka) sesuai proposal — **cocokkan No. 13 dengan proposal**.
-> Pelaksanaan dengan seller OmorfoShop & penyusunan `validation_report.pdf` masih
-> menunggu (butuh responden nyata).
+> **Pelaksanaan SELESAI** — seller Forta Beauty (Shopee), skor 4,15 "Layak";
+> hasil di `phase9_validation_report.md`.
 
 ## Deliverables Checkpoint 9
 
-- [x] Unit testing selesai dan terdokumentasi. *(199 test hijau; laporan `outputs/reports/phase9_unit_test_report.md`)*
-- [x] Integration testing selesai (alur preprocessing → model → recommendation → dashboard). *(jalur CSV otomatis, 16 test `tests/integration/`; jalur fetch CDP = verifikasi manual, masih terbuka)*
-- [ ] Usability testing pada pengguna nyata selesai.
-- [ ] Expert validation oleh praktisi OmorfoShop selesai.
-- [ ] Bug fixing selesai berdasarkan temuan testing.
-- [ ] Validation report tersedia: skor rata-rata Likert + masukan kualitatif (`outputs/reports/validation_report.pdf`).
+- [x] Unit testing selesai dan terdokumentasi. *(207 test hijau; laporan `outputs/reports/phase9_unit_test_report.md`)*
+- [x] Integration testing selesai (alur preprocessing → model → recommendation → dashboard). *(jalur CSV otomatis, 15 test `tests/integration/`; jalur fetch CDP **terverifikasi manual** oleh pengguna — tanpa masalah)*
+- [x] Usability testing pada pengguna nyata selesai. *(2 peserta non-teknis; SUS rata-rata 55,0; laporan `outputs/reports/phase9_usability_report.md`)*
+- [x] Expert validation oleh praktisi e-commerce kecantikan Shopee selesai. *(seller Forta Beauty; skor akhir 4,15 = "Layak")*
+- [x] Bug fixing selesai berdasarkan temuan testing. *(rule engine 5→4 kondisi + label Indonesia, Beranda adaptif, rombak UI/UX ramah awam — commit `aebaf7c`)*
+- [x] Validation report tersedia: skor rata-rata Likert + masukan kualitatif (`outputs/reports/phase9_validation_report.md`; ekspor PDF dari dokumen ini).
 
 ## Implementasi
 
@@ -118,17 +118,24 @@ Validasi praktisi menggunakan kuesioner terstruktur dengan skala Likert 1–5 (1
   *Jalur kedua* URL Auto-Fetch (CDP) → analisis (sekaligus menutup verifikasi
   manual fetch Fase 8; uji multi-URL + simpanan sesi) **masih perlu dijalankan
   manual** di desktop ber-login — belum tercakup otomatis.
-- ✅ Instrumen usability **sudah disusun** (skenario tugas T1–T10, lembar
-  observasi fasilitator, kuesioner SUS Indonesia + template skor) — tinggal
-  **dilaksanakan** dengan 1–2 pengguna non-teknis (skenario di atas, termasuk
-  fitur pasca-gate), lalu rekap success rate + SUS + temuan → bug fixing.
-- ✅ Kuesioner expert validation **sudah disusun** (`phase9_expert_validation_questionnaire.md`
-  + template skor `.csv`) — tinggal **dilaksanakan** dengan seller OmorfoShop lalu
-  direkap ke `validation_report.pdf`.
-  *(Opsional, bila pembimbing setuju)*: item kuesioner untuk fitur insight baru
-  (kebermanfaatan deteksi ketidaksesuaian rating–sentimen & perbandingan kondisi
-  per produk) sudah tersedia di Bagian E instrumen — tanpa mengubah 17 item inti.
+- ✅ **Usability testing SELESAI** — 2 pengguna non-teknis (Mahasiswa Bisnis &
+  Barista), task success rate 50% / completion 100%, **SUS rata-rata 55,0**.
+  Laporan: [`phase9_usability_report.md`](../outputs/reports/phase9_usability_report.md)
+  (+ skor SUS terisi di `phase9_usability_sus_scoring_template.csv`).
+- ✅ **Expert validation SELESAI** — seller **Forta Beauty** (praktisi e-commerce
+  kecantikan Shopee), **skor akhir 4,15 = "Layak"**. Laporan:
+  [`phase9_validation_report.md`](../outputs/reports/phase9_validation_report.md)
+  (skor terisi di `phase9_expert_validation_scoring_template.csv`).
+- ✅ **Bug fixing SELESAI** (commit `aebaf7c`) — menindaklanjuti temuan usability &
+  expert: rule engine **5→4 kondisi** + label Indonesia, **Beranda adaptif** + nav
+  progresif + Reset/Tambah data, dan **rombak UI/UX ramah pengguna awam** (sapu
+  jargon, glosarium, filter diperjelas). 207 unit + 15 integrasi hijau.
 
 ## Gate ke Fase Berikutnya
+
+**Status: seluruh deliverable Checkpoint 9 terpenuhi** — unit ✅, integrasi ✅
+(termasuk verifikasi manual fetch CDP), usability ✅, expert validation ✅, bug
+fixing ✅, validation report ✅. **Gate ke Fase 10 (Deployment & Dokumentasi)
+TERBUKA.**
 
 Lanjut ke Fase 10 hanya jika seluruh pengujian inti lulus, bug kritis sudah diperbaiki, dan validation report dari praktisi tersedia.
