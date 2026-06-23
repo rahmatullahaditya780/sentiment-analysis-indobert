@@ -5,6 +5,7 @@
 > Instrumen: [`phase9_expert_validation_questionnaire.md`](phase9_expert_validation_questionnaire.md);
 > data terisi: [`phase9_expert_validation_scoring_template.csv`](phase9_expert_validation_scoring_template.csv).
 > Berkas angket asli ber-tanda tangan: `Validasi 1.pdf` (arsip peneliti).
+> Data keluaran sistem atas ulasan toko validator: [`Forta_Beauty_predictions.csv`](Forta_Beauty_predictions.csv) (17 ulasan).
 
 ## 1. Validator
 
@@ -24,9 +25,26 @@ OmorfoShop sehingga representatif untuk menilai relevansi keluaran sistem.
 
 Kuesioner terstruktur **skala Likert 1–5** (1 = Sangat Tidak Setuju … 5 = Sangat
 Setuju), 13 item tertutup pada 4 aspek + penilaian keseluruhan, ditambah 4
-pertanyaan terbuka. Validator menelaah keluaran sistem (distribusi sentimen nyata
-3.739 ulasan OmorfoShop = 88,5% positif, kondisi toko, panel rekomendasi, word
-cloud) sebelum menilai.
+pertanyaan terbuka.
+
+Sebelum menilai, validator menelaah keluaran sistem atas **dua sumber data nyata**:
+
+1. **Dataset studi kasus OmorfoShop** — 3.739 ulasan (distribusi 88,5% positif),
+   beserta kondisi toko, panel rekomendasi pemasaran, dan word cloud.
+2. **Ulasan tokonya sendiri — Forta Beauty** — 17 ulasan produk perawatan rambut
+   (Makarizo) & wajah (Pigeon Teens) yang diklasifikasikan sistem
+   (`outputs/reports/Forta_Beauty_predictions.csv`). Distribusi hasil: **15 positif /
+   1 negatif / 1 netral** (88,2% / 5,9% / 5,9%). Sistem **mengenali dengan benar**
+   satu keluhan kualitas (ulasan bintang-3 *"banyak yang sudah meleleh"* → negatif,
+   keyakinan 0,96) dan satu ucapan terima kasih tanpa sentimen produk (→ netral,
+   keyakinan 0,79).
+
+Penelaahan pada data tokonya sendiri penting karena validator **mengenal langsung
+sentimen pelanggannya**, sehingga dapat membandingkan label sistem dengan persepsi
+nyata atas ulasan yang ia pahami betul. Hal ini memperkuat **validitas muka (face
+validity)** penilaian — khususnya Aspek 1 (akurasi klasifikasi sentimen, item 1–3)
+yang dinilai **"Sangat Layak" (4,67)** — karena penilaian itu berpijak pada data
+toko sendiri sekaligus data studi kasus, bukan semata data pihak ketiga.
 
 ## 3. Skor per Item
 
