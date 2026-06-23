@@ -20,6 +20,11 @@ st.set_page_config(
 )
 
 from src.dashboard import pages  # noqa: E402 — set_page_config harus lebih dulu
+from src.utils.logging_setup import configure_logging  # noqa: E402
+
+# Aktifkan logging terpusat sekali saat startup (FR-10.4). Idempoten — aman
+# meski Streamlit me-rerun skrip pada tiap interaksi.
+configure_logging()
 
 
 def main() -> None:

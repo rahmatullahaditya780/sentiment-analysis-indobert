@@ -25,7 +25,7 @@ Setiap fase hanya boleh dilanjutkan jika **seluruh checklist** fase saat ini sud
 | 7 | Rule-Based Marketing Recommendation | **Selesai** (rule engine 4 kondisi compound + trend analysis; 24 unit test) |
 | 8 | Dashboard Development | **Gate LULUS** — kode selesai + verifikasi manual fetch CDP nyata oleh pengguna (tanpa masalah). Dirombak di Fase 9: Dashboard+Input menyatu jadi **Beranda** adaptif, kondisi pemasaran 4 (label Indonesia), UI/UX ramah awam |
 | 9 | Testing & Validation | **Gate LULUS** — unit 207 + integrasi 15 (model nyata, termasuk fetch CDP) hijau; **usability** (2 peserta, SUS 55,0; `phase9_usability_report.md`); **expert validation** (seller Forta Beauty Shopee, 4,15 "Layak"; `phase9_validation_report.md`); **bug fixing** selesai (5→4 kondisi + Beranda + UI/UX awam, commit `aebaf7c`). Gate ke Fase 10 terbuka |
-| 10 | Deployment & Documentation | Belum mulai |
+| 10 | Deployment & Documentation | **Berjalan** — gate Fase 9 lulus; artefak persiapan deployment & dokumentasi dibuat: `README.md` lengkap, logging terpusat (FR-10.4), pemuatan model dari HF Hub (`MODEL_HUB_ID`), config deploy dua platform (Streamlit Cloud + HF Spaces: `secrets.toml.example`/`packages.txt`/`README_HF.md`), User Guide (`docs/panduan-pengguna.md`), `validation_report.pdf`. **Sisa (aksi pengguna):** push GitHub, deploy cloud, upload bobot model ke HF Hub |
 
 ## Checklist Gate Global
 

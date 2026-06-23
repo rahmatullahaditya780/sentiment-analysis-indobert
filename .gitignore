@@ -15,6 +15,10 @@ htmlcov/
 # Local environment files
 .env
 .env.*
+!.env.example
+
+# Streamlit secrets (template .example saja yang boleh di-commit)
+.streamlit/secrets.toml
 
 # Operating system files
 .DS_Store

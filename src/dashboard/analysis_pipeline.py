@@ -29,6 +29,9 @@ from dataclasses import dataclass
 import pandas as pd
 
 from src.recommendation import MarketingRecommendation, recommend
+from src.utils.logging_setup import get_logger
+
+log = get_logger(__name__)
 
 # ── Kontrak kolom (selaras skema implementasi OmorfoShop & Fase 6/7) ──────────
 TEXT_COLUMN = "review_text"
@@ -159,17 +162,28 @@ def run_analysis(
     Mengembalikan `AnalysisResult`.
     """
     df = normalize_input(data, text_column=text_column)
+    log.info("Mulai analisis: %d ulasan tervalidasi.", len(df))
 
     # (#2) Shortcut: CSV sudah berlabel -> lewati inferensi IndoBERT.
     if has_predictions(df):
+        log.info("CSV sudah berlabel -> inferensi IndoBERT dilewati.")
         df[CONFIDENCE_COLUMN] = pd.to_numeric(df[CONFIDENCE_COLUMN], errors="coerce")
         return _assemble_result(df, use_trend=use_trend, inference_skipped=True)
 
     if predictor is None:
         predictor = load_predictor()
 
-    predictions = predictor.predict_batch(
-        df, text_column=text_column, batch_size=batch_size, progress_cb=progress_cb
+    try:
+        predictions = predictor.predict_batch(
+            df, text_column=text_column, batch_size=batch_size, progress_cb=progress_cb
+        )
+    except Exception:
+        log.exception("Inferensi IndoBERT gagal pada %d ulasan.", len(df))
+        raise
+    log.info(
+        "Inferensi selesai: %d ulasan dalam %.2fs.",
+        len(predictions),
+        float(predictions.attrs.get("total_prediction_time", 0.0)),
     )
     return _assemble_result(
         predictions,

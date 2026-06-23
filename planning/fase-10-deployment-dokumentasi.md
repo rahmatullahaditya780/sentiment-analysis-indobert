@@ -82,13 +82,37 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 
 ## Deliverables Checkpoint 10
 
-- [ ] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces) — **CSV Upload di cloud; CSV + URL Auto-Fetch (CDP, multi-URL) di lokal**.
-- [ ] Repository GitHub selesai dengan dokumentasi lengkap.
-- [ ] `README.md` lengkap dan informatif.
-- [ ] User Guide tersedia (PDF atau Markdown).
-- [ ] Evaluation report final tersedia (`outputs/reports/evaluation_final.json`).
-- [ ] Validation report tersedia (`outputs/reports/validation_report.pdf`).
-- [ ] Sistem siap untuk demo seminar hasil.
+- [ ] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces) — **CSV Upload di cloud; CSV + URL Auto-Fetch (CDP, multi-URL) di lokal**. *(Repo SIAP deploy untuk kedua platform; deploy aktual = aksi pengguna, butuh akun.)*
+- [ ] Repository GitHub selesai dengan dokumentasi lengkap. *(Konten dokumentasi lengkap; tinggal push ke GitHub.)*
+- [x] `README.md` lengkap dan informatif. *(Instalasi, struktur, sumber data, interpretasi 4 kondisi, panduan deploy dua platform, logging.)*
+- [x] User Guide tersedia (PDF atau Markdown). *(`docs/panduan-pengguna.md` — langkah demi langkah untuk pengguna non-teknis.)*
+- [x] Evaluation report final tersedia (`outputs/reports/evaluation_final.json`). *(F1 macro 0.9031; sudah ada sejak Fase 5.)*
+- [x] Validation report tersedia (`outputs/reports/validation_report.pdf`). *(Diekspor dari `phase9_validation_report.md` via `scripts/md_to_pdf.py`.)*
+- [ ] Sistem siap untuk demo seminar hasil. *(Lokal siap dijalankan; final setelah deploy cloud.)*
+
+### Artefak persiapan deployment yang sudah dibuat (2026-06-23)
+
+| Artefak | Fungsi | FR |
+|---|---|---|
+| `src/utils/logging_setup.py` (+ integrasi `app.py`/`inference.py`/`analysis_pipeline.py`) | Logging terpusat ke stderr + `outputs/logs/app.log` | FR-10.4 |
+| `MODEL_HUB_ID` (`config.py`) + `inference._resolve_source()` | Fallback muat bobot dari HuggingFace Hub bila `models/best_model/` absen (deploy cloud) | FR-10.1 |
+| `.streamlit/secrets.toml.example` | Template secrets Streamlit Community Cloud | FR-10.1 |
+| `packages.txt` | Apt deps (font wordcloud) untuk cloud | FR-10.1 |
+| `README_HF.md` | Front-matter & panduan HuggingFace Spaces (SDK streamlit, `python_version`) | FR-10.1 |
+| `README.md`, `docs/panduan-pengguna.md` | Dokumentasi proyek & user guide | FR-10.2/10.3 |
+| `.gitignore` (+`.streamlit/secrets.toml`), `.env.example` (+`MODEL_HUB_ID`/`LOG_LEVEL`/`SENTARA_FORCE_ENV`) | Repo bersih & aman | FR-10.5 |
+| `scripts/md_to_pdf.py` | Generator PDF dokumentasi (pure-Python) | — |
+
+> **Catatan:** `runtime.txt` tidak dibuat — Streamlit Community Cloud memilih versi
+> Python via UI deploy, HF Spaces via `python_version` di front-matter `README_HF.md`;
+> tidak ada platform target yang membaca `runtime.txt`.
+
+### Langkah deploy tersisa (aksi pengguna — butuh akun)
+
+1. Upload bobot IndoBERT fine-tuned ke repo HuggingFace Hub; set `MODEL_HUB_ID`.
+2. Push repo ke GitHub.
+3. Deploy ke Streamlit Community Cloud (isi Secrets) **atau** HuggingFace Spaces
+   (salin front-matter `README_HF.md`). Lihat section README "Deployment".
 
 ## Gate Akhir
 

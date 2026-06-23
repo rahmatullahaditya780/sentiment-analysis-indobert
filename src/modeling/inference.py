@@ -41,9 +41,13 @@ from src.modeling.config import (
     BEST_MODEL_DIR,
     DEFAULT_MAX_LENGTH,
     ID2LABEL,
+    MODEL_HUB_ID,
     REPORTS_DIR,
 )
 from src.preprocessing.cleaner import preprocess_text
+from src.utils.logging_setup import get_logger
+
+log = get_logger(__name__)
 
 # ── Output standar Fase 6 (deliverable Checkpoint 6) ──────────────────────────
 OMORFO_PREDICTIONS_CSV = REPORTS_DIR / "omorfo_predictions.csv"
@@ -102,6 +106,33 @@ class SentimentPredictor:
         self._id2label: dict[int, str] = ID2LABEL
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
+    def _resolve_source(self) -> str:
+        """Tentukan sumber bobot model: folder lokal atau repo HuggingFace Hub.
+
+        Prioritas:
+        1. `models/best_model/` lokal bila ada (default lokal/desktop & training).
+        2. `MODEL_HUB_ID` (env) bila lokal absen — jalur deploy cloud (Streamlit
+           Cloud / HF Spaces tak menyimpan bobot ~500MB di repo; model diunduh &
+           di-cache dari Hub saat startup).
+
+        Mengangkat `FileNotFoundError` dengan pesan jelas bila keduanya tak ada.
+        """
+        if self.model_dir.exists():
+            return str(self.model_dir)
+        if MODEL_HUB_ID:
+            log.info(
+                "models/best_model/ tidak ditemukan -> memuat dari HuggingFace "
+                "Hub: %s",
+                MODEL_HUB_ID,
+            )
+            return MODEL_HUB_ID
+        raise FileNotFoundError(
+            f"Best model tidak ditemukan di {self.model_dir} dan env MODEL_HUB_ID "
+            "kosong. Pilihan: (a) letakkan artefak Fase 4 di models/best_model/ "
+            "(lokal), atau (b) set MODEL_HUB_ID=<repo HuggingFace Hub> untuk "
+            "deploy cloud."
+        )
+
     def load(self) -> "SentimentPredictor":
         """Muat best model + tokenizer dari `model_dir`. Set mode eval.
 
@@ -121,21 +152,17 @@ class SentimentPredictor:
                 "keduanya: pip install torch transformers"
             ) from exc
 
-        if not self.model_dir.exists():
-            raise FileNotFoundError(
-                f"Best model tidak ditemukan: {self.model_dir}. Selesaikan "
-                "training Fase 4 dan letakkan artefak di models/best_model/."
-            )
+        source = self._resolve_source()
+        log.info("Memuat model & tokenizer IndoBERT dari: %s", source)
 
-        self._tokenizer = AutoTokenizer.from_pretrained(str(self.model_dir))
-        self._model = AutoModelForSequenceClassification.from_pretrained(
-            str(self.model_dir)
-        )
+        self._tokenizer = AutoTokenizer.from_pretrained(source)
+        self._model = AutoModelForSequenceClassification.from_pretrained(source)
         self._model.eval()
 
         if self._device is None:
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
         self._model.to(self._device)
+        log.info("Model IndoBERT siap (device=%s).", self._device)
 
         # Gunakan pemetaan label milik model bila tersedia & lengkap.
         cfg_id2label = getattr(self._model.config, "id2label", None)

@@ -22,7 +22,9 @@ from src.utils.label_harmonizer import CANONICAL_LABELS
 # ── Pemetaan label <-> id ─────────────────────────────────────────────────────
 # Urutan deterministik (alfabetis) agar id stabil lintas run & lintas mesin.
 # Dipakai untuk num_labels model, encoding target, dan dekode prediksi.
-LABEL2ID: dict[str, int] = {label: idx for idx, label in enumerate(sorted(CANONICAL_LABELS))}
+LABEL2ID: dict[str, int] = {
+    label: idx for idx, label in enumerate(sorted(CANONICAL_LABELS))
+}
 ID2LABEL: dict[int, str] = {idx: label for label, idx in LABEL2ID.items()}
 NUM_LABELS: int = len(LABEL2ID)
 
@@ -43,6 +45,12 @@ FINAL_METRICS_JSON = REPORTS_DIR / "phase4_final_metrics.json"
 # Model & tokenizer (selaras dengan Fase 3)
 DEFAULT_MODEL_NAME = os.getenv("MODEL_NAME", "indolem/indobert-base-uncased")
 DEFAULT_MAX_LENGTH = int(os.getenv("MODEL_MAX_LENGTH", "128"))
+
+# Fase 10 — Deployment cloud: ID repo HuggingFace Hub berisi bobot fine-tuned
+# (mis. "username/sentara-indobert"). Dipakai sebagai SUMBER model bila folder
+# lokal `models/best_model/` tidak ada (Streamlit Cloud / HF Spaces tak menyimpan
+# bobot besar di repo). Kosong = hanya muat dari lokal (perilaku default lama).
+MODEL_HUB_ID = os.getenv("MODEL_HUB_ID", "").strip()
 
 # Reproduktibilitas (seragam dengan split Fase 2)
 DEFAULT_SEED = 42
