@@ -1,5 +1,8 @@
 # Sentara — Sistem Analisis Sentimen Ulasan E-Commerce Berbasis IndoBERT
 
+🔗 **Demo online (Streamlit Cloud):** https://sentara-c2fcqdukr2vh7grrkdbyzr.streamlit.app/
+*(versi cloud: input CSV Upload saja; URL Auto-Fetch hanya di versi lokal)*
+
 Sentara adalah sistem analisis sentimen untuk ulasan produk e-commerce
 (studi kasus **OmorfoShop** di Shopee). Sistem mengklasifikasikan ulasan
 berbahasa Indonesia menjadi **Positif / Negatif / Netral** menggunakan

@@ -82,13 +82,13 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 
 ## Deliverables Checkpoint 10
 
-- [ ] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces) — **CSV Upload di cloud; CSV + URL Auto-Fetch (CDP, multi-URL) di lokal**. *(Repo SIAP deploy untuk kedua platform; deploy aktual = aksi pengguna, butuh akun.)*
-- [ ] Repository GitHub selesai dengan dokumentasi lengkap. *(Konten dokumentasi lengkap; tinggal push ke GitHub.)*
+- [x] Dashboard online dan dapat diakses publik (Streamlit Cloud / HuggingFace Spaces) — **CSV Upload di cloud; CSV + URL Auto-Fetch (CDP, multi-URL) di lokal**. *(LIVE di Streamlit Cloud: https://sentara-c2fcqdukr2vh7grrkdbyzr.streamlit.app/ — model dimuat dari HF Hub `rahmatullahaditya780/sentara-indobert`; terverifikasi berjalan oleh pengguna 2026-06-23.)*
+- [x] Repository GitHub selesai dengan dokumentasi lengkap. *(Push ke `rahmatullahaditya780/sentiment-analysis-indobert`.)*
 - [x] `README.md` lengkap dan informatif. *(Instalasi, struktur, sumber data, interpretasi 4 kondisi, panduan deploy dua platform, logging.)*
 - [x] User Guide tersedia (PDF atau Markdown). *(`docs/panduan-pengguna.md` — langkah demi langkah untuk pengguna non-teknis.)*
 - [x] Evaluation report final tersedia (`outputs/reports/evaluation_final.json`). *(F1 macro 0.9031; sudah ada sejak Fase 5.)*
 - [x] Validation report tersedia (`outputs/reports/validation_report.pdf`). *(Diekspor dari `phase9_validation_report.md` via `scripts/md_to_pdf.py`.)*
-- [ ] Sistem siap untuk demo seminar hasil. *(Lokal siap dijalankan; final setelah deploy cloud.)*
+- [x] Sistem siap untuk demo seminar hasil. *(Online & dapat diakses publik; lokal juga siap.)*
 
 ### Artefak persiapan deployment yang sudah dibuat (2026-06-23)
 
@@ -107,13 +107,13 @@ Mempublikasikan sistem ke lingkungan online dan menyelesaikan seluruh dokumentas
 > Python via UI deploy, HF Spaces via `python_version` di front-matter `README_HF.md`;
 > tidak ada platform target yang membaca `runtime.txt`.
 
-### Langkah deploy tersisa (aksi pengguna — butuh akun)
+### Langkah deploy (SELESAI 2026-06-23)
 
-1. Upload bobot IndoBERT fine-tuned ke repo HuggingFace Hub; set `MODEL_HUB_ID`.
-2. Push repo ke GitHub.
-3. Deploy ke Streamlit Community Cloud (isi Secrets) **atau** HuggingFace Spaces
-   (salin front-matter `README_HF.md`). Lihat section README "Deployment".
+1. ✅ Bobot IndoBERT fine-tuned di-upload ke HF Hub `rahmatullahaditya780/sentara-indobert` (num_labels=3, id2label terverifikasi); `MODEL_HUB_ID` di-set sebagai secret.
+2. ✅ Repo di-push ke GitHub `rahmatullahaditya780/sentiment-analysis-indobert`.
+3. ✅ Deploy ke **Streamlit Community Cloud** (Python 3.11, secret `MODEL_HUB_ID`/`LOG_LEVEL`). Perbaikan pasca-deploy: `fileWatcherType = "none"` untuk menghentikan banjir traceback watcher `torchvision` (commit `71c0662`). App terverifikasi berjalan lancar oleh pengguna.
 
-## Gate Akhir
+## Gate Akhir — ✅ LULUS (proyek SELESAI)
 
-Fase ini adalah penutup. Jika semua deliverables terpenuhi dan sistem dapat diakses publik, proyek dinyatakan **selesai**.
+Seluruh deliverable Checkpoint 10 terpenuhi dan sistem **dapat diakses publik**
+(https://sentara-c2fcqdukr2vh7grrkdbyzr.streamlit.app/). Sesuai aturan gate, **proyek dinyatakan SELESAI** (Fase 1–10 tuntas). Catatan: HF Spaces tetap tersedia sebagai alternatif bila versi Streamlit Cloud terkendala memori untuk dataset besar.
