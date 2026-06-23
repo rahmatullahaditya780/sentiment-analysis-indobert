@@ -1,3 +1,11 @@
+[server]
+# Nonaktifkan file-watcher hot-reload. Di deployment cloud kode tidak diedit
+# live, dan watcher memindai SELURUH paket `transformers` setiap rerun —
+# memicu ratusan traceback `No module named 'torchvision'` (modul image-processing
+# yang tak dipakai Sentara) + memperlambat app & memboroskan RAM (~1 GB di
+# Streamlit Cloud). "none" mematikan pemindaian itu sepenuhnya.
+fileWatcherType = "none"
+
 # Tema Sentara — selaras palet prototipe (Design/Sentara_Prototype.html).
 # Aksen merah #FF4B4B kebetulan adalah warna primer default Streamlit.
 [theme]
