@@ -1,0 +1,39 @@
+review_id,review_text,rating,product_name,product_category,date_review,predicted_label,confidence_score
+FB1,Bagus baik,5,Pigeon Teens Variant Serum 20 ml || Calm Fair Serum 20 ml || X-Folite Army Serum 20 ml || Hydra Squad Serum 20 ml || Poreless Warrior Serum 20 ml || Bright Heroes Serum 20 ml || Acne Ranger Serum 20 ml,Perawatan Wajah,2026-06-07,positive,0.9982
+FB2,"Wangi: kyk sabun² hotel
+Manfaat: lebih praktis
+Kemasan: bgs
+Recomended",5,Makarizo Barber Daily 4-in-1 220 ml,Perawatan Rambut,2026-05-16,positive,0.9995
+FB3,bnyk yg udh meleleh :(,3,Makarizo Hair Energy Vitaglitz Hair Serum isi 20 kapsul x 1 ml,Perawatan Rambut,2026-05-07,negative,0.9553
+FB4,bagus bngtt!,5,Pigeon Teens Varian Moisturizer|| Mois All Skin 50ml || Mois Acne Ranger 50 ml || Mois Hydra Squad 50 ml || Mois Bright Heroes 50 ml,Perawatan Wajah,2026-05-03,positive,0.9995
+FB5,"Manfaat: membuang rambut begitu lembut dan sehat
+Wangi: wangi harum
+Pengiriman cepat dan packaging sangat aman",5,Makarizo Hair Energy Vitaglitz Hair Serum isi 20 kapsul x 1 ml,Perawatan Rambut,2026-04-29,positive,0.9995
+FB6,"Wangi: harum
+Profil Kecantikan: bagus
+Pengalaman Penggunaan: sesuai
+Makasih sudah ksih free makarizo hair energy",5,MAKARIZO T1 Techno Nature Rosemary Protein Cream,Perawatan Rambut,2026-04-25,positive,0.9976
+FB7,"Kemasan: baguus
+Wangi: harum
+Pengalaman Penggunaan: bagus karna ada bonusnyaa",5,Makarizo Hair Energy Vitaglitz Hair Serum isi 20 kapsul x 1 ml,Perawatan Rambut,2026-04-10,positive,0.9983
+FB8,Mantap kata anak saya,5,PIGEON TEENS Varian Facial Foam 100ml| FF Daily Mild| FF All Skin| FF Acne |FF Deep & Oil,Perawatan Wajah,2026-04-02,positive,0.9982
+FB9,"Manfaat: bagus
+Kemasan: baik
+Shampo nya dalam keadaan baik sama di kasih free hair mask nya makasih",5,MAKARIZO 9ml Conditioning Shampoo,Perawatan Rambut,2026-03-30,positive,0.9972
+FB10,"Manfaat: baru dicoba
+Pengalaman Penggunaan: baru coba sekali, tapi udah lumayan bikin rambut lembut
+Profil Kecantikan: untuk rambut
+baru pertama kali nyobain ni masker sih gara² viral, semoga aja beneran bikin rambut makin bagus & kinclong hehe, makasi banyak uda dikasi 2 bonuss, semoga makin banyak rejekinya, aamiin",5,MAKARIZO MK3 Hair Mask,Perawatan Rambut,2026-03-30,positive,0.9993
+FB11,"Dikasih bonus dong,,,,, thank you",5,MAKARIZO Advisor Dual Defense Shampoo,Perawatan Rambut,2026-03-30,positive,0.9994
+FB12,"Bagus, sy mendapatkan free sticker",5,PIGEON TEENS Varian Facial Foam 100ml| FF Daily Mild| FF All Skin| FF Acne |FF Deep & Oil,Perawatan Wajah,2026-03-14,positive,0.9992
+FB13,Trma kasih di ksh free mask rambut.,5,MAKARIZO 50ml Advisor Vitamax,Perawatan Rambut,2026-03-06,neutral,0.7905
+FB14,"Wangi: wangi abiss
+Pengalaman Penggunaan: selama penggunan cocok sama produk
+Kemasan: kemasan sangat sangat rapi dan safety
+Produk sesuai, kulit kepala jadi wangi dan rambu rontok kurang, Dapat free gift dari penjualnya, sangatt bermanfaat",5,MAKARIZO 170/330ml Conditioning Shampoo adalah shampo 2-in-1,Perawatan Rambut,2026-02-24,positive,0.9995
+FB15,Makasih banyak seller dikasih free hair mask,5,MAKARIZO Hair Energy Easy Colourz ( Natural Hair Colour),Perawatan Rambut,2026-01-17,positive,0.9976
+FB16,"Pengalaman Penggunaan: pengirimannya cepat dan sangat safety, free gift jugaa huhuu",5,MAKARIZO Hair Serum Vitaglitz tersedia dalam kemasan 6x1 ml,Perawatan Rambut,2026-01-09,positive,0.9994
+FB17,"Tekstur: ok
+Cocok untuk: anak anak
+Aroma: wangi banget
+Recomande untuk di beli makasih atas produk nya ,, nanti saya mau beli produk yang lain juga , thank you mbak",5,PIGEON TEENS Series Bright Heroes|Moisturizer 50ml| Toner 100ml| Serum 20ml| Micellar Water 100ml| Micellar Oil 100ml| Sleeping Mask | Eye Serum ( Manghilangkan Mata Panda),Perawatan Wajah,2026-01-08,positive,0.9995
